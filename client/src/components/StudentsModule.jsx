@@ -7,10 +7,10 @@ export default function StudentsModule({ students, onOpenStudentID, onOpenPaymen
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          s.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (s.admissionNo && s.admissionNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                          s.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          s.phone.includes(searchQuery);
+      s.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.admissionNo && s.admissionNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      s.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.phone.includes(searchQuery);
     const matchesFee = feeFilter === 'All' || s.feeStatus === feeFilter;
     return matchesSearch && matchesFee;
   });
@@ -74,11 +74,10 @@ export default function StudentsModule({ students, onOpenStudentID, onOpenPaymen
             <button
               key={st}
               onClick={() => setFeeFilter(st)}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                feeFilter === st
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${feeFilter === st
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
             >
               {st}
             </button>
