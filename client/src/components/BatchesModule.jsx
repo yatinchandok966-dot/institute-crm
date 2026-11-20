@@ -8,8 +8,8 @@ export default function BatchesModule({ batches, courses, onOpenNewBatch }) {
   const filteredBatches = batches.filter(b => {
     const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
     const matchesSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          b.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          b.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+      b.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.instructor.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -59,11 +59,10 @@ export default function BatchesModule({ batches, courses, onOpenNewBatch }) {
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                statusFilter === st
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${statusFilter === st
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
             >
               {st}
             </button>

@@ -38,10 +38,10 @@ export default function AdmissionsModule({
 
   const filtered = admissions.filter(adm => {
     const matchesSearch = adm.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          adm.admissionNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          adm.applicationNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          adm.phone.includes(searchQuery) ||
-                          adm.course.toLowerCase().includes(searchQuery.toLowerCase());
+      adm.admissionNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      adm.applicationNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      adm.phone.includes(searchQuery) ||
+      adm.course.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCourse = courseFilter === 'All' || adm.course === courseFilter;
     const matchesStatus = statusFilter === 'All' || adm.status === statusFilter;
     return matchesSearch && matchesCourse && matchesStatus;
@@ -76,22 +76,20 @@ export default function AdmissionsModule({
           <div className="flex items-center bg-slate-200 p-1 rounded-lg text-xs font-semibold">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'kanban'
-                  ? 'bg-white text-indigo-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${viewMode === 'kanban'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               <span>Pipeline</span>
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'table'
-                  ? 'bg-white text-indigo-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${viewMode === 'table'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               <List className="w-3.5 h-3.5" />
               <span>Register Table</span>

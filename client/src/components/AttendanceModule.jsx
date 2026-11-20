@@ -169,31 +169,28 @@ export default function AttendanceModule({ batches, students }) {
                       <div className="inline-flex items-center bg-slate-100 p-1 rounded-lg gap-1">
                         <button
                           onClick={() => handleToggle(student.id, 'P')}
-                          className={`px-3 py-1 rounded font-bold text-xs transition-colors ${
-                            currentStatus === 'P'
-                              ? 'bg-emerald-600 text-white shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
+                          className={`px-3 py-1 rounded font-bold text-xs transition-colors ${currentStatus === 'P'
+                            ? 'bg-emerald-600 text-white shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                            }`}
                         >
                           Present
                         </button>
                         <button
                           onClick={() => handleToggle(student.id, 'A')}
-                          className={`px-3 py-1 rounded font-bold text-xs transition-colors ${
-                            currentStatus === 'A'
-                              ? 'bg-rose-600 text-white shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
+                          className={`px-3 py-1 rounded font-bold text-xs transition-colors ${currentStatus === 'A'
+                            ? 'bg-rose-600 text-white shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                            }`}
                         >
                           Absent
                         </button>
                         <button
                           onClick={() => handleToggle(student.id, 'L')}
-                          className={`px-3 py-1 rounded font-bold text-xs transition-colors ${
-                            currentStatus === 'L'
-                              ? 'bg-amber-500 text-white shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
+                          className={`px-3 py-1 rounded font-bold text-xs transition-colors ${currentStatus === 'L'
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                            }`}
                         >
                           Late
                         </button>
