@@ -253,11 +253,10 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
         <div className="flex border-b border-slate-200 bg-white px-6">
           <button
             onClick={() => setActiveTab('qr')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'qr'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${activeTab === 'qr'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             <Smartphone className="w-4 h-4" />
             <span>QR Code & Public Link</span>
@@ -265,11 +264,10 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
           <button
             onClick={() => setActiveTab('standee')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'standee'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${activeTab === 'standee'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             <Printer className="w-4 h-4" />
             <span>Print Front-Desk Standee (A4)</span>

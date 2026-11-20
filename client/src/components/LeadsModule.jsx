@@ -33,8 +33,8 @@ export default function LeadsModule({
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          lead.phone.includes(searchQuery) ||
-                          lead.course.toLowerCase().includes(searchQuery.toLowerCase());
+      lead.phone.includes(searchQuery) ||
+      lead.course.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCourse = courseFilter === 'All' || lead.course === courseFilter;
     const matchesStatus = statusFilter === 'All' || lead.status === statusFilter;
     return matchesSearch && matchesCourse && matchesStatus;
