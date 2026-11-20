@@ -11,7 +11,7 @@ export default function CoursesModule({ courses, onOpenNewCourse }) {
   const filteredCourses = courses.filter(c => {
     const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.code.toLowerCase().includes(searchQuery.toLowerCase());
+      c.code.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -65,11 +65,10 @@ export default function CoursesModule({ courses, onOpenNewCourse }) {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap ${
-                selectedCategory === cat
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap ${selectedCategory === cat
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
             >
               {cat}
             </button>
