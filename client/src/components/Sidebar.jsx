@@ -13,32 +13,33 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, data }) {
-  const leadsCount = data?.recentLeads?.length || 5;
-  const admissionsCount = data?.admissions?.length || 5;
-  const batchesCount = data?.batches?.length || 5;
-  const studentsCount = data?.students?.length || 5;
+  const leadsCount = data?.recentLeads?.length || 0;
+  const admissionsCount = data?.admissions?.length || 0;
+  const batchesCount = data?.batches?.length || 0;
+  const studentsCount = data?.students?.length || 0;
+  const pendingFees = data?.stats?.pendingFees || 0;
 
   const sections = [
     {
       title: 'RECRUITMENT & ADMISSIONS',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'leads', label: 'Leads & Inquiries', icon: UserPlus, badge: `${leadsCount}` },
-        { id: 'admissions', label: 'Admissions Pipeline', icon: UserCheck, badge: `${admissionsCount} Confirmed`, badgeColor: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
+        { id: 'leads', label: 'Leads & Inquiries', icon: UserPlus, badge: leadsCount > 0 ? `${leadsCount}` : null },
+        { id: 'admissions', label: 'Admissions Pipeline', icon: UserCheck, badge: admissionsCount > 0 ? `${admissionsCount} Confirmed` : null, badgeColor: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
       ]
     },
     {
       title: 'ACADEMIC OPERATIONS',
       items: [
         { id: 'courses', label: 'Courses & Syllabus', icon: BookOpen },
-        { id: 'batches', label: 'Batches & Cohorts', icon: CalendarDays, badge: `${batchesCount}` },
-        { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: `${studentsCount}` }
+        { id: 'batches', label: 'Batches & Cohorts', icon: CalendarDays, badge: batchesCount > 0 ? `${batchesCount}` : null },
+        { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: studentsCount > 0 ? `${studentsCount}` : null }
       ]
     },
     {
       title: 'FINANCE & ATTENDANCE',
       items: [
-        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard, badge: 'Due', badgeColor: 'bg-amber-50 text-amber-700 border border-amber-200' },
+        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard, badge: pendingFees > 0 ? 'Due' : null, badgeColor: 'bg-amber-50 text-amber-700 border border-amber-200' },
         { id: 'attendance', label: 'Attendance Register', icon: ClipboardCheck }
       ]
     }

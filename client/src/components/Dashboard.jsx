@@ -1,34 +1,46 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   GraduationCap,
   UserPlus,
   UserCheck,
-  CalendarDays,
   CreditCard,
-  TrendingUp,
-  ArrowUpRight,
-  Phone,
-  FileText,
   BarChart3,
-  DollarSign
+  FileText
 } from 'lucide-react';
 
 export default function Dashboard({
   data,
+  onOpenNewLead,
   onOpenNewAdmission,
   onOpenPayment,
   onOpenConfirmationLetter,
   onNavigate,
   onConvertToAdmission
 }) {
-  const stats = data.stats || {};
   const courses = data.courses || [];
   const batches = data.batches || [];
   const leads = data.recentLeads || [];
   const admissions = data.admissions || [];
-  const revenueTimeline = data.revenueTimeline || [];
+  const students = data.students || [];
+  const feeTransactions = data.feeTransactions || [];
 
-  const maxCollected = Math.max(...revenueTimeline.map(r => Math.max(r.collected, r.target)), 700000);
+  // Dynamic real calculations
+  const totalStudents = students.length;
+  const totalLeads = leads.length;
+  const totalAdmissions = admissions.length;
+  const totalRevenue = feeTransactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const totalPending = students.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+  const leadConvRate = totalLeads > 0 ? `${Math.round((totalAdmissions / totalLeads) * 100)}%` : '0%';
+
+  // Dynamic revenue timeline (from actual data or empty)
+  const revenueTimeline = data.revenueTimeline && data.revenueTimeline.length > 0
+    ? data.revenueTimeline
+    : [];
+
+  const maxCollected = Math.max(
+    ...revenueTimeline.map(r => Math.max(Number(r.collected || 0), Number(r.target || 0))),
+    100000
+  );
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -39,11 +51,11 @@ export default function Dashboard({
             Dashboard
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Overview of prospective inquiries, confirmed admissions, cohort batches, and tuition fee collection.
+            Real-time enrollment metrics, confirmed admissions, cohort schedules, and tuition collections.
           </p>
         </div>
 
-        {/* Action Buttons (Only one set of primary actions, no duplicates) */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
           <button
             onClick={onOpenPayment}
@@ -76,17 +88,17 @@ export default function Dashboard({
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-slate-900 tracking-tight">
-                {stats.totalStudents || 342}
+                {totalStudents}
               </span>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                {stats.activeStudentsGrowth || '+14.5%'}
+                {totalStudents > 0 ? `+${totalStudents} active` : '0 active'}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">Active enrolled student count</p>
           </div>
         </div>
 
-        {/* Metric 2: Inquiries This Month */}
+        {/* Metric 2: Inquiries */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -97,10 +109,10 @@ export default function Dashboard({
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-slate-900 tracking-tight">
-                {stats.newLeadsThisMonth || 86}
+                {totalLeads}
               </span>
               <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                {stats.leadConversionRate || '28.4%'} conv.
+                {leadConvRate} conv.
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">Prospective leads in pipeline</p>
@@ -118,7 +130,7 @@ export default function Dashboard({
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-slate-900 tracking-tight">
-                {admissions.length}
+                {totalAdmissions}
               </span>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
                 Admitted
@@ -128,7 +140,7 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Metric 4: Monthly Revenue */}
+        {/* Metric 4: Tuition Revenue */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -139,14 +151,14 @@ export default function Dashboard({
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-900 tracking-tight">
-                ₹{(stats.monthlyRevenue || 642000).toLocaleString()}
+                ₹{totalRevenue.toLocaleString()}
               </span>
               <span className="text-xs font-bold text-emerald-700">
-                {stats.revenueGrowth || '+18.2%'}
+                {feeTransactions.length} receipts
               </span>
             </div>
             <p className="text-[11px] text-slate-500 font-medium mt-1">
-              ₹{(stats.pendingFees || 128500).toLocaleString()} pending installments due
+              ₹{totalPending.toLocaleString()} pending installments due
             </p>
           </div>
         </div>
@@ -178,46 +190,53 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Visual SVG Bar Graph */}
-            <div className="h-56 w-full flex items-end justify-between gap-4 pt-6 px-2">
-              {revenueTimeline.map((item, idx) => {
-                const collectedHeight = Math.round((item.collected / maxCollected) * 100);
-                const targetHeight = Math.round((item.target / maxCollected) * 100);
+            {/* Visual SVG Bar Graph or Empty State */}
+            {revenueTimeline.length === 0 ? (
+              <div className="h-56 w-full flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center p-6 my-4">
+                <CreditCard className="w-8 h-8 text-slate-300 mb-2" />
+                <h4 className="font-bold text-slate-700 text-xs">No Payment History Recorded Yet</h4>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-sm">
+                  Revenue collections will chart automatically as tuition fees are recorded.
+                </p>
+              </div>
+            ) : (
+              <div className="h-56 w-full flex items-end justify-between gap-4 pt-6 px-2">
+                {revenueTimeline.map((item, idx) => {
+                  const collectedHeight = Math.round((Number(item.collected || 0) / maxCollected) * 100);
+                  const targetHeight = Math.round((Number(item.target || 0) / maxCollected) * 100);
 
-                return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    {/* Tooltip on Hover */}
-                    <div className="text-[10px] font-bold text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                      ₹{(item.collected / 1000).toFixed(0)}k
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+                      <div className="text-[10px] font-bold text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        ₹{(Number(item.collected || 0) / 1000).toFixed(0)}k
+                      </div>
+
+                      <div className="w-full flex items-end justify-center gap-1.5 h-full">
+                        <div
+                          className="w-1/2 bg-slate-200 rounded-t transition-all group-hover:bg-slate-300"
+                          style={{ height: `${targetHeight}%` }}
+                          title={`Target: ₹${Number(item.target || 0).toLocaleString()}`}
+                        ></div>
+                        <div
+                          className="w-1/2 bg-indigo-600 rounded-t transition-all group-hover:bg-indigo-700 shadow-2xs"
+                          style={{ height: `${collectedHeight}%` }}
+                          title={`Collected: ₹${Number(item.collected || 0).toLocaleString()}`}
+                        ></div>
+                      </div>
+
+                      <span className="text-xs font-bold text-slate-700 mt-1">
+                        {item.month}
+                      </span>
                     </div>
-
-                    <div className="w-full flex items-end justify-center gap-1.5 h-full">
-                      {/* Target Bar */}
-                      <div
-                        className="w-1/2 bg-slate-200 rounded-t transition-all group-hover:bg-slate-300"
-                        style={{ height: `${targetHeight}%` }}
-                        title={`Target: ₹${item.target.toLocaleString()}`}
-                      ></div>
-                      {/* Collected Bar */}
-                      <div
-                        className="w-1/2 bg-indigo-600 rounded-t transition-all group-hover:bg-indigo-700 shadow-2xs"
-                        style={{ height: `${collectedHeight}%` }}
-                        title={`Collected: ₹${item.collected.toLocaleString()}`}
-                      ></div>
-                    </div>
-
-                    <span className="text-xs font-bold text-slate-700 mt-1">
-                      {item.month}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>6-Month Collection Total: <strong className="text-slate-900 font-bold">₹3,177,000</strong></span>
-            <span className="font-semibold text-emerald-700">✓ Exceeding Q4 Target by 8.4%</span>
+            <span>Total Recorded Collections: <strong className="text-slate-900 font-bold">₹{totalRevenue.toLocaleString()}</strong></span>
+            <span className="font-semibold text-indigo-700">{totalAdmissions} Admitted Students</span>
           </div>
         </div>
 
@@ -232,24 +251,31 @@ export default function Dashboard({
             </div>
 
             <div className="mt-4 space-y-3">
-              {courses.slice(0, 5).map((course, i) => {
-                const totalActive = courses.reduce((acc, c) => acc + c.activeStudents, 0);
-                const pct = Math.round((course.activeStudents / totalActive) * 100);
-                return (
-                  <div key={course.id} className="space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold text-slate-800">
-                      <span className="truncate max-w-[170px]">{course.name}</span>
-                      <span className="font-bold text-slate-900">{course.activeStudents} ({pct}%)</span>
+              {totalStudents === 0 ? (
+                <div className="py-8 text-center text-slate-400">
+                  <p className="text-xs font-semibold text-slate-600">0 enrolled students</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Enrollment shares will calculate as admissions are confirmed</p>
+                </div>
+              ) : (
+                courses.slice(0, 5).map((course) => {
+                  const enrolledInCourse = students.filter(s => s.course === course.name).length;
+                  const pct = totalStudents > 0 ? Math.round((enrolledInCourse / totalStudents) * 100) : 0;
+                  return (
+                    <div key={course.id} className="space-y-1 text-xs">
+                      <div className="flex justify-between font-semibold text-slate-800">
+                        <span className="truncate max-w-[170px]">{course.name}</span>
+                        <span className="font-bold text-slate-900">{enrolledInCourse} ({pct}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-indigo-600 h-full rounded-full"
+                          style={{ width: `${pct}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-indigo-600 h-full rounded-full"
-                        style={{ width: `${pct}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -283,36 +309,44 @@ export default function Dashboard({
             </div>
 
             <div className="divide-y divide-slate-100 text-xs">
-              {admissions.slice(0, 4).map((adm) => (
-                <div key={adm.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
-                        {adm.admissionNo}
-                      </span>
-                      <strong className="text-slate-900 font-bold">{adm.studentName}</strong>
-                    </div>
-                    <p className="text-slate-600 text-[11px] mt-1">{adm.course}</p>
-                    <p className="text-slate-400 text-[10px]">Batch: {adm.batch} • {adm.paymentPlan}</p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="font-bold text-emerald-700">₹{Number(adm.admissionFeePaid).toLocaleString()} Paid</p>
-                    <span className="inline-block text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded mt-1">
-                      {adm.status}
-                    </span>
-                    <div className="mt-1">
-                      <button
-                        onClick={() => onOpenConfirmationLetter(adm)}
-                        className="text-[11px] text-indigo-600 font-semibold hover:underline inline-flex items-center gap-0.5"
-                      >
-                        <FileText className="w-3 h-3" />
-                        <span>Letter</span>
-                      </button>
-                    </div>
-                  </div>
+              {admissions.length === 0 ? (
+                <div className="py-12 px-4 text-center text-slate-400">
+                  <UserCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-slate-600">No confirmed admissions yet</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Students admitted will appear here with confirmation letters</p>
                 </div>
-              ))}
+              ) : (
+                admissions.slice(0, 4).map((adm) => (
+                  <div key={adm.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                          {adm.admissionNo}
+                        </span>
+                        <strong className="text-slate-900 font-bold">{adm.studentName}</strong>
+                      </div>
+                      <p className="text-slate-600 text-[11px] mt-1">{adm.course}</p>
+                      <p className="text-slate-400 text-[10px]">Batch: {adm.batch} • {adm.paymentPlan}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-bold text-emerald-700">₹{Number(adm.admissionFeePaid || 0).toLocaleString()} Paid</p>
+                      <span className="inline-block text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded mt-1">
+                        {adm.status}
+                      </span>
+                      <div className="mt-1">
+                        <button
+                          onClick={() => onOpenConfirmationLetter(adm)}
+                          className="text-[11px] text-indigo-600 font-semibold hover:underline inline-flex items-center gap-0.5"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>Letter</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -345,30 +379,38 @@ export default function Dashboard({
             </div>
 
             <div className="divide-y divide-slate-100 text-xs">
-              {leads.slice(0, 4).map((lead) => (
-                <div key={lead.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-3">
-                  <div>
-                    <h4 className="font-bold text-slate-900">{lead.name}</h4>
-                    <p className="text-slate-600 text-[11px] mt-0.5">{lead.course}</p>
-                    <p className="text-slate-400 text-[10px] font-mono">{lead.phone} • {lead.source}</p>
-                  </div>
-
-                  <div className="text-right space-y-1">
-                    <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                      {lead.status}
-                    </span>
+              {leads.length === 0 ? (
+                <div className="py-12 px-4 text-center text-slate-400">
+                  <UserPlus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-slate-600">No student inquiries yet</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Scan reception QR or click Add Lead to record inquiries</p>
+                </div>
+              ) : (
+                leads.slice(0, 4).map((lead) => (
+                  <div key={lead.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-3">
                     <div>
-                      <button
-                        onClick={() => onConvertToAdmission(lead)}
-                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded text-[10px] transition-colors inline-flex items-center gap-1"
-                      >
-                        <UserCheck className="w-3 h-3" />
-                        <span>Convert to Admission</span>
-                      </button>
+                      <h4 className="font-bold text-slate-900">{lead.name}</h4>
+                      <p className="text-slate-600 text-[11px] mt-0.5">{lead.course}</p>
+                      <p className="text-slate-400 text-[10px] font-mono">{lead.phone} • {lead.source}</p>
+                    </div>
+
+                    <div className="text-right space-y-1">
+                      <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                        {lead.status}
+                      </span>
+                      <div>
+                        <button
+                          onClick={() => onConvertToAdmission(lead)}
+                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded text-[10px] transition-colors inline-flex items-center gap-1"
+                        >
+                          <UserCheck className="w-3 h-3" />
+                          <span>Convert to Admission</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

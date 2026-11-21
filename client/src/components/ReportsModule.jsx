@@ -17,9 +17,9 @@ export default function ReportsModule({ courses, leads, stats }) {
 
   // Counselor Leaderboard
   const counselors = [
-    { name: 'Pooja Verma', role: 'Senior Academic Counselor', leadsHandled: 48, converted: 16, convRate: '33.3%', revenue: '₹7,20,000', badge: 'Top Performer 🏆' },
-    { name: 'Karan Singhania', role: 'Admissions Counselor', leadsHandled: 38, converted: 11, convRate: '28.9%', revenue: '₹4,95,000', badge: 'Fastest Closer ⚡' },
-    { name: 'Front Desk Team', role: 'Direct Walk-in Registrations', leadsHandled: 15, converted: 5, convRate: '33.3%', revenue: '₹2,25,000', badge: 'High Conversion 🎯' }
+    { name: 'Admissions Desk 1', role: 'Senior Academic Counselor', leadsHandled: leads.length, converted: 0, convRate: '0%', revenue: '₹0', badge: 'Active' },
+    { name: 'Admissions Desk 2', role: 'Admissions Counselor', leadsHandled: 0, converted: 0, convRate: '0%', revenue: '₹0', badge: 'Active' },
+    { name: 'Front Desk Team', role: 'Direct Walk-in Registrations', leadsHandled: 0, converted: 0, convRate: '0%', revenue: '₹0', badge: 'Active' }
   ];
 
   // Lead Channel Performance

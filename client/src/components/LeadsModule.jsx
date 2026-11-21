@@ -145,8 +145,10 @@ export default function LeadsModule({
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-8 text-center text-slate-400">
-                    No matching leads found
+                  <td colSpan="7" className="py-12 text-center text-slate-400">
+                    <UserPlus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-600">No student inquiries recorded yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Click "Add Lead" or share the QR code to collect prospective student inquiries</p>
                   </td>
                 </tr>
               ) : (

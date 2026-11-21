@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
 import { GraduationCap, Search, Phone, Mail, CreditCard, ShieldCheck, QrCode } from 'lucide-react';
 
-export default function StudentsModule({ students, onOpenStudentID, onOpenPayment }) {
+export default function StudentsModule({ students = [], onOpenStudentID, onOpenPayment }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [feeFilter, setFeeFilter] = useState('All');
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.studentId && s.studentId.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (s.admissionNo && s.admissionNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      s.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.phone.includes(searchQuery);
+      (s.course && s.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.phone && s.phone.includes(searchQuery));
     const matchesFee = feeFilter === 'All' || s.feeStatus === feeFilter;
     return matchesSearch && matchesFee;
   });
 
-  const getFeeBadge = (status, due) => {
+  const getFeeBadge = (status, due = 0) => {
     switch (status) {
       case 'Paid':
         return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Paid in Full</span>;
       case 'Partial':
-        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Due: ₹{due.toLocaleString()}</span>;
+        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Due: ₹{Number(due).toLocaleString()}</span>;
       case 'Overdue':
       default:
-        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Overdue: ₹{due.toLocaleString()}</span>;
+        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Overdue: ₹{Number(due).toLocaleString()}</span>;
     }
   };
 
@@ -101,47 +101,57 @@ export default function StudentsModule({ students, onOpenStudentID, onOpenPaymen
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredStudents.map(student => (
-                <tr key={student.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-slate-900 text-sm">{student.name}</div>
-                    <div className="text-[11px] text-indigo-700 font-mono font-semibold">
-                      {student.studentId}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono font-semibold text-slate-800">
-                    {student.admissionNo || '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-slate-800">{student.course}</div>
-                    <div className="text-[11px] text-slate-500">{student.batch}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-slate-700">{student.guardian}</div>
-                    <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
-                      <Phone className="w-3 h-3" />
-                      {student.guardianPhone}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="font-bold text-slate-900">
-                      {student.attendance}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {getFeeBadge(student.feeStatus, student.feeDue)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => onOpenStudentID(student)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-semibold transition-colors"
-                    >
-                      <QrCode className="w-3 h-3 text-slate-600" />
-                      <span>ID Pass</span>
-                    </button>
+              {filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400">
+                    <GraduationCap className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-600">No students enrolled yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Students will appear here once admitted from the Admissions Pipeline</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredStudents.map(student => (
+                  <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900 text-sm">{student.name}</div>
+                      <div className="text-[11px] text-indigo-700 font-mono font-semibold">
+                        {student.studentId}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono font-semibold text-slate-800">
+                      {student.admissionNo || '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-800">{student.course}</div>
+                      <div className="text-[11px] text-slate-500">{student.batch}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-slate-700">{student.guardian}</div>
+                      <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />
+                        {student.guardianPhone || '—'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-bold text-slate-900">
+                        {student.attendance || 100}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {getFeeBadge(student.feeStatus, student.feeDue)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => onOpenStudentID(student)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-semibold transition-colors"
+                      >
+                        <QrCode className="w-3 h-3 text-slate-600" />
+                        <span>ID Pass</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

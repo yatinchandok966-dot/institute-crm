@@ -8,7 +8,7 @@ export default function NewLeadModal({ isOpen, onClose, onLeadCreated, courses }
     email: '',
     course: courses?.[0]?.name || 'Full Stack Web Development (MERN)',
     source: 'Website Form',
-    counselor: 'Pooja Verma',
+    counselor: 'Admissions Counselor',
     followUp: 'Call Pending',
     notes: ''
   });
@@ -175,9 +175,9 @@ export default function NewLeadModal({ isOpen, onClose, onLeadCreated, courses }
                 onChange={(e) => setFormData({ ...formData, counselor: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="Pooja Verma">Pooja Verma</option>
-                <option value="Karan Singhania">Karan Singhania</option>
-                <option value="Front Desk">Front Desk Reception</option>
+                <option value="Admissions Counselor">Admissions Counselor</option>
+                <option value="Senior Academic Counselor">Senior Academic Counselor</option>
+                <option value="Campus Front Desk">Campus Front Desk</option>
               </select>
             </div>
 

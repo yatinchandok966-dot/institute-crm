@@ -97,14 +97,17 @@ export default function App() {
 
   // Handlers for Leads
   const handleLeadCreated = (newLead) => {
-    setInstituteData(prev => ({
-      ...prev,
-      recentLeads: [newLead, ...prev.recentLeads],
-      stats: {
-        ...prev.stats,
-        newLeadsThisMonth: (prev.stats.newLeadsThisMonth || 86) + 1
-      }
-    }));
+    setInstituteData(prev => {
+      const updatedLeads = [newLead, ...prev.recentLeads];
+      return {
+        ...prev,
+        recentLeads: updatedLeads,
+        stats: {
+          ...prev.stats,
+          newLeadsThisMonth: updatedLeads.length
+        }
+      };
+    });
   };
 
   const handleUpdateLeadStatus = (leadId, newStatus) => {
@@ -138,16 +141,19 @@ export default function App() {
 
       // 2. Add to students roster if not present
       const updatedStudents = newStudent ? [newStudent, ...prev.students] : prev.students;
+      const updatedAdmissions = [newAdmission, ...prev.admissions];
 
       // 3. Add to fee transactions if an admission fee was collected
       const updatedFees = [...prev.feeTransactions];
-      if (Number(newAdmission.admissionFeePaid) > 0) {
+      const paidAmount = Number(newAdmission.admissionFeePaid) || 0;
+      if (paidAmount > 0) {
+        const rcpSeq = String(prev.feeTransactions.length + 1).padStart(4, '0');
         updatedFees.unshift({
-          receiptNo: `RCP-2026-0${90 + prev.feeTransactions.length + 1}`,
+          receiptNo: `RCP-2026-${rcpSeq}`,
           studentName: newAdmission.studentName,
           studentId: newStudent?.studentId || 'STU-NEW',
           course: newAdmission.course,
-          amount: Number(newAdmission.admissionFeePaid),
+          amount: paidAmount,
           mode: 'Admission Registration (UPI / Bank)',
           date: new Date().toISOString().replace('T', ' ').substring(0, 16),
           collectedBy: newAdmission.counselor || 'Admissions Desk',
@@ -155,17 +161,22 @@ export default function App() {
         });
       }
 
+      const totalRevenue = updatedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+      const totalPending = updatedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+
       return {
         ...prev,
-        admissions: [newAdmission, ...prev.admissions],
+        admissions: updatedAdmissions,
         recentLeads: updatedLeads,
         students: updatedStudents,
         feeTransactions: updatedFees,
         stats: {
           ...prev.stats,
-          confirmedAdmissions: (prev.stats.confirmedAdmissions || 24) + 1,
-          totalStudents: (prev.stats.totalStudents || 342) + 1,
-          monthlyRevenue: (prev.stats.monthlyRevenue || 642000) + (Number(newAdmission.admissionFeePaid) || 0)
+          confirmedAdmissions: updatedAdmissions.length,
+          totalStudents: updatedStudents.length,
+          monthlyRevenue: totalRevenue,
+          pendingFees: totalPending,
+          leadConversionRate: updatedLeads.length > 0 ? `${Math.round((updatedAdmissions.length / updatedLeads.length) * 100)}%` : '0%'
         }
       };
     });
@@ -191,8 +202,8 @@ export default function App() {
     setInstituteData(prev => {
       const updatedStudents = prev.students.map(s => {
         if (s.name.toLowerCase() === newReceipt.studentName.toLowerCase() || s.studentId === newReceipt.studentId) {
-          const newPaid = s.feePaid + Number(newReceipt.amount);
-          const newDue = Math.max(0, s.feeTotal - newPaid);
+          const newPaid = Number(s.feePaid || 0) + Number(newReceipt.amount || 0);
+          const newDue = Math.max(0, Number(s.feeTotal || 0) - newPaid);
           return {
             ...s,
             feePaid: newPaid,
@@ -203,39 +214,52 @@ export default function App() {
         return s;
       });
 
+      const updatedFees = [newReceipt, ...prev.feeTransactions];
+      const totalRevenue = updatedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+      const totalPending = updatedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+
       return {
         ...prev,
-        feeTransactions: [newReceipt, ...prev.feeTransactions],
+        feeTransactions: updatedFees,
         students: updatedStudents,
         stats: {
           ...prev.stats,
-          monthlyRevenue: (prev.stats.monthlyRevenue || 642000) + Number(newReceipt.amount),
-          pendingFees: Math.max(0, (prev.stats.pendingFees || 128500) - Number(newReceipt.amount))
+          monthlyRevenue: totalRevenue,
+          pendingFees: totalPending,
+          feeCollectionRate: totalRevenue + totalPending > 0
+            ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+            : '100%'
         }
       };
     });
   };
 
   const handleBatchCreated = (newBatch) => {
-    setInstituteData(prev => ({
-      ...prev,
-      batches: [newBatch, ...prev.batches],
-      stats: {
-        ...prev.stats,
-        activeBatches: (prev.stats.activeBatches || 5) + 1
-      }
-    }));
+    setInstituteData(prev => {
+      const updatedBatches = [newBatch, ...prev.batches];
+      return {
+        ...prev,
+        batches: updatedBatches,
+        stats: {
+          ...prev.stats,
+          activeBatches: updatedBatches.length
+        }
+      };
+    });
   };
 
   const handleCourseCreated = (newCourse) => {
-    setInstituteData(prev => ({
-      ...prev,
-      courses: [newCourse, ...prev.courses],
-      stats: {
-        ...prev.stats,
-        activeCourses: (prev.stats.activeCourses || 6) + 1
-      }
-    }));
+    setInstituteData(prev => {
+      const updatedCourses = [newCourse, ...prev.courses];
+      return {
+        ...prev,
+        courses: updatedCourses,
+        stats: {
+          ...prev.stats,
+          activeCourses: updatedCourses.length
+        }
+      };
+    });
   };
 
   // Render Module Content

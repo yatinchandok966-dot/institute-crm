@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { CreditCard, Search, Plus, Printer, CheckCircle2 } from 'lucide-react';
+import { CreditCard, Search, Plus, Printer } from 'lucide-react';
 
-export default function FeesModule({ feeTransactions, stats, onOpenPayment, onOpenReceipt }) {
+export default function FeesModule({ feeTransactions = [], stats = {}, onOpenPayment, onOpenReceipt }) {
   const [searchQuery, setSearchQuery] = useState('');
 
+  const totalCollected = feeTransactions.reduce((acc, tx) => acc + Number(tx.amount || 0), 0);
+  const totalPending = Number(stats.pendingFees || 0);
+  const collectionRate = totalCollected + totalPending > 0
+    ? `${Math.round((totalCollected / (totalCollected + totalPending)) * 100)}%`
+    : '100%';
+
   const filteredTransactions = feeTransactions.filter(tx => {
-    return tx.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           tx.receiptNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           tx.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           tx.mode.toLowerCase().includes(searchQuery.toLowerCase());
+    return (tx.studentName && tx.studentName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+           (tx.receiptNo && tx.receiptNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+           (tx.course && tx.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
+           (tx.mode && tx.mode.toLowerCase().includes(searchQuery.toLowerCase()));
   });
 
   return (
@@ -21,7 +27,7 @@ export default function FeesModule({ feeTransactions, stats, onOpenPayment, onOp
               Fees & Invoicing
             </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-              ₹{(stats.monthlyRevenue || 642000).toLocaleString()} Collected
+              ₹{totalCollected.toLocaleString()} Collected
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -44,7 +50,7 @@ export default function FeesModule({ feeTransactions, stats, onOpenPayment, onOp
           <span className="text-xs font-semibold text-slate-500 uppercase">Total Revenue Collected</span>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              ₹{(stats.monthlyRevenue || 642000).toLocaleString()}
+              ₹{totalCollected.toLocaleString()}
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">Tuition fee installments & admissions</p>
@@ -54,7 +60,7 @@ export default function FeesModule({ feeTransactions, stats, onOpenPayment, onOp
           <span className="text-xs font-semibold text-slate-500 uppercase">Pending Installments Due</span>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-amber-600">
-              ₹{(stats.pendingFees || 128500).toLocaleString()}
+              ₹{totalPending.toLocaleString()}
             </span>
           </div>
           <p className="text-[11px] text-amber-600 font-medium mt-1">Outstanding installment balance</p>
@@ -64,10 +70,10 @@ export default function FeesModule({ feeTransactions, stats, onOpenPayment, onOp
           <span className="text-xs font-semibold text-slate-500 uppercase">Collection Efficiency</span>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-indigo-700">
-              {stats.feeCollectionRate || '83.3%'}
+              {collectionRate}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">On target for the billing cycle</p>
+          <p className="text-[11px] text-slate-400 mt-1">Real-time installment clearance rate</p>
         </div>
       </div>
 
@@ -100,44 +106,54 @@ export default function FeesModule({ feeTransactions, stats, onOpenPayment, onOp
                 <th className="px-4 py-3">Amount Paid</th>
                 <th className="px-4 py-3">Payment Mode</th>
                 <th className="px-4 py-3">Date & Time</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-right">Receipt Slip</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredTransactions.map(tx => (
-                <tr key={tx.receiptNo} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-mono font-bold text-indigo-700">
-                    {tx.receiptNo}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-slate-900">{tx.studentName}</div>
-                    <div className="text-[11px] text-slate-400 font-mono">{tx.studentId}</div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-800">
-                    {tx.course}
-                  </td>
-                  <td className="px-4 py-3 font-black text-slate-900 text-sm">
-                    ₹{Number(tx.amount).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
-                      {tx.mode}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-500 font-mono text-[11px]">
-                    {tx.date}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => onOpenReceipt(tx)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-semibold transition-colors"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Print Slip</span>
-                    </button>
+              {filteredTransactions.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400">
+                    <CreditCard className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-600">No payment receipts recorded yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Click "Record Fee Payment" or confirm an admission to generate receipts</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredTransactions.map(tx => (
+                  <tr key={tx.receiptNo} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-mono font-bold text-indigo-700">
+                      {tx.receiptNo}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900">{tx.studentName}</div>
+                      <div className="text-[11px] text-slate-400 font-mono">{tx.studentId}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-800">
+                      {tx.course}
+                    </td>
+                    <td className="px-4 py-3 font-black text-slate-900 text-sm">
+                      ₹{Number(tx.amount || 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
+                        {tx.mode}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 font-mono text-[11px]">
+                      {tx.date}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => onOpenReceipt(tx)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-semibold transition-colors"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print Slip</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

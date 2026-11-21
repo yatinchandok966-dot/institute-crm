@@ -26,7 +26,7 @@ export default function AdmissionModal({
     admissionFeePaid: 15000,
     paymentPlan: '2 Installments (50/50)',
     status: 'Admission Confirmed',
-    counselor: 'Pooja Verma',
+    counselor: 'Admissions Desk',
     notes: ''
   });
 
@@ -51,7 +51,7 @@ export default function AdmissionModal({
         totalCourseFee: fee,
         discount: 0,
         admissionFeePaid: Math.round(fee * 0.3), // default 30% registration
-        counselor: leadToConvert.counselor || 'Pooja Verma',
+        counselor: leadToConvert.counselor || 'Admissions Desk',
         notes: `Converted from lead. ${leadToConvert.notes || ''}`
       }));
     } else if (courses.length > 0) {

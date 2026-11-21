@@ -86,7 +86,7 @@ export default function NewBatchModal({ isOpen, onClose, onBatchCreated, courses
               <input
                 type="text"
                 required
-                placeholder="e.g. Dr. Sunita Sharma"
+                placeholder="e.g. Lead Instructor Name"
                 value={formData.instructor}
                 onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"

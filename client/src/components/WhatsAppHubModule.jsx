@@ -24,7 +24,7 @@ export default function WhatsAppHubModule({ leads, students, templates }) {
     text = text.replace(/{{batchName}}/g, selectedRecipient.batch || 'FSWD Morning Cohort');
     text = text.replace(/{{startDate}}/g, 'Monday, 10:00 AM');
     text = text.replace(/{{schedule}}/g, 'Mon-Fri 09:00 AM - 11:30 AM');
-    text = text.replace(/{{instructor}}/g, 'Prof. Alex Rivera');
+    text = text.replace(/{{instructor}}/g, 'Lead Instructor');
     text = text.replace(/{{date}}/g, new Date().toLocaleDateString());
     return text;
   };

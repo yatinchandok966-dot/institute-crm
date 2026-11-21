@@ -32,7 +32,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
       course: formData.course,
       source: 'QR Code (Campus Reception)',
       status: 'New Inquiry',
-      counselor: 'Pooja Verma',
+      counselor: 'Admissions Desk',
       followUp: 'Pending Counselor Call',
       notes: `Mode: ${formData.mode} | Timing: ${formData.timing} | Background: ${formData.qualification} ${formData.notes ? '| Message: ' + formData.notes : ''}`
     };
@@ -85,7 +85,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Assigned Counselor:</span>
-              <span className="font-semibold text-indigo-700">Pooja Verma</span>
+              <span className="font-semibold text-indigo-700">Admissions Desk</span>
             </div>
           </div>
 

@@ -77,46 +77,55 @@ export default function CoursesModule({ courses, onOpenNewCourse }) {
       </div>
 
       {/* Course Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.map(course => {
-          const isExpanded = expandedCourseId === course.id;
-          return (
-            <div
-              key={course.id}
-              className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden"
-            >
-              <div className="p-5 space-y-4">
-                {/* Category & Code */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                    {course.category}
-                  </span>
-                  <span className="text-xs font-mono font-bold text-slate-500">
-                    {course.code}
-                  </span>
-                </div>
-
-                {/* Title & Desc */}
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base leading-snug">
-                    {course.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    {course.description}
-                  </p>
-                </div>
-
-                {/* Highlights */}
-                <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-medium">Duration</span>
-                    <p className="font-bold text-slate-800 mt-0.5">{course.durationWeeks} Weeks</p>
+      {filteredCourses.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">
+          <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <h3 className="text-sm font-bold text-slate-700">No Programs Found</h3>
+          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            Click "Add Course" to create programs with syllabus outlines and fee structures.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map(course => {
+            const isExpanded = expandedCourseId === course.id;
+            return (
+              <div
+                key={course.id}
+                className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden"
+              >
+                <div className="p-5 space-y-4">
+                  {/* Category & Code */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                      {course.category}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-500">
+                      {course.code}
+                    </span>
                   </div>
+
+                  {/* Title & Desc */}
                   <div>
-                    <span className="text-[10px] text-slate-400 font-medium">Enrolled Students</span>
-                    <p className="font-bold text-indigo-700 mt-0.5">{course.activeStudents}</p>
+                    <h3 className="font-bold text-slate-900 text-base leading-snug">
+                      {course.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      {course.description}
+                    </p>
                   </div>
-                </div>
+
+                  {/* Highlights */}
+                  <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium">Duration</span>
+                      <p className="font-bold text-slate-800 mt-0.5">{course.durationWeeks} Weeks</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium">Enrolled Students</span>
+                      <p className="font-bold text-indigo-700 mt-0.5">{course.activeStudents || 0}</p>
+                    </div>
+                  </div>
 
                 {/* Syllabus Modules Accordion */}
                 {isExpanded && course.modules && (
@@ -159,6 +168,7 @@ export default function CoursesModule({ courses, onOpenNewCourse }) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }
