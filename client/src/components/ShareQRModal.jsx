@@ -341,7 +341,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                     className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>Open Form Preview (Fill Sample)</span>
+                    <span>Open Registration Form (Live Preview)</span>
                   </button>
 
                   <button
