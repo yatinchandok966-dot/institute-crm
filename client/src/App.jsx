@@ -105,6 +105,50 @@ export default function App() {
         newLeadsThisMonth: (prev.stats.newLeadsThisMonth || 86) + 1
       }
     }));
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLead)
+    }).catch(() => null);
+  };
+
+  const handleLeadUpdated = (updatedLead) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === updatedLead.id ? updatedLead : l))
+    }));
+    fetch(`/api/leads/${updatedLead.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedLead)
+    }).catch(() => null);
+  };
+
+  const handleLeadDeleted = (leadId) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.filter(l => l.id !== leadId)
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'DELETE'
+    }).catch(() => null);
+  };
+
+  const handleBatchLeadsImported = (newLeads) => {
+    if (!newLeads || newLeads.length === 0) return;
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: [...newLeads, ...prev.recentLeads],
+      stats: {
+        ...prev.stats,
+        newLeadsThisMonth: (prev.stats.newLeadsThisMonth || 86) + newLeads.length
+      }
+    }));
+    fetch('/api/leads/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leads: newLeads })
+    }).catch(() => null);
   };
 
   const handleUpdateLeadStatus = (leadId, newStatus) => {
@@ -116,6 +160,70 @@ export default function App() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
+    }).catch(() => null);
+  };
+
+  const handleAssignCounsellor = (leadId, counselor) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, counselor } : l))
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ counselor })
+    }).catch(() => null);
+  };
+
+  const handleUpdateLeadPriority = (leadId, priority) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, priority } : l))
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority })
+    }).catch(() => null);
+  };
+
+  const handleAddLeadNote = (leadId, note) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => {
+        if (l.id === leadId) {
+          const notesList = [note, ...(l.notesList || [])];
+          return { ...l, notesList, notes: note.text };
+        }
+        return l;
+      })
+    }));
+    fetch(`/api/leads/${leadId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(note)
+    }).catch(() => null);
+  };
+
+  const handleLogLeadCall = (leadId, call, nextFollowUp) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => {
+        if (l.id === leadId) {
+          const callHistory = [call, ...(l.callHistory || [])];
+          return {
+            ...l,
+            callHistory,
+            ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
+          };
+        }
+        return l;
+      })
+    }));
+    fetch(`/api/leads/${leadId}/calls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...call, nextFollowUpDate: nextFollowUp })
     }).catch(() => null);
   };
 
@@ -258,10 +366,17 @@ export default function App() {
           <LeadsModule
             leads={instituteData.recentLeads}
             courses={instituteData.courses}
-            onOpenNewLead={() => setIsLeadModalOpen(true)}
             onOpenShareQR={() => setIsShareQROpen(true)}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onConvertToAdmission={handleConvertToAdmission}
+            onLeadCreated={handleLeadCreated}
+            onLeadUpdated={handleLeadUpdated}
+            onLeadDeleted={handleLeadDeleted}
+            onBatchLeadsImported={handleBatchLeadsImported}
+            onAssignCounsellor={handleAssignCounsellor}
+            onUpdateLeadPriority={handleUpdateLeadPriority}
+            onAddLeadNote={handleAddLeadNote}
+            onLogLeadCall={handleLogLeadCall}
           />
         );
       case 'admissions':
@@ -378,6 +493,7 @@ export default function App() {
         onClose={() => setIsLeadModalOpen(false)}
         onLeadCreated={handleLeadCreated}
         courses={instituteData.courses}
+        existingLeads={instituteData.recentLeads}
       />
 
       {/* Admissions Conversion & New Admission Modal */}

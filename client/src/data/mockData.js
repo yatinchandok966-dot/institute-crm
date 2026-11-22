@@ -1,3 +1,33 @@
+export const LEAD_SOURCES = [
+  'Website',
+  'Facebook',
+  'Instagram',
+  'LinkedIn',
+  'Google Ads',
+  'Referral',
+  'Walk-in',
+  'Phone Call'
+];
+
+export const LEAD_PIPELINE_STAGES = [
+  'New',
+  'Contacted',
+  'Counselling Scheduled',
+  'Interested',
+  'Follow-up Required',
+  'Converted / Lost'
+];
+
+export const LEAD_PRIORITIES = ['Hot', 'Warm', 'Cold'];
+
+export const COUNSELLORS_LIST = [
+  'Pooja Verma',
+  'Karan Singhania',
+  'Rohit Sharma',
+  'Ananya Sen',
+  'Vikram Mehta'
+];
+
 export const initialInstituteData = {
   stats: {
     totalStudents: 342,
@@ -167,65 +197,186 @@ export const initialInstituteData = {
       name: 'Riya Kapoor',
       phone: '+91 98765 43210',
       email: 'riya.k@example.com',
+      city: 'Pune',
+      qualification: 'B.Tech CS',
+      college: 'Pune Institute of Computer Technology (PICT)',
       course: 'Full Stack Web Development (MERN)',
-      source: 'Website Form',
-      status: 'Demo Scheduled',
+      source: 'Website',
       counselor: 'Pooja Verma',
-      followUp: '21 Nov 2026, 11:00 AM',
-      notes: 'B.Tech CS graduate. Attending demo class this Saturday. Looking for placement assistance.',
-      createdAt: '2026-11-19'
+      createdAt: '2026-11-18',
+      status: 'Counselling Scheduled',
+      priority: 'Hot',
+      nextFollowUpDate: '2026-11-20T11:00',
+      notes: 'B.Tech CS graduate. Attending demo counseling session. Looking for placement assistance.',
+      notesList: [
+        { id: 1, text: 'Inquired about weekend vs weekday MERN batch and placement track record.', date: '2026-11-18 10:30', author: 'Pooja Verma' },
+        { id: 2, text: 'Shared syllabus and scheduled 1-on-1 counseling demo.', date: '2026-11-19 14:15', author: 'Pooja Verma' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-18 10:25', duration: '4m 10s', outcome: 'Connected - Interested', notes: 'First intro call. High interest in React & Node.js.', counselor: 'Pooja Verma' },
+        { id: 2, date: '2026-11-19 16:00', duration: '2m 30s', outcome: 'Counseling Scheduled', notes: 'Confirmed demo session for today 11 AM.', counselor: 'Pooja Verma' }
+      ]
     },
     {
       id: 102,
       name: 'Aman Verma',
       phone: '+91 98111 22334',
       email: 'aman.v@example.com',
+      city: 'Mumbai',
+      qualification: 'B.Sc Statistics',
+      college: "St. Xavier's College, Mumbai",
       course: 'Data Science & Machine Learning with Python',
-      source: 'Instagram Ad',
-      status: 'Follow-up',
+      source: 'Instagram',
       counselor: 'Pooja Verma',
-      followUp: '20 Nov 2026, 04:00 PM',
+      createdAt: '2026-11-17',
+      status: 'Follow-up Required',
+      priority: 'Hot',
+      nextFollowUpDate: '2026-11-19T16:00',
       notes: 'Working as business analyst. Wants weekend batch. Requested installment options.',
-      createdAt: '2026-11-18'
+      notesList: [
+        { id: 1, text: 'Requested fee installment options and curriculum details for NLP modules.', date: '2026-11-17 11:20', author: 'Pooja Verma' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-17 11:15', duration: '5m 05s', outcome: 'Connected - Interested', notes: 'Discussed weekend schedule and fees.', counselor: 'Pooja Verma' },
+        { id: 2, date: '2026-11-19 15:45', duration: '1m 20s', outcome: 'Call Back Requested', notes: 'In a meeting; follow-up call needed.', counselor: 'Pooja Verma' }
+      ]
     },
     {
       id: 103,
       name: 'Neha Deshmukh',
       phone: '+91 97234 56789',
       email: 'neha.d@example.com',
+      city: 'Pune',
+      qualification: 'B.Des',
+      college: 'MIT Institute of Design',
       course: 'UI/UX Product Design Masterclass',
       source: 'Walk-in',
-      status: 'Lead Confirmed',
       counselor: 'Karan Singhania',
-      followUp: 'Ready for Admission',
-      notes: 'Visited center yesterday. Confirmed interest in evening batch. Ready to enroll.',
-      createdAt: '2026-11-20'
+      createdAt: '2026-11-20',
+      status: 'Interested',
+      priority: 'Warm',
+      nextFollowUpDate: '2026-11-21T14:30',
+      notes: 'Visited campus today. Very keen on Figma design systems and UX portfolio project.',
+      notesList: [
+        { id: 1, text: 'Visited academy in person. Took lab tour with Karan.', date: '2026-11-20 12:00', author: 'Karan Singhania' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-20 16:30', duration: '3m 15s', outcome: 'Connected - Interested', notes: 'Follow-up after in-person visit. Sent brochure to parents.', counselor: 'Karan Singhania' }
+      ]
     },
     {
       id: 104,
       name: 'Siddharth Joshi',
       phone: '+91 91234 09876',
       email: 'sid.j@example.com',
+      city: 'Nagpur',
+      qualification: 'BCA 3rd Year',
+      college: 'Raisoni College of Engineering',
       course: 'Cyber Security & Ethical Hacking',
-      source: 'Google Search Ad',
+      source: 'Google Ads',
+      counselor: 'Rohit Sharma',
+      createdAt: '2026-11-19',
       status: 'Contacted',
-      counselor: 'Pooja Verma',
-      followUp: '22 Nov 2026',
-      notes: 'Sent syllabus on WhatsApp. Inquiring about prerequisites.',
-      createdAt: '2026-11-19'
+      priority: 'Warm',
+      nextFollowUpDate: '2026-11-22T10:00',
+      notes: 'Final year student looking for CEH certification curriculum and hands-on lab access.',
+      notesList: [
+        { id: 1, text: 'Filled inquiry from Google Ad campaign.', date: '2026-11-19 14:00', author: 'Rohit Sharma' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-19 15:30', duration: '3m 40s', outcome: 'Connected - Interested', notes: 'Introductory discussion regarding lab setup and timings.', counselor: 'Rohit Sharma' }
+      ]
     },
     {
       id: 105,
       name: 'Tanvi Agarwal',
       phone: '+91 98334 11223',
       email: 'tanvi.a@example.com',
+      city: 'Bengaluru',
+      qualification: 'BE Information Science',
+      college: 'BMS College of Engineering',
       course: 'Cloud Computing & DevOps',
       source: 'LinkedIn',
-      status: 'New Inquiry',
       counselor: 'Karan Singhania',
-      followUp: '20 Nov 2026, 05:30 PM',
-      notes: 'QA Engineer wanting to upskill in cloud technologies.',
-      createdAt: '2026-11-20'
+      createdAt: '2026-11-20',
+      status: 'New',
+      priority: 'Hot',
+      nextFollowUpDate: '2026-11-20T17:30',
+      notes: 'QA Engineer with 2 years experience transitioning to Cloud/DevOps. High intent.',
+      notesList: [
+        { id: 1, text: 'Inbound message on LinkedIn regarding AWS + Docker batch.', date: '2026-11-20 09:15', author: 'Karan Singhania' }
+      ],
+      callHistory: []
+    },
+    {
+      id: 106,
+      name: 'Rahul Kulkarni',
+      phone: '+91 98450 11998',
+      email: 'rahul.k@example.com',
+      city: 'Pune',
+      qualification: 'B.Com Graduate',
+      college: 'BMCC Pune',
+      course: 'Digital Marketing & Growth Hacking',
+      source: 'Facebook',
+      counselor: 'Ananya Sen',
+      createdAt: '2026-11-15',
+      status: 'Converted / Lost',
+      priority: 'Cold',
+      nextFollowUpDate: '2026-11-16T12:00',
+      notes: 'Opted for distant university MBA instead. Retained for future short-term workshops.',
+      notesList: [
+        { id: 1, text: 'Expressed budget constraints and opted for alternate program.', date: '2026-11-16 12:10', author: 'Ananya Sen' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-15 11:00', duration: '4m 00s', outcome: 'Connected - Interested', notes: 'First briefing on course fees.', counselor: 'Ananya Sen' },
+        { id: 2, date: '2026-11-16 12:05', duration: '2m 10s', outcome: 'Not Interested / Lost', notes: 'Decided not to enroll this session.', counselor: 'Ananya Sen' }
+      ]
+    },
+    {
+      id: 107,
+      name: 'Sneha Reddy',
+      phone: '+91 98555 44332',
+      email: 'sneha.r@example.com',
+      city: 'Hyderabad',
+      qualification: 'B.Tech ECE',
+      college: 'JNTU Hyderabad',
+      course: 'Full Stack Web Development (MERN)',
+      source: 'Referral',
+      counselor: 'Vikram Mehta',
+      createdAt: '2026-11-19',
+      status: 'Interested',
+      priority: 'Hot',
+      nextFollowUpDate: '2026-11-23T11:00',
+      notes: 'Referred by alumni Dev Patel. Wants to join the morning hybrid cohort.',
+      notesList: [
+        { id: 1, text: 'Friend of current student Dev Patel. Fast-track admission interest.', date: '2026-11-19 16:40', author: 'Vikram Mehta' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-19 17:00', duration: '6m 20s', outcome: 'Connected - Interested', notes: 'Very positive call. Reviewing admission form.', counselor: 'Vikram Mehta' }
+      ]
+    },
+    {
+      id: 108,
+      name: 'Aditya Saxena',
+      phone: '+91 98222 33441',
+      email: 'aditya.s@example.com',
+      city: 'Noida',
+      qualification: 'BCA',
+      college: 'Amity University',
+      course: 'Cyber Security & Ethical Hacking',
+      source: 'Phone Call',
+      counselor: 'Pooja Verma',
+      createdAt: '2026-11-20',
+      status: 'New',
+      priority: 'Warm',
+      nextFollowUpDate: '2026-11-20T15:00',
+      notes: 'Inbounded via direct phone call inquiry. Sent syllabus brochure on WhatsApp.',
+      notesList: [
+        { id: 1, text: 'Direct incoming call on center hotline.', date: '2026-11-20 10:05', author: 'Pooja Verma' }
+      ],
+      callHistory: [
+        { id: 1, date: '2026-11-20 10:06', duration: '3m 50s', outcome: 'Connected - Interested', notes: 'Counseling scheduled for afternoon call.', counselor: 'Pooja Verma' }
+      ]
     }
   ],
 

@@ -48,17 +48,41 @@ CREATE TABLE IF NOT EXISTS batches (
 -- 4. Leads / Inquiries Table
 CREATE TABLE IF NOT EXISTS leads (
     id SERIAL PRIMARY KEY,
-    first_name VARCHAR(80) NOT NULL,
-    last_name VARCHAR(80),
+    full_name VARCHAR(120) NOT NULL,
     phone VARCHAR(25) NOT NULL,
     email VARCHAR(150),
-    interested_course_id INT REFERENCES courses(id) ON DELETE SET NULL,
-    source VARCHAR(50) DEFAULT 'Walk-in', -- 'Walk-in', 'Website', 'Instagram', 'Referral', 'Google Ad'
-    status VARCHAR(40) DEFAULT 'New', -- 'New', 'Contacted', 'Demo Booked', 'Follow-up', 'Converted', 'Cold'
-    assigned_counselor VARCHAR(100),
-    next_follow_up DATE,
+    city VARCHAR(100),
+    qualification VARCHAR(100),
+    college_university VARCHAR(150),
+    interested_course VARCHAR(150),
+    lead_source VARCHAR(50) DEFAULT 'Website', -- 'Website', 'Facebook', 'Instagram', 'LinkedIn', 'Google Ads', 'Referral', 'Walk-in', 'Phone Call'
+    assigned_counsellor VARCHAR(100) DEFAULT 'Pooja Verma',
+    lead_status VARCHAR(50) DEFAULT 'New', -- 'New', 'Contacted', 'Counselling Scheduled', 'Interested', 'Follow-up Required', 'Converted / Lost'
+    priority VARCHAR(20) DEFAULT 'Warm', -- 'Hot', 'Warm', 'Cold'
+    next_follow_up_date TIMESTAMP WITH TIME ZONE,
     notes TEXT,
+    created_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Lead Notes History
+CREATE TABLE IF NOT EXISTS lead_notes (
+    id SERIAL PRIMARY KEY,
+    lead_id INT REFERENCES leads(id) ON DELETE CASCADE,
+    note_text TEXT NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Lead Call Logs & Telephonic History
+CREATE TABLE IF NOT EXISTS lead_call_history (
+    id SERIAL PRIMARY KEY,
+    lead_id INT REFERENCES leads(id) ON DELETE CASCADE,
+    call_outcome VARCHAR(80) NOT NULL, -- e.g. 'Connected - Interested', 'Counselling Scheduled', etc.
+    duration VARCHAR(30) DEFAULT '2m 00s',
+    remarks TEXT,
+    counselor VARCHAR(100) NOT NULL,
+    call_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 5. Students Table
@@ -123,10 +147,10 @@ VALUES
     ('UI/UX Evening Cohort (U4)', 3, 'Vikram Mehta', CURRENT_DATE - INTERVAL '15 days', CURRENT_DATE + INTERVAL '75 days', 'Mon-Wed-Fri 06:30 PM - 08:30 PM', 'offline', 20, 18, 'ongoing'),
     ('Cyber Security Sprint Batch', 5, 'Rohan Kapoor', CURRENT_DATE + INTERVAL '20 days', CURRENT_DATE + INTERVAL '140 days', 'Tue-Thu-Sat 03:00 PM - 05:30 PM', 'hybrid', 20, 11, 'upcoming');
 
-INSERT INTO leads (first_name, last_name, phone, email, interested_course_id, source, status, assigned_counselor, next_follow_up, notes)
+INSERT INTO leads (full_name, phone, email, city, qualification, college_university, interested_course, lead_source, assigned_counsellor, lead_status, priority, next_follow_up_date, notes)
 VALUES
-    ('Riya', 'Kapoor', '+91 98765 43210', 'riya.k@example.com', 1, 'Website', 'Demo Booked', 'Pooja Verma', CURRENT_DATE + INTERVAL '1 day', 'Attending Saturday demo class for MERN.'),
-    ('Aman', 'Verma', '+91 98111 22334', 'aman.v@example.com', 2, 'Instagram', 'Follow-up', 'Pooja Verma', CURRENT_DATE, 'Interested in weekend Python batch; waiting for fee discount approval.'),
-    ('Neha', 'Deshmukh', '+91 97234 56789', 'neha.d@example.com', 3, 'Walk-in', 'New', 'Karan Singhania', CURRENT_DATE + INTERVAL '2 days', 'Walked into the campus today. Inquired about portfolio support.'),
-    ('Dev', 'Patel', '+91 99887 76655', 'dev.p@example.com', 1, 'Referral', 'Converted', 'Karan Singhania', NULL, 'Enrolled into FSWD Morning Batch.'),
-    ('Siddharth', 'Joshi', '+91 91234 09876', 'sid.j@example.com', 5, 'Google Ad', 'Contacted', 'Pooja Verma', CURRENT_DATE + INTERVAL '3 days', 'Engineering 3rd year student exploring Ethical Hacking certification.');
+    ('Riya Kapoor', '+91 98765 43210', 'riya.k@example.com', 'Pune', 'B.Tech CS', 'PICT Pune', 'Full Stack Web Development (MERN)', 'Website', 'Pooja Verma', 'Counselling Scheduled', 'Hot', CURRENT_DATE + INTERVAL '1 day', 'Attending Saturday counseling demo class for MERN.'),
+    ('Aman Verma', '+91 98111 22334', 'aman.v@example.com', 'Mumbai', 'B.Sc Statistics', 'St. Xavier''s College', 'Data Science & Machine Learning with Python', 'Instagram', 'Pooja Verma', 'Follow-up Required', 'Hot', CURRENT_DATE, 'Interested in weekend Python batch; waiting for fee discount approval.'),
+    ('Neha Deshmukh', '+91 97234 56789', 'neha.d@example.com', 'Pune', 'B.Des', 'MIT Institute of Design', 'UI/UX Design Masterclass', 'Walk-in', 'Karan Singhania', 'Interested', 'Warm', CURRENT_DATE + INTERVAL '2 days', 'Walked into campus today. Inquired about design portfolio mentorship.'),
+    ('Siddharth Joshi', '+91 91234 09876', 'sid.j@example.com', 'Nagpur', 'BCA 3rd Year', 'Raisoni College', 'Cyber Security & Ethical Hacking', 'Google Ads', 'Rohit Sharma', 'Contacted', 'Warm', CURRENT_DATE + INTERVAL '3 days', 'Engineering 3rd year student exploring Ethical Hacking certification.'),
+    ('Tanvi Agarwal', '+91 98334 11223', 'tanvi.a@example.com', 'Bengaluru', 'BE IS', 'BMS College', 'Cloud Computing & DevOps', 'LinkedIn', 'Karan Singhania', 'New', 'Hot', CURRENT_DATE, 'QA Engineer wanting to upskill in cloud technologies.');
