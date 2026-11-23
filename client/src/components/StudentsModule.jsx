@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GraduationCap, Search, Phone, Mail, CreditCard, ShieldCheck, QrCode } from 'lucide-react';
 
-export default function StudentsModule({ students = [], onOpenStudentID, onOpenPayment }) {
+export default function StudentsModule({ students = [], onOpenStudentID, onOpenPayment, onOpenStudentProfile }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [feeFilter, setFeeFilter] = useState('All');
 
@@ -113,7 +113,12 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
                 filteredStudents.map(student => (
                   <tr key={student.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
-                      <div className="font-bold text-slate-900 text-sm">{student.name}</div>
+                      <button
+                        onClick={() => onOpenStudentProfile && onOpenStudentProfile(student)}
+                        className="font-bold text-slate-900 text-sm hover:text-indigo-600 hover:underline text-left transition-colors cursor-pointer"
+                      >
+                        {student.name}
+                      </button>
                       <div className="text-[11px] text-indigo-700 font-mono font-semibold">
                         {student.studentId}
                       </div>

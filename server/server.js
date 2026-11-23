@@ -583,9 +583,73 @@ app.put('/api/admissions/:id', (req, res) => {
   res.status(404).json({ success: false, message: 'Admission record not found' });
 });
 
-// Students API
-app.get('/api/students', (req, res) => {
-  res.json({ success: true, data: demoStore.students });
+// Students API - Fetch students from PostgreSQL if connected, otherwise fallback to demoStore
+app.get('/api/students', async (req, res) => {
+  if (isConnected && pool) {
+    try {
+      const result = await pool.query(`
+        SELECT
+          s.id,
+          s.student_id_code AS "studentId",
+          CONCAT_WS(' ', s.first_name, s.last_name) AS name,
+          s.email,
+          s.phone,
+          s.guardian_name AS guardian,
+          s.guardian_phone AS "guardianPhone",
+          s.address,
+          s.date_of_birth AS "dateOfBirth",
+          s.enrollment_status AS status,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'course', c.name,
+                'batch', b.batch_name,
+                'feeTotal', e.total_fee,
+                'feePaid', e.paid_fee,
+                'feeDue', e.due_fee,
+                'enrollmentDate', e.enrollment_date,
+                'status', e.status
+              )
+              ORDER BY e.enrollment_date DESC
+            ) FILTER (WHERE e.id IS NOT NULL),
+            '[]'::json
+          ) AS enrollments,
+          COALESCE(SUM(e.total_fee), 0) AS "feeTotal",
+          COALESCE(SUM(e.paid_fee), 0) AS "feePaid",
+          COALESCE(SUM(e.due_fee), 0) AS "feeDue"
+        FROM students s
+        LEFT JOIN enrollments e ON s.id = e.student_id
+        LEFT JOIN courses c ON e.course_id = c.id
+        LEFT JOIN batches b ON e.batch_id = b.id
+        GROUP BY s.id
+        ORDER BY s.id DESC
+      `);
+
+      const students = result.rows.map(student => ({
+        ...student,
+        feeStatus:
+          Number(student.feeTotal) === 0
+            ? 'Not Enrolled'
+            : Number(student.feeDue) === 0
+              ? 'Paid'
+              : Number(student.feePaid) > 0
+                ? 'Partial'
+                : 'Overdue',
+        course: student.enrollments[0]?.course || '',
+        batch: student.enrollments[0]?.batch || ''
+      }));
+
+      return res.status(200).json({
+        success: true,
+        count: students.length,
+        data: students
+      });
+    } catch (error) {
+      console.warn('PostgreSQL query error, falling back to demoStore:', error.message);
+    }
+  }
+
+  res.json({ success: true, count: demoStore.students.length, data: demoStore.students });
 });
 
 // Courses API

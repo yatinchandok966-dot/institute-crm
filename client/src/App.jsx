@@ -7,6 +7,7 @@ import AdmissionsModule from './components/AdmissionsModule';
 import CoursesModule from './components/CoursesModule';
 import BatchesModule from './components/BatchesModule';
 import StudentsModule from './components/StudentsModule';
+import StudentProfile from './components/Students/StudentProfile';
 import FeesModule from './components/FeesModule';
 import AttendanceModule from './components/AttendanceModule';
 import TrainersModule from './components/TrainersModule';
@@ -101,6 +102,7 @@ export default function App() {
   const [courseForEdit, setCourseForEdit] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedStudentID, setSelectedStudentID] = useState(null);
+  const [selectedStudentForProfile, setSelectedStudentForProfile] = useState(null);
 
   // Force pure light theme & listen to URL hash for QR public form
   useEffect(() => {
@@ -620,11 +622,21 @@ export default function App() {
           />
         );
       case 'students':
+        if (selectedStudentForProfile) {
+          return (
+            <StudentProfile
+              student={selectedStudentForProfile}
+              onBack={() => setSelectedStudentForProfile(null)}
+              onOpenPayment={() => setIsPaymentModalOpen(true)}
+            />
+          );
+        }
         return (
           <StudentsModule
             students={instituteData.students}
             onOpenStudentID={(student) => setSelectedStudentID(student)}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
+            onOpenStudentProfile={(student) => setSelectedStudentForProfile(student)}
           />
         );
       case 'fees':
@@ -675,12 +687,17 @@ export default function App() {
     );
   }
 
+  const handleTabChange = (tab) => {
+    setSelectedStudentForProfile(null);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         data={instituteData}
       />
 
@@ -694,7 +711,7 @@ export default function App() {
           isRefreshing={isRefreshing}
           dbStatus={dbStatus}
           data={instituteData}
-          onNavigate={(tab) => setActiveTab(tab)}
+          onNavigate={handleTabChange}
         />
 
         <main className="flex-1 overflow-y-auto">
