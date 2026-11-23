@@ -5,6 +5,7 @@ import {
   UserCheck,
   BookOpen,
   GraduationCap,
+  CreditCard,
   School,
   ShieldCheck,
   Users
@@ -15,6 +16,7 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
   const admissionsCount = data?.admissions?.length || 0;
   const trainersCount = data?.trainers?.length || 0;
   const studentsCount = data?.students?.length || 0;
+  const pendingFees = data?.stats?.pendingFees || 0;
 
   const sections = [
     {
@@ -31,6 +33,12 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
         { id: 'courses', label: 'Courses & Syllabus', icon: BookOpen },
         { id: 'trainers', label: 'Trainers / Faculty', icon: Users, badge: trainersCount > 0 ? `${trainersCount}` : null },
         { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: studentsCount > 0 ? `${studentsCount}` : null }
+      ]
+    },
+    {
+      title: 'FINANCE & BILLING',
+      items: [
+        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard, badge: pendingFees > 0 ? 'Due' : null, badgeColor: 'bg-amber-50 text-amber-700 border border-amber-200' }
       ]
     }
   ];
@@ -56,11 +64,13 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         {sections.map((section, idx) => (
+
           <div key={idx}>
             <div className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               {section.title}
             </div>
             <nav className="space-y-1">
+
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -88,6 +98,8 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
                   </button>
                 );
               })}
+
+              
             </nav>
           </div>
         ))}

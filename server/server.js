@@ -12,19 +12,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, 'data_store.json');
 
-const OFFICIAL_COURSES = [];
-const OFFICIAL_BATCHES = [];
-
 const loadStoreFromDisk = () => {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, 'utf-8');
       const parsed = JSON.parse(content);
-      const courses = Array.isArray(parsed.courses) ? parsed.courses : [];
-      const batches = Array.isArray(parsed.batches) ? parsed.batches : [];
       return {
-        courses,
-        batches,
+        courses: Array.isArray(parsed.courses) ? parsed.courses : [],
+        batches: Array.isArray(parsed.batches) ? parsed.batches : [],
         recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
         trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
         admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
@@ -103,7 +98,7 @@ app.get('/api/health', (req, res) => {
     database: {
       engine: 'PostgreSQL',
       connected: isConnected,
-      mode: isConnected ? 'PostgreSQL Live' : 'Ready'
+      mode: isConnected ? 'PostgreSQL Live' : 'Persistent Local Storage (Disk)'
     }
   });
 });
@@ -134,13 +129,16 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+// ==========================================
 // Leads Endpoints
+// ==========================================
 app.get('/api/leads', (req, res) => {
   res.json({ success: true, data: demoStore.recentLeads });
 });
 
-app.post('/api/leads', (req, res) => {
+app.post('/api/leads', async (req, res) => {
   const {
+    id,
     name,
     phone,
     email,
@@ -155,15 +153,19 @@ app.post('/api/leads', (req, res) => {
     nextFollowUpDate,
     notes,
     notesList,
-    callHistory
+    callHistory,
+    createdAt
   } = req.body;
 
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Full Name and Phone Number are required' });
   }
 
+  const leadId = id || Date.now();
+  const existingIdx = demoStore.recentLeads.findIndex(l => l.id === leadId || (l.phone === phone && l.name === name));
+
   const newLead = {
-    id: Date.now(),
+    id: leadId,
     name,
     phone,
     email: email || '',
@@ -173,7 +175,7 @@ app.post('/api/leads', (req, res) => {
     course: course || '',
     source: source || 'Website',
     status: status || 'New',
-    counselor: counselor || 'Unassigned',
+    counselor: counselor || 'Admissions Desk',
     priority: priority || 'Warm',
     nextFollowUpDate: nextFollowUpDate || '',
     notes: notes || '',
@@ -181,48 +183,89 @@ app.post('/api/leads', (req, res) => {
       id: Date.now(),
       text: notes,
       date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      author: counselor || 'System'
+      author: counselor || 'Admissions Desk'
     }] : []),
     callHistory: callHistory || [],
-    createdAt: new Date().toISOString().split('T')[0]
+    createdAt: createdAt || new Date().toISOString().split('T')[0]
   };
 
-  demoStore.recentLeads.unshift(newLead);
+  if (existingIdx !== -1) {
+    demoStore.recentLeads[existingIdx] = { ...demoStore.recentLeads[existingIdx], ...newLead };
+  } else {
+    demoStore.recentLeads.unshift(newLead);
+  }
+
   saveStoreToDisk();
+
+  // If PostgreSQL is connected, persist to database table
+  if (isConnected && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO leads (full_name, phone, email, city, qualification, college_university, interested_course, lead_source, assigned_counsellor, lead_status, priority, next_follow_up_date, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [newLead.name, newLead.phone, newLead.email, newLead.city, newLead.qualification, newLead.college, newLead.course, newLead.source, newLead.counselor, newLead.status, newLead.priority, newLead.nextFollowUpDate || null, newLead.notes]
+      );
+    } catch (dbErr) {
+      console.warn('PostgreSQL leads insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({ success: true, lead: newLead });
 });
 
-app.put('/api/leads/:id', (req, res) => {
+app.put('/api/leads/:id', async (req, res) => {
   const leadId = parseInt(req.params.id, 10);
   const index = demoStore.recentLeads.findIndex(l => l.id === leadId);
   if (index !== -1) {
     demoStore.recentLeads[index] = { ...demoStore.recentLeads[index], ...req.body };
     saveStoreToDisk();
+
+    if (isConnected && pool) {
+      try {
+        const lead = demoStore.recentLeads[index];
+        await pool.query(
+          `UPDATE leads SET full_name = $1, phone = $2, email = $3, city = $4, qualification = $5, college_university = $6, interested_course = $7, lead_source = $8, assigned_counsellor = $9, lead_status = $10, priority = $11, next_follow_up_date = $12, notes = $13 WHERE id = $14 OR phone = $2`,
+          [lead.name, lead.phone, lead.email, lead.city, lead.qualification, lead.college, lead.course, lead.source, lead.counselor, lead.status, lead.priority, lead.nextFollowUpDate || null, lead.notes, leadId]
+        );
+      } catch (dbErr) {
+        console.warn('PostgreSQL lead update warning:', dbErr.message);
+      }
+    }
+
     return res.json({ success: true, lead: demoStore.recentLeads[index] });
   }
   res.status(404).json({ success: false, message: 'Lead not found' });
 });
 
-app.delete('/api/leads/:id', (req, res) => {
+app.delete('/api/leads/:id', async (req, res) => {
   const leadId = parseInt(req.params.id, 10);
   const index = demoStore.recentLeads.findIndex(l => l.id === leadId);
   if (index !== -1) {
     const deleted = demoStore.recentLeads.splice(index, 1)[0];
     saveStoreToDisk();
+
+    if (isConnected && pool) {
+      try {
+        await pool.query('DELETE FROM leads WHERE id = $1 OR phone = $2', [leadId, deleted.phone]);
+      } catch (dbErr) {
+        console.warn('PostgreSQL lead delete warning:', dbErr.message);
+      }
+    }
+
     return res.json({ success: true, message: 'Lead deleted successfully', lead: deleted });
   }
   res.status(404).json({ success: false, message: 'Lead not found' });
 });
 
 // Bulk Import Leads Endpoint
-app.post('/api/leads/bulk', (req, res) => {
+app.post('/api/leads/bulk', async (req, res) => {
   const { leads: incomingLeads } = req.body;
   if (!Array.isArray(incomingLeads)) {
     return res.status(400).json({ success: false, message: 'Expected an array of leads' });
   }
 
   const added = [];
-  incomingLeads.forEach(lead => {
+  for (const lead of incomingLeads) {
     if (lead && lead.name && lead.phone) {
       const formatted = {
         id: lead.id || (Date.now() + Math.floor(Math.random() * 10000)),
@@ -236,7 +279,7 @@ app.post('/api/leads/bulk', (req, res) => {
         source: lead.source || 'Website',
         status: lead.status || 'New',
         priority: lead.priority || 'Warm',
-        counselor: lead.counselor || 'Unassigned',
+        counselor: lead.counselor || 'Admissions Desk',
         nextFollowUpDate: lead.nextFollowUpDate || '',
         notes: lead.notes || '',
         notesList: lead.notesList || (lead.notes ? [{
@@ -250,15 +293,27 @@ app.post('/api/leads/bulk', (req, res) => {
       };
       demoStore.recentLeads.unshift(formatted);
       added.push(formatted);
+
+      if (isConnected && pool) {
+        try {
+          await pool.query(
+            `INSERT INTO leads (full_name, phone, email, city, qualification, college_university, interested_course, lead_source, assigned_counsellor, lead_status, priority, next_follow_up_date, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            [formatted.name, formatted.phone, formatted.email, formatted.city, formatted.qualification, formatted.college, formatted.course, formatted.source, formatted.counselor, formatted.status, formatted.priority, formatted.nextFollowUpDate || null, formatted.notes]
+          );
+        } catch (dbErr) {
+          // ignore
+        }
+      }
     }
-  });
+  }
 
   saveStoreToDisk();
   res.status(201).json({ success: true, count: added.length, leads: added });
 });
 
 // Add Note to Lead Endpoint
-app.post('/api/leads/:id/notes', (req, res) => {
+app.post('/api/leads/:id/notes', async (req, res) => {
   const leadId = parseInt(req.params.id, 10);
   const lead = demoStore.recentLeads.find(l => l.id === leadId);
   if (!lead) {
@@ -269,16 +324,25 @@ app.post('/api/leads/:id/notes', (req, res) => {
     id: Date.now(),
     text,
     date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    author: author || lead.counselor || 'Counselor'
+    author: author || lead.counselor || 'Admissions Desk'
   };
   if (!lead.notesList) lead.notesList = [];
   lead.notesList.unshift(newNote);
   saveStoreToDisk();
+
+  if (isConnected && pool) {
+    try {
+      await pool.query('INSERT INTO lead_notes (lead_id, note_text, author) VALUES ($1, $2, $3)', [leadId, text, newNote.author]);
+    } catch (dbErr) {
+      console.warn('PostgreSQL note insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({ success: true, note: newNote });
 });
 
 // Log Call for Lead Endpoint
-app.post('/api/leads/:id/calls', (req, res) => {
+app.post('/api/leads/:id/calls', async (req, res) => {
   const leadId = parseInt(req.params.id, 10);
   const lead = demoStore.recentLeads.find(l => l.id === leadId);
   if (!lead) {
@@ -291,7 +355,7 @@ app.post('/api/leads/:id/calls', (req, res) => {
     outcome: outcome || 'Connected - Interested',
     duration: duration || '2m 00s',
     notes: notes || '',
-    counselor: counselor || lead.counselor || 'Counselor'
+    counselor: counselor || lead.counselor || 'Admissions Desk'
   };
   if (!lead.callHistory) lead.callHistory = [];
   lead.callHistory.unshift(newCall);
@@ -299,16 +363,28 @@ app.post('/api/leads/:id/calls', (req, res) => {
     lead.nextFollowUpDate = nextFollowUpDate;
   }
   saveStoreToDisk();
+
+  if (isConnected && pool) {
+    try {
+      await pool.query('INSERT INTO lead_call_history (lead_id, call_outcome, duration, remarks, counselor) VALUES ($1, $2, $3, $4, $5)', [leadId, newCall.outcome, newCall.duration, newCall.notes, newCall.counselor]);
+    } catch (dbErr) {
+      console.warn('PostgreSQL call log insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({ success: true, call: newCall, nextFollowUpDate: lead.nextFollowUpDate });
 });
 
-// Admissions Endpoints (Lead-to-student conversion without re-entering details)
+// ==========================================
+// Admissions Endpoints
+// ==========================================
 app.get('/api/admissions', (req, res) => {
   res.json({ success: true, data: demoStore.admissions });
 });
 
-app.post('/api/admissions', (req, res) => {
+app.post('/api/admissions', async (req, res) => {
   const {
+    id,
     leadId,
     studentName,
     phone,
@@ -334,10 +410,9 @@ app.post('/api/admissions', (req, res) => {
     return res.status(400).json({ success: false, message: 'Student Name, Phone, and Course are required' });
   }
 
-  // Auto-generate official sequence numbers
   const nextSeq = String(demoStore.admissions.length + 1).padStart(4, '0');
-  const admissionNo = `ADM-2026-${nextSeq}`;
-  const applicationNo = `APP-2026-${nextSeq}`;
+  const admissionNo = req.body.admissionNo || `ADM-2026-${nextSeq}`;
+  const applicationNo = req.body.applicationNo || `APP-2026-${nextSeq}`;
 
   const numTotalFee = Number(totalCourseFee) || 0;
   const numDiscount = Number(discount) || 0;
@@ -346,7 +421,7 @@ app.post('/api/admissions', (req, res) => {
   const numDue = Math.max(0, numNetFee - numPaid);
 
   const newAdmission = {
-    id: Date.now(),
+    id: id || Date.now(),
     admissionNo,
     applicationNo,
     studentName,
@@ -371,7 +446,12 @@ app.post('/api/admissions', (req, res) => {
     notes: notes || 'Direct admission registration.'
   };
 
-  demoStore.admissions.unshift(newAdmission);
+  const admIdx = demoStore.admissions.findIndex(a => a.id === newAdmission.id || a.admissionNo === newAdmission.admissionNo);
+  if (admIdx !== -1) {
+    demoStore.admissions[admIdx] = { ...demoStore.admissions[admIdx], ...newAdmission };
+  } else {
+    demoStore.admissions.unshift(newAdmission);
+  }
 
   // If converted from a lead, mark lead as "Converted to Admission"
   if (leadId) {
@@ -384,9 +464,10 @@ app.post('/api/admissions', (req, res) => {
 
   // Auto-create Enrolled Student Record in students directory without re-entering
   const stuSeq = String(demoStore.students.length + 1).padStart(4, '0');
+  const studentId = req.body.studentId || `STU-2026-${stuSeq}`;
   const newStudent = {
     id: Date.now(),
-    studentId: `STU-2026-${stuSeq}`,
+    studentId,
     admissionNo,
     name: studentName,
     email: email || '',
@@ -403,7 +484,13 @@ app.post('/api/admissions', (req, res) => {
     attendance: 100,
     status: 'Active'
   };
-  demoStore.students.unshift(newStudent);
+
+  const stuIdx = demoStore.students.findIndex(s => s.admissionNo === admissionNo || s.studentId === studentId);
+  if (stuIdx !== -1) {
+    demoStore.students[stuIdx] = { ...demoStore.students[stuIdx], ...newStudent };
+  } else {
+    demoStore.students.unshift(newStudent);
+  }
 
   // If an admission fee was collected, generate payment receipt
   if (numPaid > 0) {
@@ -423,6 +510,35 @@ app.post('/api/admissions', (req, res) => {
   }
 
   saveStoreToDisk();
+
+  // If PostgreSQL is connected, write to DB tables
+  if (isConnected && pool) {
+    try {
+      const nameParts = studentName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const stuRes = await pool.query(
+        `INSERT INTO students (student_id_code, first_name, last_name, email, phone, guardian_name, guardian_phone, address, enrollment_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (student_id_code) DO UPDATE SET first_name = $2, last_name = $3, email = $4, phone = $5, guardian_name = $6, guardian_phone = $7, address = $8
+         RETURNING id`,
+        [newStudent.studentId, firstName, lastName, email, phone, guardianName, guardianPhone, address, 'Active']
+      );
+
+      const dbStudentId = stuRes.rows[0]?.id;
+      if (dbStudentId) {
+        await pool.query(
+          `INSERT INTO enrollments (student_id, total_fee, discount, paid_fee, enrollment_date, status)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [dbStudentId, numTotalFee, numDiscount, numPaid, newAdmission.admissionDate, numDue === 0 ? 'Enrolled' : 'Fee Pending']
+        );
+      }
+    } catch (dbErr) {
+      console.warn('PostgreSQL admissions insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({
     success: true,
     admission: newAdmission,
@@ -442,7 +558,9 @@ app.put('/api/admissions/:id', (req, res) => {
   res.status(404).json({ success: false, message: 'Admission record not found' });
 });
 
-// Students API - Fetch students from PostgreSQL if connected, otherwise fallback to demoStore
+// ==========================================
+// Students Endpoints
+// ==========================================
 app.get('/api/students', async (req, res) => {
   if (isConnected && pool) {
     try {
@@ -484,25 +602,27 @@ app.get('/api/students', async (req, res) => {
         ORDER BY s.id DESC
       `);
 
-      const students = result.rows.map(student => ({
-        ...student,
-        feeStatus:
-          Number(student.feeTotal) === 0
-            ? 'Not Enrolled'
-            : Number(student.feeDue) === 0
-              ? 'Paid'
-              : Number(student.feePaid) > 0
-                ? 'Partial'
-                : 'Overdue',
-        course: student.enrollments[0]?.course || '',
-        batch: student.enrollments[0]?.batch || ''
-      }));
+      if (result.rows.length > 0) {
+        const students = result.rows.map(student => ({
+          ...student,
+          feeStatus:
+            Number(student.feeTotal) === 0
+              ? 'Not Enrolled'
+              : Number(student.feeDue) === 0
+                ? 'Paid'
+                : Number(student.feePaid) > 0
+                  ? 'Partial'
+                  : 'Overdue',
+          course: student.enrollments[0]?.course || '',
+          batch: student.enrollments[0]?.batch || ''
+        }));
 
-      return res.status(200).json({
-        success: true,
-        count: students.length,
-        data: students
-      });
+        return res.status(200).json({
+          success: true,
+          count: students.length,
+          data: students
+        });
+      }
     } catch (error) {
       console.warn('PostgreSQL query error, falling back to demoStore:', error.message);
     }
@@ -511,40 +631,164 @@ app.get('/api/students', async (req, res) => {
   res.json({ success: true, count: demoStore.students.length, data: demoStore.students });
 });
 
-// Courses API
-app.get('/api/courses', (req, res) => {
+// ==========================================
+// Courses Endpoints
+// ==========================================
+app.get('/api/courses', async (req, res) => {
+  if (isConnected && pool) {
+    try {
+      const result = await pool.query('SELECT * FROM courses ORDER BY id ASC');
+      if (result.rows.length > 0) {
+        const dbCourses = result.rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          code: r.code,
+          category: r.category,
+          durationWeeks: Number(r.duration_weeks),
+          fee: Number(r.fee_amount),
+          description: r.description || '',
+          activeStudents: demoStore.students.filter(s => s.course === r.name).length
+        }));
+        return res.json({ success: true, data: dbCourses });
+      }
+    } catch (err) {
+      console.warn('PostgreSQL fetch courses warning:', err.message);
+    }
+  }
   res.json({ success: true, data: demoStore.courses });
 });
 
-app.post('/api/courses', (req, res) => {
-  const { name, code, category, durationWeeks, fee, description, modules } = req.body;
+app.post('/api/courses', async (req, res) => {
+  const { id, name, code, category, durationWeeks, fee, description, modules, trainerId, trainerName } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, message: 'Course name is required' });
+  }
+
+  const courseId = id || Date.now();
+  const courseCode = code || `CRS-${Date.now().toString().slice(-4)}`;
+
   const newCourse = {
-    id: Date.now(),
+    id: courseId,
     name,
-    code: code || `CRS-${Date.now().toString().slice(-4)}`,
-    category: category || 'General',
+    code: courseCode,
+    category: category || 'Software Development',
+    trainerId: trainerId || '',
+    trainerName: trainerName || 'Unassigned',
     durationWeeks: Number(durationWeeks) || 12,
     fee: Number(fee) || 0,
     activeStudents: 0,
     description: description || '',
-    modules: modules || []
+    modules: Array.isArray(modules) ? modules : []
   };
-  demoStore.courses.push(newCourse);
+
+  const existingIdx = demoStore.courses.findIndex(c => c.id === courseId || c.code === courseCode);
+  if (existingIdx !== -1) {
+    demoStore.courses[existingIdx] = { ...demoStore.courses[existingIdx], ...newCourse };
+  } else {
+    demoStore.courses.unshift(newCourse);
+  }
+
   saveStoreToDisk();
+
+  if (isConnected && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO courses (name, code, category, duration_weeks, fee_amount, description)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (code) DO UPDATE SET name = $1, category = $3, duration_weeks = $4, fee_amount = $5, description = $6`,
+        [newCourse.name, newCourse.code, newCourse.category, newCourse.durationWeeks, newCourse.fee, newCourse.description]
+      );
+    } catch (dbErr) {
+      console.warn('PostgreSQL course insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({ success: true, course: newCourse });
 });
 
-// Batches API
-app.get('/api/batches', (req, res) => {
+app.put('/api/courses/:id', async (req, res) => {
+  const courseId = parseInt(req.params.id, 10);
+  const index = demoStore.courses.findIndex(c => c.id === courseId);
+  if (index !== -1) {
+    demoStore.courses[index] = { ...demoStore.courses[index], ...req.body };
+    saveStoreToDisk();
+
+    if (isConnected && pool) {
+      try {
+        const c = demoStore.courses[index];
+        await pool.query(
+          `UPDATE courses SET name = $1, category = $2, duration_weeks = $3, fee_amount = $4, description = $5 WHERE id = $6 OR code = $7`,
+          [c.name, c.category, c.durationWeeks, c.fee, c.description, courseId, c.code]
+        );
+      } catch (dbErr) {
+        console.warn('PostgreSQL course update warning:', dbErr.message);
+      }
+    }
+
+    return res.json({ success: true, course: demoStore.courses[index] });
+  }
+  res.status(404).json({ success: false, message: 'Course not found' });
+});
+
+app.delete('/api/courses/:id', async (req, res) => {
+  const courseId = parseInt(req.params.id, 10);
+  const index = demoStore.courses.findIndex(c => c.id === courseId);
+  if (index !== -1) {
+    const deleted = demoStore.courses.splice(index, 1)[0];
+    saveStoreToDisk();
+
+    if (isConnected && pool) {
+      try {
+        await pool.query('DELETE FROM courses WHERE id = $1 OR code = $2', [courseId, deleted.code]);
+      } catch (dbErr) {
+        console.warn('PostgreSQL course delete warning:', dbErr.message);
+      }
+    }
+
+    return res.json({ success: true, message: 'Course deleted successfully', course: deleted });
+  }
+  res.status(404).json({ success: false, message: 'Course not found' });
+});
+
+// ==========================================
+// Batches Endpoints
+// ==========================================
+app.get('/api/batches', async (req, res) => {
+  if (isConnected && pool) {
+    try {
+      const result = await pool.query('SELECT * FROM batches ORDER BY id ASC');
+      if (result.rows.length > 0) {
+        const dbBatches = result.rows.map(r => ({
+          id: r.id,
+          name: r.batch_name,
+          instructor: r.instructor_name,
+          startDate: r.start_date,
+          timing: r.schedule_time,
+          mode: r.mode,
+          capacity: r.max_capacity,
+          enrolled: r.current_enrolled,
+          status: r.status
+        }));
+        return res.json({ success: true, data: dbBatches });
+      }
+    } catch (err) {
+      console.warn('PostgreSQL fetch batches warning:', err.message);
+    }
+  }
   res.json({ success: true, data: demoStore.batches });
 });
 
-app.post('/api/batches', (req, res) => {
-  const { name, course, instructor, timing, startDate, capacity, mode, room } = req.body;
+app.post('/api/batches', async (req, res) => {
+  const { id, name, course, instructor, timing, startDate, capacity, mode, room } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, message: 'Batch name is required' });
+  }
+
+  const batchId = id || Date.now();
   const newBatch = {
-    id: Date.now(),
+    id: batchId,
     name,
-    course,
+    course: course || 'General Course',
     instructor: instructor || 'Staff Instructor',
     timing: timing || 'Morning',
     startDate: startDate || new Date().toISOString().split('T')[0],
@@ -554,23 +798,89 @@ app.post('/api/batches', (req, res) => {
     room: room || 'Room 1',
     status: 'Upcoming'
   };
-  demoStore.batches.push(newBatch);
+
+  const existingIdx = demoStore.batches.findIndex(b => b.id === batchId || b.name === name);
+  if (existingIdx !== -1) {
+    demoStore.batches[existingIdx] = { ...demoStore.batches[existingIdx], ...newBatch };
+  } else {
+    demoStore.batches.unshift(newBatch);
+  }
+
   saveStoreToDisk();
+
+  if (isConnected && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO batches (batch_name, instructor_name, start_date, schedule_time, mode, max_capacity, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [newBatch.name, newBatch.instructor, newBatch.startDate, newBatch.timing, newBatch.mode, newBatch.capacity, newBatch.status]
+      );
+    } catch (dbErr) {
+      console.warn('PostgreSQL batch insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({ success: true, batch: newBatch });
 });
 
-// Fees API
+app.put('/api/batches/:id', async (req, res) => {
+  const batchId = parseInt(req.params.id, 10);
+  const index = demoStore.batches.findIndex(b => b.id === batchId);
+  if (index !== -1) {
+    demoStore.batches[index] = { ...demoStore.batches[index], ...req.body };
+    saveStoreToDisk();
+
+    if (isConnected && pool) {
+      try {
+        const b = demoStore.batches[index];
+        await pool.query(
+          `UPDATE batches SET batch_name = $1, instructor_name = $2, schedule_time = $3, mode = $4, max_capacity = $5, status = $6 WHERE id = $7`,
+          [b.name, b.instructor, b.timing, b.mode, b.capacity, b.status, batchId]
+        );
+      } catch (dbErr) {
+        console.warn('PostgreSQL batch update warning:', dbErr.message);
+      }
+    }
+
+    return res.json({ success: true, batch: demoStore.batches[index] });
+  }
+  res.status(404).json({ success: false, message: 'Batch not found' });
+});
+
+app.delete('/api/batches/:id', async (req, res) => {
+  const batchId = parseInt(req.params.id, 10);
+  const index = demoStore.batches.findIndex(b => b.id === batchId);
+  if (index !== -1) {
+    const deleted = demoStore.batches.splice(index, 1)[0];
+    saveStoreToDisk();
+
+    if (isConnected && pool) {
+      try {
+        await pool.query('DELETE FROM batches WHERE id = $1', [batchId]);
+      } catch (dbErr) {
+        console.warn('PostgreSQL batch delete warning:', dbErr.message);
+      }
+    }
+
+    return res.json({ success: true, message: 'Batch deleted successfully', batch: deleted });
+  }
+  res.status(404).json({ success: false, message: 'Batch not found' });
+});
+
+// ==========================================
+// Fees Endpoints
+// ==========================================
 app.get('/api/fees', (req, res) => {
   res.json({ success: true, data: demoStore.feeTransactions });
 });
 
-app.post('/api/fees', (req, res) => {
+app.post('/api/fees', async (req, res) => {
   const { studentName, studentId, course, amount, mode } = req.body;
   const numAmount = Number(amount) || 0;
   const rcpSeq = String(demoStore.feeTransactions.length + 1).padStart(4, '0');
 
   const newReceipt = {
-    receiptNo: `RCP-2026-${rcpSeq}`,
+    receiptNo: req.body.receiptNo || `RCP-2026-${rcpSeq}`,
     studentName,
     studentId: studentId || 'STU-GEN',
     course: course || 'Tuition Fee',
@@ -583,19 +893,35 @@ app.post('/api/fees', (req, res) => {
 
   demoStore.feeTransactions.unshift(newReceipt);
 
-  // Update student fee balance
+  // Update student fee balance in demoStore
   const student = demoStore.students.find(s => s.studentId === studentId || s.name.toLowerCase() === studentName?.toLowerCase());
   if (student) {
-    student.feePaid += numAmount;
-    student.feeDue = Math.max(0, student.feeTotal - student.feePaid);
+    student.feePaid = Number(student.feePaid || 0) + numAmount;
+    student.feeDue = Math.max(0, Number(student.feeTotal || 0) - student.feePaid);
     student.feeStatus = student.feeDue === 0 ? 'Paid' : 'Partial';
   }
 
   saveStoreToDisk();
+
+  if (isConnected && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (receipt_no) DO NOTHING`,
+        [newReceipt.receiptNo, newReceipt.amount, newReceipt.mode, newReceipt.collectedBy]
+      );
+    } catch (dbErr) {
+      console.warn('PostgreSQL fees insert warning:', dbErr.message);
+    }
+  }
+
   res.status(201).json({ success: true, receipt: newReceipt });
 });
 
-// Trainers / Employees API
+// ==========================================
+// Trainers / Employees Endpoints
+// ==========================================
 app.get('/api/trainers', (req, res) => {
   res.json({ success: true, data: demoStore.trainers || [] });
 });
