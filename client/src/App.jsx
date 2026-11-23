@@ -35,15 +35,9 @@ export default function App() {
   const [instituteData, setInstituteData] = useState(() => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('edupulse_institute_crm_v1');
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          const cleanCourses = (Array.isArray(parsed.courses) ? parsed.courses : [])
-            .filter(c => !['FSWD-101', 'DSML-201', 'UIUX-301', 'SEC-501', 'CLD-601', 'DM-401'].includes(c.code));
-          const cleanBatches = (Array.isArray(parsed.batches) ? parsed.batches : [])
-            .filter(b => !['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)', 'Data Science Weekend Cohort (DS-14)', 'UI/UX Evening Batch (U4)', 'Cyber Security Sprint Cohort (SEC-09)', 'Cloud DevOps Weekend (CLD-02)'].includes(b.name));
-
           return {
             ...initialInstituteData,
             ...parsed,
@@ -66,15 +60,11 @@ export default function App() {
             }),
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: cleanCourses,
-            batches: cleanBatches,
+            courses: Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses,
+            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
-            stats: {
-              ...(parsed.stats || initialInstituteData.stats),
-              activeCourses: cleanCourses.length,
-              activeBatches: cleanBatches.length
-            }
+            stats: parsed.stats || initialInstituteData.stats
           };
         }
       }
