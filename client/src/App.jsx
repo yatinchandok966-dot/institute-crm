@@ -132,10 +132,9 @@ export default function App() {
         const result = await statsRes.json();
         if (result.success) {
           setInstituteData(prev => {
-            // Smart merge for leads: never wipe existing local leads with empty array
+            // Smart merge for leads
             const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
             const localLeads = Array.isArray(prev.recentLeads) ? prev.recentLeads : [];
-
             let mergedLeads = localLeads;
             if (serverLeads.length > 0 && localLeads.length === 0) {
               mergedLeads = serverLeads;
@@ -145,7 +144,6 @@ export default function App() {
               serverLeads.forEach(l => map.set(l.id || l.phone, l));
               mergedLeads = Array.from(map.values());
             } else if (localLeads.length > 0 && serverLeads.length === 0) {
-              // Sync local leads up to server so server also has them
               localLeads.forEach(l => {
                 fetch('/api/leads', {
                   method: 'POST',
@@ -176,17 +174,145 @@ export default function App() {
               mergedTrainers = localTrainers;
             }
 
+            // Smart merge for courses
+            const serverCourses = Array.isArray(result.courses) ? result.courses : [];
+            const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
+            let mergedCourses = localCourses;
+            if (serverCourses.length > 0 && localCourses.length === 0) {
+              mergedCourses = serverCourses;
+            } else if (serverCourses.length > 0 && localCourses.length > 0) {
+              const cMap = new Map();
+              localCourses.forEach(c => cMap.set(c.id || c.code, c));
+              serverCourses.forEach(c => cMap.set(c.id || c.code, c));
+              mergedCourses = Array.from(cMap.values());
+            } else if (localCourses.length > 0 && serverCourses.length === 0) {
+              localCourses.forEach(c => {
+                fetch('/api/courses', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(c)
+                }).catch(() => null);
+              });
+              mergedCourses = localCourses;
+            }
+
+            // Smart merge for batches
+            const serverBatches = Array.isArray(result.batches) ? result.batches : [];
+            const localBatches = Array.isArray(prev.batches) ? prev.batches : [];
+            let mergedBatches = localBatches;
+            if (serverBatches.length > 0 && localBatches.length === 0) {
+              mergedBatches = serverBatches;
+            } else if (serverBatches.length > 0 && localBatches.length > 0) {
+              const bMap = new Map();
+              localBatches.forEach(b => bMap.set(b.id || b.name, b));
+              serverBatches.forEach(b => bMap.set(b.id || b.name, b));
+              mergedBatches = Array.from(bMap.values());
+            } else if (localBatches.length > 0 && serverBatches.length === 0) {
+              localBatches.forEach(b => {
+                fetch('/api/batches', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(b)
+                }).catch(() => null);
+              });
+              mergedBatches = localBatches;
+            }
+
+            // Smart merge for admissions
+            const serverAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
+            const localAdmissions = Array.isArray(prev.admissions) ? prev.admissions : [];
+            let mergedAdmissions = localAdmissions;
+            if (serverAdmissions.length > 0 && localAdmissions.length === 0) {
+              mergedAdmissions = serverAdmissions;
+            } else if (serverAdmissions.length > 0 && localAdmissions.length > 0) {
+              const aMap = new Map();
+              localAdmissions.forEach(a => aMap.set(a.id || a.admissionNo, a));
+              serverAdmissions.forEach(a => aMap.set(a.id || a.admissionNo, a));
+              mergedAdmissions = Array.from(aMap.values());
+            } else if (localAdmissions.length > 0 && serverAdmissions.length === 0) {
+              localAdmissions.forEach(a => {
+                fetch('/api/admissions', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(a)
+                }).catch(() => null);
+              });
+              mergedAdmissions = localAdmissions;
+            }
+
+            // Smart merge for students
+            const serverStudents = Array.isArray(result.students) ? result.students : [];
+            const localStudents = Array.isArray(prev.students) ? prev.students : [];
+            let mergedStudents = localStudents;
+            if (serverStudents.length > 0 && localStudents.length === 0) {
+              mergedStudents = serverStudents;
+            } else if (serverStudents.length > 0 && localStudents.length > 0) {
+              const sMap = new Map();
+              localStudents.forEach(s => sMap.set(s.id || s.studentId || s.admissionNo, s));
+              serverStudents.forEach(s => sMap.set(s.id || s.studentId || s.admissionNo, s));
+              mergedStudents = Array.from(sMap.values());
+            } else if (localStudents.length > 0 && serverStudents.length === 0) {
+              mergedStudents = localStudents;
+            }
+
+            // Smart merge for fee transactions
+            const serverFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
+            const localFees = Array.isArray(prev.feeTransactions) ? prev.feeTransactions : [];
+            let mergedFees = localFees;
+            if (serverFees.length > 0 && localFees.length === 0) {
+              mergedFees = serverFees;
+            } else if (serverFees.length > 0 && localFees.length > 0) {
+              const fMap = new Map();
+              localFees.forEach(f => fMap.set(f.receiptNo || f.id, f));
+              serverFees.forEach(f => fMap.set(f.receiptNo || f.id, f));
+              mergedFees = Array.from(fMap.values());
+            } else if (localFees.length > 0 && serverFees.length === 0) {
+              localFees.forEach(f => {
+                fetch('/api/fees', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(f)
+                }).catch(() => null);
+              });
+              mergedFees = localFees;
+            }
+
+            const totalRev = mergedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+            const totalPend = mergedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+            const totalStuds = mergedStudents.length;
+            const totalAdms = mergedAdmissions.length;
+            const totalLds = mergedLeads.length;
+            const convRate = totalLds > 0 ? `${Math.round((totalAdms / totalLds) * 100)}%` : '0%';
+            const collRate = (totalRev + totalPend > 0)
+              ? `${Math.round((totalRev / (totalRev + totalPend)) * 100)}%`
+              : '100%';
+
+            const mergedStats = {
+              totalStudents: totalStuds,
+              activeStudentsGrowth: totalStuds > 0 ? `+${totalStuds}` : '0%',
+              newLeadsThisMonth: totalLds,
+              leadConversionRate: convRate,
+              confirmedAdmissions: totalAdms,
+              activeCourses: mergedCourses.length,
+              activeBatches: mergedBatches.length,
+              monthlyRevenue: totalRev,
+              revenueGrowth: totalRev > 0 ? '+100%' : '0%',
+              pendingFees: totalPend,
+              attendanceAverage: '100%',
+              feeCollectionRate: collRate
+            };
+
             return {
               ...prev,
-              stats: result.stats || prev.stats,
-              courses: (result.courses && result.courses.length > 0) ? result.courses : prev.courses,
-              batches: (result.batches && result.batches.length > 0) ? result.batches : prev.batches,
+              stats: mergedStats,
+              courses: mergedCourses,
+              batches: mergedBatches,
               recentLeads: mergedLeads,
               trainers: mergedTrainers,
-              admissions: (result.admissions && result.admissions.length > 0) ? result.admissions : prev.admissions,
-              students: (result.students && result.students.length > 0) ? result.students : prev.students,
-              feeTransactions: (result.feeTransactions && result.feeTransactions.length > 0) ? result.feeTransactions : prev.feeTransactions,
-              revenueTimeline: result.revenueTimeline || prev.revenueTimeline,
+              admissions: mergedAdmissions,
+              students: mergedStudents,
+              feeTransactions: mergedFees,
+              revenueTimeline: result.revenueTimeline && result.revenueTimeline.length > 0 ? result.revenueTimeline : prev.revenueTimeline,
             };
           });
         }
@@ -409,6 +535,17 @@ export default function App() {
     setLeadForConversion(null);
     // Show official admission confirmation letter modal
     setConfirmedAdmissionLetter(newAdmission);
+
+    // Persist admission, student and fee record to backend and DB
+    fetch('/api/admissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...newAdmission,
+        studentId: newStudent?.studentId,
+        admissionFeePaid: newAdmission.admissionFeePaid
+      })
+    }).catch(() => null);
   };
 
   const handleUpdateAdmissionStatus = (admId, newStatus) => {
@@ -457,6 +594,12 @@ export default function App() {
         }
       };
     });
+
+    fetch('/api/fees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newReceipt)
+    }).catch(() => null);
   };
 
   const handleBatchCreated = (newBatch) => {
@@ -471,6 +614,12 @@ export default function App() {
         }
       };
     });
+
+    fetch('/api/batches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBatch)
+    }).catch(() => null);
   };
 
   const handleCourseCreated = (courseData, isEdit) => {
@@ -488,6 +637,20 @@ export default function App() {
         }
       };
     });
+
+    if (isEdit) {
+      fetch(`/api/courses/${courseData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(courseData)
+      }).catch(() => null);
+    } else {
+      fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(courseData)
+      }).catch(() => null);
+    }
   };
 
   const handleDeleteCourse = (courseId) => {
@@ -504,6 +667,10 @@ export default function App() {
         }
       };
     });
+
+    fetch(`/api/courses/${courseId}`, {
+      method: 'DELETE'
+    }).catch(() => null);
   };
 
   // Handlers for Trainers / Employees
