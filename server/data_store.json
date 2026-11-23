@@ -1,0 +1,414 @@
+{
+  "courses": [
+    {
+      "id": 1795418442970,
+      "name": "MERN",
+      "code": "CRS-2970",
+      "category": "Software Development",
+      "trainerId": "",
+      "trainerName": "Unassigned",
+      "durationWeeks": 12,
+      "fee": 25000,
+      "activeStudents": 0,
+      "description": "",
+      "modules": [
+        "Module 1: Foundations",
+        "Module 2: Advanced Implementation"
+      ]
+    },
+    {
+      "id": 1795413901536,
+      "name": "Full Stack Web Development (MERN)",
+      "code": "FSWD-101",
+      "category": "Software Development",
+      "trainerId": "",
+      "trainerName": "Unassigned",
+      "durationWeeks": 16,
+      "fee": 45000,
+      "activeStudents": 0,
+      "description": "",
+      "modules": []
+    }
+  ],
+  "batches": [],
+  "recentLeads": [
+    {
+      "id": 1795421032576,
+      "name": "Riya",
+      "phone": "6523658978",
+      "email": "riya@gmail.com",
+      "city": "Pune",
+      "qualification": "B.Tech.",
+      "college": "Pune",
+      "course": "MERN",
+      "source": "Website",
+      "status": "New",
+      "counselor": "Harshika",
+      "priority": "Warm",
+      "nextFollowUpDate": "2026-11-24T05:30",
+      "notes": "",
+      "notesList": [],
+      "callHistory": [],
+      "createdAt": "2026-11-23"
+    }
+  ],
+  "trainers": [
+    {
+      "id": 1795418291687,
+      "employeeId": "EMP-2026-002",
+      "name": "Harshika",
+      "role": "Admission Counsellor",
+      "department": "Counseling & Admissions",
+      "phone": "9856426589",
+      "email": "harshika@gmail.com",
+      "qualification": "M.Tech.",
+      "experience": "2",
+      "status": "Full Time",
+      "bio": "Exerienced counselling adviser",
+      "skills": [],
+      "assignedCourses": [],
+      "assignedBatches": [],
+      "schedule": [],
+      "joiningDate": "2026-11-23"
+    },
+    {
+      "id": 1795363539407,
+      "employeeId": "EMP-2026-001",
+      "name": "Deepika",
+      "role": "Technical Trainer",
+      "department": "Academic Faculty",
+      "phone": "9856429756",
+      "email": "deepika@gmail.com",
+      "qualification": "M.Tech.",
+      "experience": "2+ Years",
+      "status": "Active",
+      "bio": "Specialist in MERN stack, React.js, Node.js, and cloud application development.",
+      "skills": [
+        "React.js",
+        "Node.js",
+        "Python",
+        "JavaScript",
+        "Java",
+        "Docker & DevOps",
+        "MongoDB"
+      ],
+      "assignedCourses": [
+        "Full Stack Web Development (MERN)"
+      ],
+      "assignedBatches": [
+        "FSWD Morning Batch (M26)",
+        "FSWD Evening Batch (E12)"
+      ],
+      "schedule": [
+        {
+          "id": 1,
+          "day": "Mon-Fri",
+          "time": "09:00 AM - 11:30 AM",
+          "batch": "FSWD Morning Batch (M26)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 1",
+          "mode": "Classroom"
+        },
+        {
+          "id": 2,
+          "day": "Mon-Fri",
+          "time": "06:00 PM - 08:30 PM",
+          "batch": "FSWD Evening Batch (E12)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 2",
+          "mode": "Hybrid"
+        }
+      ],
+      "joiningDate": "2026-11-22"
+    },
+    {
+      "id": 1795363539407,
+      "employeeId": "EMP-2026-001",
+      "name": "Deepika",
+      "role": "Technical Trainer",
+      "department": "Academic Faculty",
+      "phone": "9856429756",
+      "email": "deepika@gmail.com",
+      "qualification": "M.Tech.",
+      "experience": "2+ Years",
+      "status": "Active",
+      "bio": "Specialist in MERN stack, React.js, Node.js, and cloud application development.",
+      "skills": [
+        "React.js",
+        "Node.js",
+        "Python",
+        "JavaScript",
+        "Java",
+        "Docker & DevOps",
+        "MongoDB"
+      ],
+      "assignedCourses": [
+        "Full Stack Web Development (MERN)"
+      ],
+      "assignedBatches": [
+        "FSWD Morning Batch (M26)",
+        "FSWD Evening Batch (E12)"
+      ],
+      "schedule": [
+        {
+          "id": 1,
+          "day": "Mon-Fri",
+          "time": "09:00 AM - 11:30 AM",
+          "batch": "FSWD Morning Batch (M26)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 1",
+          "mode": "Classroom"
+        },
+        {
+          "id": 2,
+          "day": "Mon-Fri",
+          "time": "06:00 PM - 08:30 PM",
+          "batch": "FSWD Evening Batch (E12)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 2",
+          "mode": "Hybrid"
+        }
+      ],
+      "joiningDate": "2026-11-22"
+    },
+    {
+      "id": 1795363539407,
+      "employeeId": "EMP-2026-001",
+      "name": "Deepika",
+      "role": "Technical Trainer",
+      "department": "Academic Faculty",
+      "phone": "9856429756",
+      "email": "deepika@gmail.com",
+      "qualification": "M.Tech.",
+      "experience": "2+ Years",
+      "status": "Active",
+      "bio": "Specialist in MERN stack, React.js, Node.js, and cloud application development.",
+      "skills": [
+        "React.js",
+        "Node.js",
+        "Python",
+        "JavaScript",
+        "Java",
+        "Docker & DevOps",
+        "MongoDB"
+      ],
+      "assignedCourses": [
+        "Full Stack Web Development (MERN)"
+      ],
+      "assignedBatches": [
+        "FSWD Morning Batch (M26)",
+        "FSWD Evening Batch (E12)"
+      ],
+      "schedule": [
+        {
+          "id": 1,
+          "day": "Mon-Fri",
+          "time": "09:00 AM - 11:30 AM",
+          "batch": "FSWD Morning Batch (M26)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 1",
+          "mode": "Classroom"
+        },
+        {
+          "id": 2,
+          "day": "Mon-Fri",
+          "time": "06:00 PM - 08:30 PM",
+          "batch": "FSWD Evening Batch (E12)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 2",
+          "mode": "Hybrid"
+        }
+      ],
+      "joiningDate": "2026-11-22"
+    },
+    {
+      "id": 1795363539407,
+      "employeeId": "EMP-2026-001",
+      "name": "Deepika",
+      "role": "Technical Trainer",
+      "department": "Academic Faculty",
+      "phone": "9856429756",
+      "email": "deepika@gmail.com",
+      "qualification": "M.Tech.",
+      "experience": "2+ Years",
+      "status": "Active",
+      "bio": "Specialist in MERN stack, React.js, Node.js, and cloud application development.",
+      "skills": [
+        "React.js",
+        "Node.js",
+        "Python",
+        "JavaScript",
+        "Java",
+        "Docker & DevOps",
+        "MongoDB"
+      ],
+      "assignedCourses": [
+        "Full Stack Web Development (MERN)"
+      ],
+      "assignedBatches": [
+        "FSWD Morning Batch (M26)",
+        "FSWD Evening Batch (E12)"
+      ],
+      "schedule": [
+        {
+          "id": 1,
+          "day": "Mon-Fri",
+          "time": "09:00 AM - 11:30 AM",
+          "batch": "FSWD Morning Batch (M26)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 1",
+          "mode": "Classroom"
+        },
+        {
+          "id": 2,
+          "day": "Mon-Fri",
+          "time": "06:00 PM - 08:30 PM",
+          "batch": "FSWD Evening Batch (E12)",
+          "course": "Full Stack Web Development (MERN)",
+          "room": "Lab 2",
+          "mode": "Hybrid"
+        }
+      ],
+      "joiningDate": "2026-11-22"
+    }
+  ],
+  "admissions": [
+    {
+      "id": 1795413743136,
+      "admissionNo": "ADM-2026-0002",
+      "applicationNo": "APP-2026-0002",
+      "studentName": "Yatin Chandok",
+      "phone": "+917355346971",
+      "email": "yatinchandok966@gmail.com",
+      "guardianName": "Vinod kumar",
+      "guardianPhone": "",
+      "address": "hakima gate",
+      "course": "Full Stack Web Development (MERN)",
+      "batch": "General Cohort",
+      "duration": "16 Weeks",
+      "admissionDate": "2026-11-23",
+      "totalCourseFee": 45000,
+      "discount": 0,
+      "discountReason": "",
+      "netFee": 45000,
+      "admissionFeePaid": 13500,
+      "feeDue": 31500,
+      "paymentPlan": "2 Installments (50/50)",
+      "status": "Admission Confirmed",
+      "counselor": "Admissions Desk",
+      "notes": "Direct admission registration."
+    },
+    {
+      "id": 1795413743123,
+      "admissionNo": "ADM-2026-0001",
+      "applicationNo": "APP-2026-0001",
+      "studentName": "Yatin Chandok",
+      "phone": "+917355346971",
+      "email": "yatinchandok966@gmail.com",
+      "guardianName": "Vinod kumar",
+      "guardianPhone": "",
+      "address": "hakima gate",
+      "course": "Full Stack Web Development (MERN)",
+      "batch": "General Cohort",
+      "duration": "16 Weeks",
+      "admissionDate": "2026-11-23",
+      "totalCourseFee": 45000,
+      "discount": 0,
+      "discountReason": "",
+      "netFee": 45000,
+      "admissionFeePaid": 13500,
+      "feeDue": 31500,
+      "paymentPlan": "2 Installments (50/50)",
+      "status": "Admission Confirmed",
+      "counselor": "Admissions Desk",
+      "notes": "Direct admission registration."
+    }
+  ],
+  "students": [
+    {
+      "id": 1795413743136,
+      "studentId": "STU-2026-0002",
+      "admissionNo": "ADM-2026-0002",
+      "name": "Yatin Chandok",
+      "email": "yatinchandok966@gmail.com",
+      "phone": "+917355346971",
+      "guardian": "Vinod kumar",
+      "guardianPhone": "",
+      "course": "Full Stack Web Development (MERN)",
+      "batch": "General Cohort",
+      "enrollmentDate": "2026-11-23",
+      "feeTotal": 45000,
+      "feePaid": 27000,
+      "feeDue": 18000,
+      "feeStatus": "Partial",
+      "attendance": 100,
+      "status": "Active"
+    },
+    {
+      "id": 1795413743123,
+      "studentId": "STU-2026-0001",
+      "admissionNo": "ADM-2026-0001",
+      "name": "Yatin Chandok",
+      "email": "yatinchandok966@gmail.com",
+      "phone": "+917355346971",
+      "guardian": "Vinod kumar",
+      "guardianPhone": "",
+      "course": "Full Stack Web Development (MERN)",
+      "batch": "General Cohort",
+      "enrollmentDate": "2026-11-23",
+      "feeTotal": 45000,
+      "feePaid": 27000,
+      "feeDue": 18000,
+      "feeStatus": "Partial",
+      "attendance": 100,
+      "status": "Active"
+    }
+  ],
+  "feeTransactions": [
+    {
+      "receiptNo": "RCP-2026-0004",
+      "studentName": "Yatin Chandok",
+      "studentId": "STU-2026-0001",
+      "course": "Full Stack Web Development (MERN)",
+      "amount": 13500,
+      "mode": "Admission Registration (UPI / Bank)",
+      "date": "2026-11-23 06:02",
+      "collectedBy": "Finance Desk",
+      "status": "Success"
+    },
+    {
+      "receiptNo": "RCP-2026-0003",
+      "studentName": "Yatin Chandok",
+      "studentId": "STU-2026-0002",
+      "course": "Full Stack Web Development (MERN)",
+      "amount": 13500,
+      "mode": "Admission Registration (UPI / Bank)",
+      "date": "2026-11-23 06:02",
+      "collectedBy": "Admissions Desk",
+      "status": "Success"
+    },
+    {
+      "receiptNo": "RCP-2026-0002",
+      "studentName": "Yatin Chandok",
+      "studentId": "STU-2026-0001",
+      "course": "Full Stack Web Development (MERN)",
+      "amount": 13500,
+      "mode": "Admission Registration (UPI / Bank)",
+      "date": "2026-11-23 06:02",
+      "collectedBy": "Finance Desk",
+      "status": "Success"
+    },
+    {
+      "receiptNo": "RCP-2026-0001",
+      "studentName": "Yatin Chandok",
+      "studentId": "STU-2026-0001",
+      "course": "Full Stack Web Development (MERN)",
+      "amount": 13500,
+      "mode": "Admission Registration (UPI / Bank)",
+      "date": "2026-11-23 06:02",
+      "collectedBy": "Admissions Desk",
+      "status": "Success"
+    }
+  ],
+  "revenueTimeline": []
+}
