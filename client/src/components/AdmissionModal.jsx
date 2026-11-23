@@ -258,14 +258,36 @@ export default function AdmissionModal({
     return safeBatches;
   }, [selectedTrainerObj, formData.course, batches]);
 
-  // Dynamic counselors list
+  // Dynamic counselors list (strictly exclude technical trainers)
   const availableCounselors = useMemo(() => {
     const set = new Set();
     set.add('Admissions Desk');
+    const technicalTrainerNames = new Set(
+      (effectiveTrainers || [])
+        .filter(t => {
+          const role = (t?.role || '').toLowerCase();
+          return role.includes('technical trainer') || role === 'trainer';
+        })
+        .map(t => (t?.name || '').trim().toLowerCase())
+    );
+
     (effectiveTrainers || []).forEach(t => {
-      if (t && t.name) set.add(t.name);
+      if (!t || !t.name) return;
+      const role = (t.role || '').toLowerCase();
+      const dept = (t.department || '').toLowerCase();
+      const isTrainer = role.includes('technical trainer') || role === 'trainer';
+      const isCounselor = role.includes('counsel') || dept.includes('counsel');
+      if (isCounselor && !isTrainer) {
+        set.add(t.name.trim());
+      }
     });
-    if (leadToConvert?.counselor) set.add(leadToConvert.counselor);
+
+    if (leadToConvert?.counselor) {
+      const cTrim = leadToConvert.counselor.trim();
+      if (!technicalTrainerNames.has(cTrim.toLowerCase())) {
+        set.add(cTrim);
+      }
+    }
     return Array.from(set).sort();
   }, [effectiveTrainers, leadToConvert]);
 

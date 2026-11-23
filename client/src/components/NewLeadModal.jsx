@@ -37,19 +37,41 @@ import {
     }) {
     const isEditMode = Boolean(leadToEdit);
 
-    // Dynamically collect known counsellors from trainers/employees and existing leads
+    // Dynamically collect known counsellors (strictly exclude technical trainers)
     const availableCounselors = useMemo(() => {
       const set = new Set();
+      // Names of all technical trainers to strictly exclude
+      const technicalTrainerNames = new Set(
+        (trainers || [])
+          .filter(t => {
+            const role = (t?.role || '').toLowerCase();
+            return role.includes('technical trainer') || role === 'trainer';
+          })
+          .map(t => (t?.name || '').trim().toLowerCase())
+      );
+
+      // Only include staff designated as counsellors
       (trainers || []).forEach((t) => {
-        if (t.name) {
-          set.add(t.name);
+        if (!t || !t.name) return;
+        const role = (t.role || '').toLowerCase();
+        const dept = (t.department || '').toLowerCase();
+        const isTrainer = role.includes('technical trainer') || role === 'trainer';
+        const isCounselor = role.includes('counsel') || dept.includes('counsel');
+        if (isCounselor && !isTrainer) {
+          set.add(t.name.trim());
         }
       });
+
+      // From existing leads, add counsellor names (only if not a technical trainer)
       (existingLeads || []).forEach((l) => {
         if (l.counselor && l.counselor !== 'Unassigned') {
-          set.add(l.counselor);
+          const cTrim = l.counselor.trim();
+          if (!technicalTrainerNames.has(cTrim.toLowerCase())) {
+            set.add(cTrim);
+          }
         }
       });
+
       return Array.from(set).sort();
     }, [existingLeads, trainers]);
 
@@ -479,21 +501,19 @@ const handleSubmit = async (e) => {
                                               Assigned Counsellor
                                             </label>
                                             <div className="relative">
-                                              <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                                              <input
-                                                type="text"
-                                                list="available-counselors-list"
-                                                value={formData.counselor}
+                                              <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                                              <select
+                                                value={formData.counselor || 'Unassigned'}
                                                 onChange={(e) => setFormData({ ...formData, counselor: e.target.value })}
-                                                placeholder="Enter counselor or Unassigned"
                                                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                                              />
-                                              <datalist id="available-counselors-list">
-                                                <option value="Unassigned" />
+                                              >
+                                                <option value="Unassigned">Unassigned</option>
                                                 {availableCounselors.map((c) => (
-                                                  <option key={c} value={c} />
+                                                  <option key={c} value={c}>
+                                                    {c} (Counsellor)
+                                                  </option>
                                                 ))}
-                                              </datalist>
+                                              </select>
                                             </div>
                                           </div>
 

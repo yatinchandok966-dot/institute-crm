@@ -168,15 +168,35 @@ export default function LeadsModule({
     return Array.from(set).sort();
   }, [courses, leads]);
 
-  // Dynamic unique counsellors from trainers/employees and actual leads
+  // Dynamic unique counsellors from staff and actual leads (strictly exclude technical trainers)
   const uniqueCounselors = useMemo(() => {
     const set = new Set();
+    const technicalTrainerNames = new Set(
+      (trainers || [])
+        .filter(t => {
+          const role = (t?.role || '').toLowerCase();
+          return role.includes('technical trainer') || role === 'trainer';
+        })
+        .map(t => (t?.name || '').trim().toLowerCase())
+    );
+
     (trainers || []).forEach(t => {
-      if (t.name) set.add(t.name);
+      if (!t || !t.name) return;
+      const role = (t.role || '').toLowerCase();
+      const dept = (t.department || '').toLowerCase();
+      const isTrainer = role.includes('technical trainer') || role === 'trainer';
+      const isCounselor = role.includes('counsel') || dept.includes('counsel');
+      if (isCounselor && !isTrainer) {
+        set.add(t.name.trim());
+      }
     });
+
     leads.forEach(l => {
       if (l.counselor && l.counselor !== 'Unassigned') {
-        set.add(l.counselor);
+        const cTrim = l.counselor.trim();
+        if (!technicalTrainerNames.has(cTrim.toLowerCase())) {
+          set.add(cTrim);
+        }
       }
     });
     return Array.from(set).sort();
