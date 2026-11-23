@@ -26,7 +26,7 @@ import PublicInquiryForm from './components/PublicInquiryForm';
 
 import { initialInstituteData } from './data/mockData';
 
-const STORAGE_KEY = 'edupulse_institute_crm_v1';
+const STORAGE_KEY = 'edupulse_institute_crm_v2';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -35,36 +35,31 @@ export default function App() {
   const [instituteData, setInstituteData] = useState(() => {
     try {
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('edupulse_institute_crm_v1');
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
+          const cleanCourses = (Array.isArray(parsed.courses) ? parsed.courses : [])
+            .filter(c => !['FSWD-101', 'DSML-201', 'UIUX-301', 'SEC-501', 'CLD-601', 'DM-401'].includes(c.code));
+          const cleanBatches = (Array.isArray(parsed.batches) ? parsed.batches : [])
+            .filter(b => !['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)', 'Data Science Weekend Cohort (DS-14)', 'UI/UX Evening Batch (U4)', 'Cyber Security Sprint Cohort (SEC-09)', 'Cloud DevOps Weekend (CLD-02)'].includes(b.name));
+
           return {
             ...initialInstituteData,
             ...parsed,
             recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
-            trainers: (Array.isArray(parsed.trainers) ? parsed.trainers : []).map(t => {
-              if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
-                return {
-                  ...t,
-                  role: 'Technical Trainer',
-                  department: 'Academic Faculty',
-                  assignedCourses: ['Full Stack Web Development (MERN)'],
-                  assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
-                  schedule: [
-                    { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
-                    { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
-                  ]
-                };
-              }
-              return t;
-            }),
+            trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses,
-            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
+            courses: cleanCourses,
+            batches: cleanBatches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
-            stats: parsed.stats || initialInstituteData.stats
+            stats: {
+              ...(parsed.stats || initialInstituteData.stats),
+              activeCourses: cleanCourses.length,
+              activeBatches: cleanBatches.length
+            }
           };
         }
       }
