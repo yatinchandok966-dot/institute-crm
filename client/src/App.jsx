@@ -7,8 +7,10 @@ import AdmissionsModule from './components/AdmissionsModule';
 import CoursesModule from './components/CoursesModule';
 import BatchesModule from './components/BatchesModule';
 import StudentsModule from './components/StudentsModule';
+import StudentProfile from './components/Students/StudentProfile';
 import FeesModule from './components/FeesModule';
 import AttendanceModule from './components/AttendanceModule';
+import TrainersModule from './components/TrainersModule';
 
 // Modals
 import NewLeadModal from './components/NewLeadModal';
@@ -24,12 +26,78 @@ import PublicInquiryForm from './components/PublicInquiryForm';
 
 import { initialInstituteData } from './data/mockData';
 
+const STORAGE_KEY = 'edupulse_institute_crm_v2';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [instituteData, setInstituteData] = useState(initialInstituteData);
+
+  // Persistent institute state initialized from localStorage
+  const [instituteData, setInstituteData] = useState(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('edupulse_institute_crm_v1');
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const cleanCourses = (Array.isArray(parsed.courses) ? parsed.courses : [])
+            .filter(c => !['FSWD-101', 'DSML-201', 'UIUX-301', 'SEC-501', 'CLD-601', 'DM-401'].includes(c.code));
+          const cleanBatches = (Array.isArray(parsed.batches) ? parsed.batches : [])
+            .filter(b => !['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)', 'Data Science Weekend Cohort (DS-14)', 'UI/UX Evening Batch (U4)', 'Cyber Security Sprint Cohort (SEC-09)', 'Cloud DevOps Weekend (CLD-02)'].includes(b.name));
+
+          return {
+            ...initialInstituteData,
+            ...parsed,
+            recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
+            trainers: (Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : initialInstituteData.trainers).map(t => {
+              if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
+                return {
+                  ...t,
+                  role: 'Technical Trainer',
+                  department: 'Academic Faculty',
+                  assignedCourses: ['Full Stack Web Development (MERN)'],
+                  assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
+                  schedule: [
+                    { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
+                    { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
+                  ]
+                };
+              }
+              return t;
+            }),
+            admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
+            students: Array.isArray(parsed.students) ? parsed.students : [],
+            courses: cleanCourses,
+            batches: cleanBatches,
+            feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
+            revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
+            stats: {
+              ...(parsed.stats || initialInstituteData.stats),
+              activeCourses: cleanCourses.length,
+              activeBatches: cleanBatches.length
+            }
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Could not read from localStorage:', err);
+    }
+    return initialInstituteData;
+  });
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dbStatus, setDbStatus] = useState({ connected: false, engine: 'PostgreSQL' });
   const [currentHash, setCurrentHash] = useState(typeof window !== 'undefined' ? window.location.hash : '');
+
+  // Automatically sync state to localStorage whenever it updates
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(instituteData));
+      }
+    } catch (err) {
+      console.warn('Could not persist to localStorage:', err);
+    }
+  }, [instituteData]);
 
   // Modal states
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
@@ -41,8 +109,10 @@ export default function App() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [courseForEdit, setCourseForEdit] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedStudentID, setSelectedStudentID] = useState(null);
+  const [selectedStudentForProfile, setSelectedStudentForProfile] = useState(null);
 
   // Force pure light theme & listen to URL hash for QR public form
   useEffect(() => {
@@ -71,17 +141,64 @@ export default function App() {
       if (statsRes && statsRes.ok) {
         const result = await statsRes.json();
         if (result.success) {
-          setInstituteData(prev => ({
-            ...prev,
-            stats: result.stats || prev.stats,
-            courses: result.courses || prev.courses,
-            batches: result.batches || prev.batches,
-            recentLeads: result.recentLeads || prev.recentLeads,
-            admissions: result.admissions || prev.admissions,
-            students: result.students || prev.students,
-            feeTransactions: result.feeTransactions || prev.feeTransactions,
-            revenueTimeline: result.revenueTimeline || prev.revenueTimeline,
-          }));
+          setInstituteData(prev => {
+            // Smart merge for leads: never wipe existing local leads with empty array
+            const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
+            const localLeads = Array.isArray(prev.recentLeads) ? prev.recentLeads : [];
+
+            let mergedLeads = localLeads;
+            if (serverLeads.length > 0 && localLeads.length === 0) {
+              mergedLeads = serverLeads;
+            } else if (serverLeads.length > 0 && localLeads.length > 0) {
+              const map = new Map();
+              localLeads.forEach(l => map.set(l.id || l.phone, l));
+              serverLeads.forEach(l => map.set(l.id || l.phone, l));
+              mergedLeads = Array.from(map.values());
+            } else if (localLeads.length > 0 && serverLeads.length === 0) {
+              // Sync local leads up to server so server also has them
+              localLeads.forEach(l => {
+                fetch('/api/leads', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(l)
+                }).catch(() => null);
+              });
+              mergedLeads = localLeads;
+            }
+
+            // Smart merge for trainers
+            const serverTrainers = Array.isArray(result.trainers) ? result.trainers : [];
+            const localTrainers = Array.isArray(prev.trainers) ? prev.trainers : [];
+            let mergedTrainers = localTrainers.length > 0 ? localTrainers : (serverTrainers.length > 0 ? serverTrainers : initialInstituteData.trainers);
+            if (serverTrainers.length > 0 && localTrainers.length > 0) {
+              const tMap = new Map();
+              localTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              serverTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              mergedTrainers = Array.from(tMap.values());
+            } else if (localTrainers.length > 0 && serverTrainers.length === 0) {
+              localTrainers.forEach(t => {
+                fetch('/api/trainers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(t)
+                }).catch(() => null);
+              });
+              mergedTrainers = localTrainers;
+            }
+
+            return {
+              ...prev,
+              stats: result.stats || prev.stats,
+              courses: (result.courses && result.courses.length > 0) ? result.courses : prev.courses,
+              batches: (result.batches && result.batches.length > 0) ? result.batches : prev.batches,
+              recentLeads: mergedLeads,
+              trainers: mergedTrainers,
+              admissions: (result.admissions && result.admissions.length > 0) ? result.admissions : prev.admissions,
+              students: (result.students && result.students.length > 0) ? result.students : prev.students,
+              feeTransactions: (result.feeTransactions && result.feeTransactions.length > 0) ? result.feeTransactions : prev.feeTransactions,
+              revenueTimeline: result.revenueTimeline || prev.revenueTimeline,
+            };
+          });
         }
       }
     } catch (err) {
@@ -97,14 +214,71 @@ export default function App() {
 
   // Handlers for Leads
   const handleLeadCreated = (newLead) => {
+    setInstituteData(prev => {
+      const updatedLeads = [newLead, ...prev.recentLeads];
+      return {
+        ...prev,
+        recentLeads: updatedLeads,
+        stats: {
+          ...prev.stats,
+          newLeadsThisMonth: updatedLeads.length
+        }
+      };
+    });
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLead)
+    }).catch(() => null);
+  };
+
+  const handleLeadUpdated = (updatedLead) => {
     setInstituteData(prev => ({
       ...prev,
-      recentLeads: [newLead, ...prev.recentLeads],
-      stats: {
-        ...prev.stats,
-        newLeadsThisMonth: (prev.stats.newLeadsThisMonth || 86) + 1
-      }
+      recentLeads: prev.recentLeads.map(l => (l.id === updatedLead.id ? updatedLead : l))
     }));
+    fetch(`/api/leads/${updatedLead.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedLead)
+    }).catch(() => null);
+  };
+
+  const handleLeadDeleted = (leadId) => {
+    setInstituteData(prev => {
+      const updatedLeads = prev.recentLeads.filter(l => l.id !== leadId);
+      return {
+        ...prev,
+        recentLeads: updatedLeads,
+        stats: {
+          ...prev.stats,
+          newLeadsThisMonth: updatedLeads.length
+        }
+      };
+    });
+    fetch(`/api/leads/${leadId}`, {
+      method: 'DELETE'
+    }).catch(() => null);
+  };
+
+  const handleBatchLeadsImported = (newLeads) => {
+    if (!newLeads || newLeads.length === 0) return;
+    setInstituteData(prev => {
+      const updatedLeads = [...newLeads, ...prev.recentLeads];
+      return {
+        ...prev,
+        recentLeads: updatedLeads,
+        stats: {
+          ...prev.stats,
+          newLeadsThisMonth: updatedLeads.length
+        }
+      };
+    });
+    fetch('/api/leads/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leads: newLeads })
+    }).catch(() => null);
   };
 
   const handleUpdateLeadStatus = (leadId, newStatus) => {
@@ -116,6 +290,70 @@ export default function App() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
+    }).catch(() => null);
+  };
+
+  const handleAssignCounsellor = (leadId, counselor) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, counselor } : l))
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ counselor })
+    }).catch(() => null);
+  };
+
+  const handleUpdateLeadPriority = (leadId, priority) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, priority } : l))
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority })
+    }).catch(() => null);
+  };
+
+  const handleAddLeadNote = (leadId, note) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => {
+        if (l.id === leadId) {
+          const notesList = [note, ...(l.notesList || [])];
+          return { ...l, notesList, notes: note.text };
+        }
+        return l;
+      })
+    }));
+    fetch(`/api/leads/${leadId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(note)
+    }).catch(() => null);
+  };
+
+  const handleLogLeadCall = (leadId, call, nextFollowUp) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => {
+        if (l.id === leadId) {
+          const callHistory = [call, ...(l.callHistory || [])];
+          return {
+            ...l,
+            callHistory,
+            ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
+          };
+        }
+        return l;
+      })
+    }));
+    fetch(`/api/leads/${leadId}/calls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...call, nextFollowUpDate: nextFollowUp })
     }).catch(() => null);
   };
 
@@ -138,16 +376,19 @@ export default function App() {
 
       // 2. Add to students roster if not present
       const updatedStudents = newStudent ? [newStudent, ...prev.students] : prev.students;
+      const updatedAdmissions = [newAdmission, ...prev.admissions];
 
       // 3. Add to fee transactions if an admission fee was collected
       const updatedFees = [...prev.feeTransactions];
-      if (Number(newAdmission.admissionFeePaid) > 0) {
+      const paidAmount = Number(newAdmission.admissionFeePaid) || 0;
+      if (paidAmount > 0) {
+        const rcpSeq = String(prev.feeTransactions.length + 1).padStart(4, '0');
         updatedFees.unshift({
-          receiptNo: `RCP-2026-0${90 + prev.feeTransactions.length + 1}`,
+          receiptNo: `RCP-2026-${rcpSeq}`,
           studentName: newAdmission.studentName,
           studentId: newStudent?.studentId || 'STU-NEW',
           course: newAdmission.course,
-          amount: Number(newAdmission.admissionFeePaid),
+          amount: paidAmount,
           mode: 'Admission Registration (UPI / Bank)',
           date: new Date().toISOString().replace('T', ' ').substring(0, 16),
           collectedBy: newAdmission.counselor || 'Admissions Desk',
@@ -155,17 +396,22 @@ export default function App() {
         });
       }
 
+      const totalRevenue = updatedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+      const totalPending = updatedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+
       return {
         ...prev,
-        admissions: [newAdmission, ...prev.admissions],
+        admissions: updatedAdmissions,
         recentLeads: updatedLeads,
         students: updatedStudents,
         feeTransactions: updatedFees,
         stats: {
           ...prev.stats,
-          confirmedAdmissions: (prev.stats.confirmedAdmissions || 24) + 1,
-          totalStudents: (prev.stats.totalStudents || 342) + 1,
-          monthlyRevenue: (prev.stats.monthlyRevenue || 642000) + (Number(newAdmission.admissionFeePaid) || 0)
+          confirmedAdmissions: updatedAdmissions.length,
+          totalStudents: updatedStudents.length,
+          monthlyRevenue: totalRevenue,
+          pendingFees: totalPending,
+          leadConversionRate: updatedLeads.length > 0 ? `${Math.round((updatedAdmissions.length / updatedLeads.length) * 100)}%` : '0%'
         }
       };
     });
@@ -191,8 +437,8 @@ export default function App() {
     setInstituteData(prev => {
       const updatedStudents = prev.students.map(s => {
         if (s.name.toLowerCase() === newReceipt.studentName.toLowerCase() || s.studentId === newReceipt.studentId) {
-          const newPaid = s.feePaid + Number(newReceipt.amount);
-          const newDue = Math.max(0, s.feeTotal - newPaid);
+          const newPaid = Number(s.feePaid || 0) + Number(newReceipt.amount || 0);
+          const newDue = Math.max(0, Number(s.feeTotal || 0) - newPaid);
           return {
             ...s,
             feePaid: newPaid,
@@ -203,39 +449,106 @@ export default function App() {
         return s;
       });
 
+      const updatedFees = [newReceipt, ...prev.feeTransactions];
+      const totalRevenue = updatedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+      const totalPending = updatedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+
       return {
         ...prev,
-        feeTransactions: [newReceipt, ...prev.feeTransactions],
+        feeTransactions: updatedFees,
         students: updatedStudents,
         stats: {
           ...prev.stats,
-          monthlyRevenue: (prev.stats.monthlyRevenue || 642000) + Number(newReceipt.amount),
-          pendingFees: Math.max(0, (prev.stats.pendingFees || 128500) - Number(newReceipt.amount))
+          monthlyRevenue: totalRevenue,
+          pendingFees: totalPending,
+          feeCollectionRate: totalRevenue + totalPending > 0
+            ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+            : '100%'
         }
       };
     });
   };
 
   const handleBatchCreated = (newBatch) => {
-    setInstituteData(prev => ({
-      ...prev,
-      batches: [newBatch, ...prev.batches],
-      stats: {
-        ...prev.stats,
-        activeBatches: (prev.stats.activeBatches || 5) + 1
-      }
-    }));
+    setInstituteData(prev => {
+      const updatedBatches = [newBatch, ...prev.batches];
+      return {
+        ...prev,
+        batches: updatedBatches,
+        stats: {
+          ...prev.stats,
+          activeBatches: updatedBatches.length
+        }
+      };
+    });
   };
 
-  const handleCourseCreated = (newCourse) => {
+  const handleCourseCreated = (courseData, isEdit) => {
+    setInstituteData(prev => {
+      const updatedCourses = isEdit
+        ? prev.courses.map(c => (c.id === courseData.id ? courseData : c))
+        : [courseData, ...prev.courses];
+
+      return {
+        ...prev,
+        courses: updatedCourses,
+        stats: {
+          ...prev.stats,
+          activeCourses: updatedCourses.length
+        }
+      };
+    });
+  };
+
+  const handleDeleteCourse = (courseId) => {
+    if (!window.confirm('Are you sure you want to delete this course?')) return;
+
+    setInstituteData(prev => {
+      const updatedCourses = prev.courses.filter(c => c.id !== courseId);
+      return {
+        ...prev,
+        courses: updatedCourses,
+        stats: {
+          ...prev.stats,
+          activeCourses: updatedCourses.length
+        }
+      };
+    });
+  };
+
+  // Handlers for Trainers / Employees
+  const handleTrainerCreated = (newTrainer) => {
     setInstituteData(prev => ({
       ...prev,
-      courses: [newCourse, ...prev.courses],
-      stats: {
-        ...prev.stats,
-        activeCourses: (prev.stats.activeCourses || 6) + 1
-      }
+      trainers: [newTrainer, ...(prev.trainers || [])]
     }));
+    fetch('/api/trainers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTrainer)
+    }).catch(() => null);
+  };
+
+  const handleTrainerUpdated = (updatedTrainer) => {
+    setInstituteData(prev => ({
+      ...prev,
+      trainers: (prev.trainers || []).map(t => (t.id === updatedTrainer.id ? updatedTrainer : t))
+    }));
+    fetch(`/api/trainers/${updatedTrainer.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedTrainer)
+    }).catch(() => null);
+  };
+
+  const handleTrainerDeleted = (trainerId) => {
+    setInstituteData(prev => ({
+      ...prev,
+      trainers: (prev.trainers || []).filter(t => t.id !== trainerId)
+    }));
+    fetch(`/api/trainers/${trainerId}`, {
+      method: 'DELETE'
+    }).catch(() => null);
   };
 
   // Render Module Content
@@ -258,10 +571,18 @@ export default function App() {
           <LeadsModule
             leads={instituteData.recentLeads}
             courses={instituteData.courses}
-            onOpenNewLead={() => setIsLeadModalOpen(true)}
+            trainers={instituteData.trainers}
             onOpenShareQR={() => setIsShareQROpen(true)}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onConvertToAdmission={handleConvertToAdmission}
+            onLeadCreated={handleLeadCreated}
+            onLeadUpdated={handleLeadUpdated}
+            onLeadDeleted={handleLeadDeleted}
+            onBatchLeadsImported={handleBatchLeadsImported}
+            onAssignCounsellor={handleAssignCounsellor}
+            onUpdateLeadPriority={handleUpdateLeadPriority}
+            onAddLeadNote={handleAddLeadNote}
+            onLogLeadCall={handleLogLeadCall}
           />
         );
       case 'admissions':
@@ -270,6 +591,7 @@ export default function App() {
             admissions={instituteData.admissions}
             courses={instituteData.courses}
             batches={instituteData.batches}
+            trainers={instituteData.trainers}
             onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onUpdateAdmissionStatus={handleUpdateAdmissionStatus}
@@ -279,7 +601,15 @@ export default function App() {
         return (
           <CoursesModule
             courses={instituteData.courses}
-            onOpenNewCourse={() => setIsCourseModalOpen(true)}
+            onOpenNewCourse={() => {
+              setCourseForEdit(null);
+              setIsCourseModalOpen(true);
+            }}
+            onEditCourse={(course) => {
+              setCourseForEdit(course);
+              setIsCourseModalOpen(true);
+            }}
+            onDeleteCourse={handleDeleteCourse}
           />
         );
       case 'batches':
@@ -290,12 +620,33 @@ export default function App() {
             onOpenNewBatch={() => setIsBatchModalOpen(true)}
           />
         );
+      case 'trainers':
+        return (
+          <TrainersModule
+            trainers={instituteData.trainers || []}
+            courses={instituteData.courses}
+            batches={instituteData.batches}
+            onTrainerCreated={handleTrainerCreated}
+            onTrainerUpdated={handleTrainerUpdated}
+            onTrainerDeleted={handleTrainerDeleted}
+          />
+        );
       case 'students':
+        if (selectedStudentForProfile) {
+          return (
+            <StudentProfile
+              student={selectedStudentForProfile}
+              onBack={() => setSelectedStudentForProfile(null)}
+              onOpenPayment={() => setIsPaymentModalOpen(true)}
+            />
+          );
+        }
         return (
           <StudentsModule
             students={instituteData.students}
             onOpenStudentID={(student) => setSelectedStudentID(student)}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
+            onOpenStudentProfile={(student) => setSelectedStudentForProfile(student)}
           />
         );
       case 'fees':
@@ -303,6 +654,7 @@ export default function App() {
           <FeesModule
             feeTransactions={instituteData.feeTransactions}
             stats={instituteData.stats}
+            students={instituteData.students}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenReceipt={(receipt) => setSelectedReceipt(receipt)}
           />
@@ -345,12 +697,17 @@ export default function App() {
     );
   }
 
+  const handleTabChange = (tab) => {
+    setSelectedStudentForProfile(null);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         data={instituteData}
       />
 
@@ -364,7 +721,7 @@ export default function App() {
           isRefreshing={isRefreshing}
           dbStatus={dbStatus}
           data={instituteData}
-          onNavigate={(tab) => setActiveTab(tab)}
+          onNavigate={handleTabChange}
         />
 
         <main className="flex-1 overflow-y-auto">
@@ -378,6 +735,8 @@ export default function App() {
         onClose={() => setIsLeadModalOpen(false)}
         onLeadCreated={handleLeadCreated}
         courses={instituteData.courses}
+        trainers={instituteData.trainers}
+        existingLeads={instituteData.recentLeads}
       />
 
       {/* Admissions Conversion & New Admission Modal */}
@@ -387,6 +746,7 @@ export default function App() {
         leadToConvert={leadForConversion}
         courses={instituteData.courses}
         batches={instituteData.batches}
+        trainers={instituteData.trainers}
         onAdmissionCreated={handleAdmissionCreated}
       />
 
@@ -413,8 +773,13 @@ export default function App() {
 
       <NewCourseModal
         isOpen={isCourseModalOpen}
-        onClose={() => setIsCourseModalOpen(false)}
+        onClose={() => {
+          setIsCourseModalOpen(false);
+          setCourseForEdit(null);
+        }}
         onCourseCreated={handleCourseCreated}
+        courseToEdit={courseForEdit}
+        trainers={instituteData.trainers || []}
       />
 
       <ReceiptModal

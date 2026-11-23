@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { CalendarDays, Plus, Clock, Search, MapPin } from 'lucide-react';
 
-export default function BatchesModule({ batches, courses, onOpenNewBatch }) {
+export default function BatchesModule({ batches = [], courses = [], onOpenNewBatch }) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredBatches = batches.filter(b => {
     const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
-    const matchesSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (b.name && b.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (b.course && b.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (b.instructor && b.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -71,81 +71,91 @@ export default function BatchesModule({ batches, courses, onOpenNewBatch }) {
       </div>
 
       {/* Batches Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredBatches.map(batch => {
-          const fillPercentage = Math.round((batch.enrolled / batch.capacity) * 100);
-          const seatsLeft = batch.capacity - batch.enrolled;
+      {filteredBatches.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">
+          <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <h3 className="text-sm font-bold text-slate-700">No Batches Scheduled Yet</h3>
+          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            Click "New Batch" to schedule cohorts with timing, classroom rooms, and instructors.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBatches.map(batch => {
+            const fillPercentage = Math.round(((batch.enrolled || 0) / (batch.capacity || 1)) * 100);
+            const seatsLeft = (batch.capacity || 25) - (batch.enrolled || 0);
 
-          return (
-            <div
-              key={batch.id}
-              className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow p-5 flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                {/* Status & Mode */}
-                <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
-                    {batch.mode}
-                  </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
-                    {batch.status}
-                  </span>
-                </div>
-
-                {/* Batch Name & Course */}
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base">
-                    {batch.name}
-                  </h3>
-                  <p className="text-xs text-indigo-700 font-semibold mt-0.5">
-                    {batch.course}
-                  </p>
-                </div>
-
-                {/* Instructor */}
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
-                  <span className="text-[10px] text-slate-400 font-medium">Lead Instructor</span>
-                  <p className="font-bold text-slate-800 mt-0.5">{batch.instructor}</p>
-                </div>
-
-                {/* Timing */}
-                <div className="space-y-1.5 text-xs text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{batch.timing}</span>
+            return (
+              <div
+                key={batch.id}
+                className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow p-5 flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  {/* Status & Mode */}
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                      {batch.mode || 'Classroom'}
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+                      {batch.status || 'Upcoming'}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Start Date: <strong className="text-slate-800">{batch.startDate}</strong></span>
+
+                  {/* Batch Name & Course */}
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">
+                      {batch.name}
+                    </h3>
+                    <p className="text-xs text-indigo-700 font-semibold mt-0.5">
+                      {batch.course}
+                    </p>
+                  </div>
+
+                  {/* Instructor */}
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
+                    <span className="text-[10px] text-slate-400 font-medium">Lead Instructor</span>
+                    <p className="font-bold text-slate-800 mt-0.5">{batch.instructor || 'Staff Instructor'}</p>
+                  </div>
+
+                  {/* Timing */}
+                  <div className="space-y-1.5 text-xs text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{batch.timing}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Start Date: <strong className="text-slate-800">{batch.startDate}</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seat Capacity Progress */}
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-slate-500">Seat Capacity:</span>
+                    <span className="text-slate-900">
+                      {batch.enrolled || 0} / {batch.capacity || 25} ({fillPercentage}%)
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${fillPercentage >= 90 ? 'bg-amber-600' : 'bg-indigo-600'}`}
+                      style={{ width: `${Math.min(100, fillPercentage)}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[11px] text-slate-400">
+                    <span>{seatsLeft > 0 ? `${seatsLeft} seats remaining` : 'Batch Full'}</span>
+                    <span className="font-medium text-indigo-700">{batch.room || 'Room 1'}</span>
                   </div>
                 </div>
               </div>
-
-              {/* Seat Capacity Progress */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-500">Seat Capacity:</span>
-                  <span className="text-slate-900">
-                    {batch.enrolled} / {batch.capacity} ({fillPercentage}%)
-                  </span>
-                </div>
-
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${fillPercentage >= 90 ? 'bg-amber-600' : 'bg-indigo-600'}`}
-                    style={{ width: `${Math.min(100, fillPercentage)}%` }}
-                  ></div>
-                </div>
-
-                <div className="flex justify-between items-center text-[11px] text-slate-400">
-                  <span>{seatsLeft > 0 ? `${seatsLeft} seats remaining` : 'Batch Full'}</span>
-                  <span className="font-medium text-indigo-700">{batch.room}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

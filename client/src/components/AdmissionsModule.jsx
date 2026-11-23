@@ -20,6 +20,7 @@ export default function AdmissionsModule({
   admissions,
   courses,
   batches,
+  trainers = [],
   onOpenNewAdmission,
   onOpenConfirmationLetter,
   onUpdateAdmissionStatus
@@ -31,7 +32,6 @@ export default function AdmissionsModule({
 
   const pipelineStages = [
     { id: 'Application Submitted', label: 'Application Submitted', border: 'border-blue-500', bg: 'bg-blue-50 text-blue-800' },
-    { id: 'Document Verification', label: 'Document Verification', border: 'border-purple-500', bg: 'bg-purple-50 text-purple-800' },
     { id: 'Fee Pending', label: 'Fee Pending / Part-Paid', border: 'border-amber-500', bg: 'bg-amber-50 text-amber-800' },
     { id: 'Admission Confirmed', label: 'Admission Confirmed', border: 'border-emerald-500', bg: 'bg-emerald-50 text-emerald-800' }
   ];
@@ -192,13 +192,18 @@ export default function AdmissionsModule({
                           <span className="text-[10px] text-slate-400 font-medium">{adm.admissionDate}</span>
                         </div>
 
-                        {/* Program & Batch */}
+                        {/* Program & Batch & Trainer */}
                         <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px] space-y-1">
                           <p className="font-bold text-slate-800 truncate">{adm.course}</p>
                           <div className="flex justify-between text-slate-500">
                             <span>Batch: {adm.batch?.split(' ')[0]}</span>
                             <span>{adm.duration}</span>
                           </div>
+                          {adm.trainer && adm.trainer !== 'Unassigned' && (
+                            <div className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-semibold inline-block">
+                              Trainer: {adm.trainer}
+                            </div>
+                          )}
                         </div>
 
                         {/* Fee Summary */}
@@ -274,61 +279,76 @@ export default function AdmissionsModule({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filtered.map(adm => (
-                  <tr key={adm.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-indigo-700">
-                      {adm.admissionNo}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-bold text-slate-900">{adm.studentName}</div>
-                      <div className="text-[11px] text-slate-400 font-mono">{adm.phone}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-800">
-                      {adm.course}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {adm.batch}
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">
-                      ₹{Number(adm.totalCourseFee).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">
-                      ₹{Number(adm.admissionFeePaid).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-slate-800">
-                      ₹{Number(adm.feeDue).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={adm.status}
-                        onChange={(e) => onUpdateAdmissionStatus(adm.id, e.target.value)}
-                        className="text-[11px] font-semibold bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none"
-                      >
-                        {pipelineStages.map(s => (
-                          <option key={s.id} value={s.id}>{s.id}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          onClick={() => onOpenConfirmationLetter(adm)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px]"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>Letter</span>
-                        </button>
-                        <button
-                          onClick={() => openWhatsApp(adm)}
-                          className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
-                          title="WhatsApp Confirmation"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="py-12 text-center text-slate-400">
+                      <UserCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs font-semibold text-slate-600">No admissions in pipeline yet</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Confirmed inquiries converted to admissions will appear here</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map(adm => (
+                    <tr key={adm.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-mono font-bold text-indigo-700">
+                        {adm.admissionNo}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-bold text-slate-900">{adm.studentName}</div>
+                        <div className="text-[11px] text-slate-400 font-mono">{adm.phone}</div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-800">
+                        {adm.course}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        <div>{adm.batch}</div>
+                        {adm.trainer && adm.trainer !== 'Unassigned' && (
+                          <span className="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold border border-indigo-200 inline-block mt-0.5">
+                            Trainer: {adm.trainer}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">
+                        ₹{Number(adm.totalCourseFee).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-emerald-700">
+                        ₹{Number(adm.admissionFeePaid).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-slate-800">
+                        ₹{Number(adm.feeDue).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={adm.status}
+                          onChange={(e) => onUpdateAdmissionStatus(adm.id, e.target.value)}
+                          className="text-[11px] font-semibold bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none"
+                        >
+                          {pipelineStages.map(s => (
+                            <option key={s.id} value={s.id}>{s.id}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => onOpenConfirmationLetter(adm)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px]"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Letter</span>
+                          </button>
+                          <button
+                            onClick={() => openWhatsApp(adm)}
+                            className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                            title="WhatsApp Confirmation"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

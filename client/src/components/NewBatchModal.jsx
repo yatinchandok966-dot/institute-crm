@@ -4,7 +4,7 @@ import { X, CalendarDays, CheckCircle2 } from 'lucide-react';
 export default function NewBatchModal({ isOpen, onClose, onBatchCreated, courses }) {
   const [formData, setFormData] = useState({
     name: '',
-    course: courses[0]?.name || 'Full Stack Web Development (MERN)',
+    course: courses?.[0]?.name || '',
     instructor: '',
     timing: 'Mon-Fri 10:00 AM - 12:30 PM',
     startDate: '',
@@ -72,9 +72,13 @@ export default function NewBatchModal({ isOpen, onClose, onBatchCreated, courses
               onChange={(e) => setFormData({ ...formData, course: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
             >
-              {courses.map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
-              ))}
+              {courses && courses.length > 0 ? (
+                courses.map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))
+              ) : (
+                <option value="">No courses yet (Add a Course first)</option>
+              )}
             </select>
           </div>
 
@@ -86,7 +90,7 @@ export default function NewBatchModal({ isOpen, onClose, onBatchCreated, courses
               <input
                 type="text"
                 required
-                placeholder="e.g. Dr. Sunita Sharma"
+                placeholder="e.g. Lead Instructor Name"
                 value={formData.instructor}
                 onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"

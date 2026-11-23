@@ -48,17 +48,41 @@ CREATE TABLE IF NOT EXISTS batches (
 -- 4. Leads / Inquiries Table
 CREATE TABLE IF NOT EXISTS leads (
     id SERIAL PRIMARY KEY,
-    first_name VARCHAR(80) NOT NULL,
-    last_name VARCHAR(80),
+    full_name VARCHAR(120) NOT NULL,
     phone VARCHAR(25) NOT NULL,
     email VARCHAR(150),
-    interested_course_id INT REFERENCES courses(id) ON DELETE SET NULL,
-    source VARCHAR(50) DEFAULT 'Walk-in', -- 'Walk-in', 'Website', 'Instagram', 'Referral', 'Google Ad'
-    status VARCHAR(40) DEFAULT 'New', -- 'New', 'Contacted', 'Demo Booked', 'Follow-up', 'Converted', 'Cold'
-    assigned_counselor VARCHAR(100),
-    next_follow_up DATE,
+    city VARCHAR(100),
+    qualification VARCHAR(100),
+    college_university VARCHAR(150),
+    interested_course VARCHAR(150),
+    lead_source VARCHAR(50) DEFAULT 'Website', -- 'Website', 'Facebook', 'Instagram', 'LinkedIn', 'Google Ads', 'Referral', 'Walk-in', 'Phone Call'
+    assigned_counsellor VARCHAR(100) DEFAULT 'Pooja Verma',
+    lead_status VARCHAR(50) DEFAULT 'New', -- 'New', 'Contacted', 'Counselling Scheduled', 'Interested', 'Follow-up Required', 'Converted / Lost'
+    priority VARCHAR(20) DEFAULT 'Warm', -- 'Hot', 'Warm', 'Cold'
+    next_follow_up_date TIMESTAMP WITH TIME ZONE,
     notes TEXT,
+    created_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Lead Notes History
+CREATE TABLE IF NOT EXISTS lead_notes (
+    id SERIAL PRIMARY KEY,
+    lead_id INT REFERENCES leads(id) ON DELETE CASCADE,
+    note_text TEXT NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Lead Call Logs & Telephonic History
+CREATE TABLE IF NOT EXISTS lead_call_history (
+    id SERIAL PRIMARY KEY,
+    lead_id INT REFERENCES leads(id) ON DELETE CASCADE,
+    call_outcome VARCHAR(80) NOT NULL, -- e.g. 'Connected - Interested', 'Counselling Scheduled', etc.
+    duration VARCHAR(30) DEFAULT '2m 00s',
+    remarks TEXT,
+    counselor VARCHAR(100) NOT NULL,
+    call_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 5. Students Table

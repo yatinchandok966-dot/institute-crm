@@ -6,7 +6,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
     name: '',
     phone: '',
     email: '',
-    course: courses?.[0]?.name || 'Full Stack Web Development (MERN)',
+    course: courses?.[0]?.name || '',
     mode: 'Hybrid (Classroom + Online)',
     timing: 'Morning (09:00 AM - 11:30 AM)',
     qualification: 'College Student (Final Year)',
@@ -18,21 +18,40 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim()) {
-      alert('Please provide your name and phone number.');
+    if (!formData.name.trim()) {
+      alert('Please provide your name.');
       return;
+    }
+
+    const cleanPhone = (formData.phone || '').replace(/\D/g, '');
+    if (!cleanPhone) {
+      alert('Please provide your phone number.');
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      alert('Phone Number must be exactly 10 digits (digits only, no letters allowed).');
+      return;
+    }
+
+    const cleanEmail = (formData.email || '').trim().toLowerCase();
+    if (cleanEmail) {
+      const emailPattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+      if (!emailPattern.test(cleanEmail)) {
+        alert('Please enter a valid lowercase email address (e.g. name@gmail.com).');
+        return;
+      }
     }
 
     setIsSubmitting(true);
 
     const payload = {
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email,
+      name: formData.name.trim(),
+      phone: cleanPhone,
+      email: cleanEmail,
       course: formData.course,
       source: 'QR Code (Campus Reception)',
       status: 'New Inquiry',
-      counselor: 'Pooja Verma',
+      counselor: 'Admissions Desk',
       followUp: 'Pending Counselor Call',
       notes: `Mode: ${formData.mode} | Timing: ${formData.timing} | Background: ${formData.qualification} ${formData.notes ? '| Message: ' + formData.notes : ''}`
     };
@@ -85,7 +104,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Assigned Counselor:</span>
-              <span className="font-semibold text-indigo-700">Pooja Verma</span>
+              <span className="font-semibold text-indigo-700">Admissions Desk</span>
             </div>
           </div>
 
@@ -100,7 +119,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                   name: '',
                   phone: '',
                   email: '',
-                  course: courses?.[0]?.name || 'Full Stack Web Development (MERN)',
+                  course: courses?.[0]?.name || '',
                   mode: 'Hybrid (Classroom + Online)',
                   timing: 'Morning (09:00 AM - 11:30 AM)',
                   qualification: 'College Student (Final Year)',
@@ -187,31 +206,61 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
           {/* Contact (Phone & Email) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block font-bold text-slate-800 text-xs">
-                WhatsApp / Mobile Number <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block font-bold text-slate-800 text-xs">
+                  WhatsApp / Mobile Number <span className="text-rose-500">*</span>
+                </label>
+                <span className={`text-[10px] font-mono font-bold ${
+                  (formData.phone || '').length === 10 ? 'text-emerald-600' : 'text-slate-400'
+                }`}>
+                  {(formData.phone || '').length}/10 digits
+                </span>
+              </div>
               <div className="relative">
                 <input
                   type="tel"
                   required
+                  maxLength={10}
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium"
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setFormData({ ...formData, phone: digitsOnly });
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      !/[0-9]/.test(e.key) &&
+                      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="10-digit number (e.g. 9876543210)"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-mono font-medium"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block font-bold text-slate-800 text-xs">
-                Email Address
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block font-bold text-slate-800 text-xs">
+                  Email Address
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  lowercase only
+                </span>
+              </div>
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="aditi@example.com"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium"
+                onChange={(e) => {
+                  const lower = e.target.value.toLowerCase().replace(/[A-Z\s]/g, '').trim();
+                  setFormData({ ...formData, email: lower });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === ' ') e.preventDefault();
+                }}
+                placeholder="e.g. name@gmail.com"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium lowercase"
               />
             </div>
           </div>
@@ -221,17 +270,29 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             <label className="block font-bold text-slate-800 text-xs">
               Select Program of Interest <span className="text-rose-500">*</span>
             </label>
-            <select
-              value={formData.course}
-              onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-semibold"
-            >
-              {courses?.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name} ({c.durationWeeks} Weeks)
-                </option>
-              ))}
-            </select>
+            {courses && courses.length > 0 ? (
+              <select
+                value={formData.course}
+                onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-semibold"
+                required
+              >
+                {courses.map((c) => (
+                  <option key={c.id || c.name} value={c.name}>
+                    {c.name} {c.durationWeeks ? `(${c.durationWeeks} Weeks)` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={formData.course}
+                onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                placeholder="Enter interested course (e.g. Web Development, Python, Design...)"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-semibold"
+                required
+              />
+            )}
           </div>
 
           {/* Mode & Timing */}
