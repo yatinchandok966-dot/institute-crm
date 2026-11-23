@@ -1,29 +1,51 @@
 import React, { useState } from 'react';
 import { GraduationCap, Search, Phone, Mail, CreditCard, ShieldCheck, QrCode } from 'lucide-react';
 
-export default function StudentsModule({ students = [], onOpenStudentID, onOpenPayment, onOpenStudentProfile }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [feeFilter, setFeeFilter] = useState('All');
 
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (s.studentId && s.studentId.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (s.admissionNo && s.admissionNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (s.course && s.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
+export default function StudentsModule({
+  students = [],
+  onOpenStudentID,
+  onOpenPayment,
+  onOpenStudentProfile, // Change By Deepak 
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [feeFilter, setFeeFilter] = useState("All");
+
+  const filteredStudents = students.filter((s) => {
+    const matchesSearch =
+      (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.studentId &&
+        s.studentId.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.admissionNo &&
+        s.admissionNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.course &&
+        s.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (s.phone && s.phone.includes(searchQuery));
-    const matchesFee = feeFilter === 'All' || s.feeStatus === feeFilter;
+    const matchesFee = feeFilter === "All" || s.feeStatus === feeFilter;
     return matchesSearch && matchesFee;
   });
 
   const getFeeBadge = (status, due = 0) => {
     switch (status) {
-      case 'Paid':
-        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Paid in Full</span>;
-      case 'Partial':
-        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Due: ₹{Number(due).toLocaleString()}</span>;
-      case 'Overdue':
+      case "Paid":
+        return (
+          <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+            Paid in Full
+          </span>
+        );
+      case "Partial":
+        return (
+          <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+            Due: ₹{Number(due).toLocaleString()}
+          </span>
+        );
+      case "Overdue":
       default:
-        return <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Overdue: ₹{Number(due).toLocaleString()}</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">
+            Overdue: ₹{Number(due).toLocaleString()}
+          </span>
+        );
     }
   };
 
@@ -41,7 +63,8 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Official student directory with admission numbers, roll IDs, batch allocations, guardian contacts, and fee status.
+            Official student directory with admission numbers, roll IDs, batch
+            allocations, guardian contacts, and fee status.
           </p>
         </div>
 
@@ -70,14 +93,15 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
         {/* Fee status filter */}
         <div className="flex items-center gap-1.5">
           <span className="text-slate-500 font-semibold">Fee Status:</span>
-          {['All', 'Paid', 'Partial', 'Overdue'].map(st => (
+          {["All", "Paid", "Partial", "Overdue"].map((st) => (
             <button
               key={st}
               onClick={() => setFeeFilter(st)}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${feeFilter === st
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                feeFilter === st ?
+                  "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-600 hover:text-slate-900"
+              }`}
             >
               {st}
             </button>
@@ -88,6 +112,7 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
       {/* Students Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
+
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
               <tr>
@@ -100,18 +125,27 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
+
+
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredStudents.length === 0 ? (
+              {filteredStudents.length === 0 ?
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400">
                     <GraduationCap className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-xs font-semibold text-slate-600">No students enrolled yet</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Students will appear here once admitted from the Admissions Pipeline</p>
+                    <p className="text-xs font-semibold text-slate-600">
+                      No students enrolled yet
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Students will appear here once admitted from the
+                      Admissions Pipeline
+                    </p>
                   </td>
                 </tr>
-              ) : (
-                filteredStudents.map(student => (
-                  <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+              : filteredStudents.map((student) => (
+                  <tr
+                    key={student.id}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
                     <td className="px-4 py-3">
                       <button
                         onClick={() => onOpenStudentProfile && onOpenStudentProfile(student)}
@@ -124,17 +158,21 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
                       </div>
                     </td>
                     <td className="px-4 py-3 font-mono font-semibold text-slate-800">
-                      {student.admissionNo || '—'}
+                      {student.admissionNo || "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-800">{student.course}</div>
-                      <div className="text-[11px] text-slate-500">{student.batch}</div>
+                      <div className="font-semibold text-slate-800">
+                        {student.course}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {student.batch}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-slate-700">{student.guardian}</div>
                       <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
                         <Phone className="w-3 h-3" />
-                        {student.guardianPhone || '—'}
+                        {student.guardianPhone || "—"}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -156,9 +194,13 @@ export default function StudentsModule({ students = [], onOpenStudentID, onOpenP
                     </td>
                   </tr>
                 ))
-              )}
+              }
             </tbody>
+
+            
           </table>
+
+
         </div>
       </div>
     </div>
