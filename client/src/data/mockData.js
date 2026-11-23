@@ -166,6 +166,55 @@ export const OFFICIAL_BATCHES = [
   }
 ];
 
+// Official Standard Faculty & Trainers
+export const OFFICIAL_TRAINERS = [
+  {
+    id: 1795363539407,
+    employeeId: 'EMP-2026-001',
+    name: 'Deepika',
+    role: 'Technical Trainer',
+    department: 'Academic Faculty',
+    phone: '9856429756',
+    email: 'deepika@gmail.com',
+    qualification: 'M.Tech.',
+    experience: '2+ Years',
+    status: 'Active',
+    bio: 'Specialist in MERN stack, React.js, Node.js, and cloud application development.',
+    skills: [
+      'React.js',
+      'Node.js',
+      'Python',
+      'JavaScript',
+      'Java',
+      'Docker & DevOps',
+      'MongoDB'
+    ],
+    assignedCourses: ['Full Stack Web Development (MERN)'],
+    assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
+    schedule: [
+      {
+        id: 1,
+        day: 'Monday to Friday',
+        time: '09:00 AM - 11:30 AM',
+        batch: 'FSWD Morning Batch (M26)',
+        course: 'Full Stack Web Development (MERN)',
+        room: 'Lab 1',
+        mode: 'Classroom'
+      },
+      {
+        id: 2,
+        day: 'Monday to Friday',
+        time: '06:00 PM - 08:30 PM',
+        batch: 'FSWD Evening Batch (E12)',
+        course: 'Full Stack Web Development (MERN)',
+        room: 'Lab 2',
+        mode: 'Hybrid'
+      }
+    ],
+    joiningDate: '2026-11-22'
+  }
+];
+
 // Production Initial State for EduPulse CRM
 export const initialInstituteData = {
   stats: {
@@ -194,6 +243,6 @@ export const initialInstituteData = {
   recentLeads: [],
   admissions: [],
   students: [],
-  trainers: [],
+  trainers: OFFICIAL_TRAINERS,
   feeTransactions: []
 };

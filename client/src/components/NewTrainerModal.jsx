@@ -72,8 +72,8 @@ export default function NewTrainerModal({
     phone: '',
     email: '',
     qualification: '',
-    experience: '3+ Years',
-    status: 'Active',
+    experience: '2+ Years',
+    status: 'Full Time',
     bio: '',
     skills: [],
     assignedCourses: [],
@@ -81,7 +81,8 @@ export default function NewTrainerModal({
     schedule: []
   });
 
-  const [isCustomRole, setIsCustomRole] = useState(false);
+  const isTrainer = formData.role === 'Technical Trainer';
+
   const [newSkillInput, setNewSkillInput] = useState('');
   const [error, setError] = useState(null);
 
@@ -89,28 +90,23 @@ export default function NewTrainerModal({
   useEffect(() => {
     if (isOpen) {
       if (trainerToEdit) {
+        const normalizedRole = (trainerToEdit.role && trainerToEdit.role.toLowerCase().includes('counsel'))
+          ? 'Admission Counsellor'
+          : 'Technical Trainer';
         setFormData({
           ...trainerToEdit,
+          role: normalizedRole,
+          department: normalizedRole === 'Admission Counsellor' ? 'Counseling & Admissions' : 'Academic Faculty',
+          status: trainerToEdit.status || 'Full Time',
           skills: trainerToEdit.skills || [],
           assignedCourses: trainerToEdit.assignedCourses || [],
           assignedBatches: trainerToEdit.assignedBatches || [],
           schedule: trainerToEdit.schedule || []
         });
-        const isStandard = [
-          'Technical Trainer',
-          'Senior Technical Trainer',
-          'Lead Faculty / Instructor',
-          'Lab Mentor & Assistant',
-          'Admission Counsellor',
-          'Senior Admission Counsellor',
-          'Academic Counsellor & Career Advisor',
-          'Student Career & Placement Counsellor'
-        ].includes(trainerToEdit.role);
-        setIsCustomRole(!isStandard);
       } else {
         const nextNum = (existingTrainers.length + 1).toString().padStart(3, '0');
-        const role = defaultRole || 'Technical Trainer';
-        const dept = defaultDepartment || (role.toLowerCase().includes('counsel') ? 'Counseling & Admissions' : 'Academic Faculty');
+        const role = defaultRole === 'Admission Counsellor' ? 'Admission Counsellor' : 'Technical Trainer';
+        const dept = role === 'Admission Counsellor' ? 'Counseling & Admissions' : 'Academic Faculty';
         setFormData({
           employeeId: `EMP-2026-${nextNum}`,
           name: '',
@@ -120,14 +116,13 @@ export default function NewTrainerModal({
           email: '',
           qualification: '',
           experience: '2+ Years',
-          status: 'Active',
+          status: 'Full Time',
           bio: '',
           skills: [],
           assignedCourses: [],
           assignedBatches: [],
           schedule: []
         });
-        setIsCustomRole(false);
       }
       setError(null);
       setNewSkillInput('');
@@ -349,47 +344,21 @@ export default function NewTrainerModal({
                 </div>
                 <div className="space-y-1.5">
                   <select
-                    value={isCustomRole ? 'custom' : formData.role}
+                    value={formData.role}
                     onChange={(e) => {
-                      if (e.target.value === 'custom') {
-                        setIsCustomRole(true);
-                      } else {
-                        setIsCustomRole(false);
-                        const selectedRole = e.target.value;
-                        const isCounselor = selectedRole.toLowerCase().includes('counsel');
-                        setFormData(prev => ({
-                          ...prev,
-                          role: selectedRole,
-                          department: isCounselor ? 'Counseling & Admissions' : (prev.department === 'Counseling & Admissions' ? 'Academic Faculty' : prev.department)
-                        }));
-                      }
+                      const selectedRole = e.target.value;
+                      const isCounselor = selectedRole === 'Admission Counsellor';
+                      setFormData(prev => ({
+                        ...prev,
+                        role: selectedRole,
+                        department: isCounselor ? 'Counseling & Admissions' : 'Academic Faculty'
+                      }));
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <optgroup label="Academic Faculty & Trainers">
-                      <option value="Technical Trainer">Technical Trainer</option>
-                      <option value="Senior Technical Trainer">Senior Technical Trainer</option>
-                      <option value="Lead Faculty / Instructor">Lead Faculty / Instructor</option>
-                      <option value="Lab Mentor & Assistant">Lab Mentor & Assistant</option>
-                    </optgroup>
-                    <optgroup label="Counseling & Admissions">
-                      <option value="Admission Counsellor">Admission Counsellor</option>
-                      <option value="Senior Admission Counsellor">Senior Admission Counsellor</option>
-                      <option value="Academic Counsellor & Career Advisor">Academic Counsellor & Career Advisor</option>
-                      <option value="Student Career & Placement Counsellor">Student Career & Placement Counsellor</option>
-                    </optgroup>
-                    <option value="custom">Other / Custom Role...</option>
+                    <option value="Technical Trainer">Technical Trainer</option>
+                    <option value="Admission Counsellor">Admission Counsellor</option>
                   </select>
-                  {isCustomRole && (
-                    <input
-                      type="text"
-                      required
-                      value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                      placeholder="Enter custom title (e.g. Lead Counsellor)"
-                      className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs"
-                    />
-                  )}
                 </div>
               </div>
 
@@ -417,9 +386,8 @@ export default function NewTrainerModal({
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="Active">Active (Full-Time / Part-Time)</option>
-                  <option value="On Leave">On Leave</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="Full Time">Full Time</option>
+                  <option value="Part Time">Part Time</option>
                 </select>
               </div>
             </div>
@@ -431,9 +399,8 @@ export default function NewTrainerModal({
                   <label className="block font-semibold text-slate-700">
                     Phone Number <span className="text-rose-500">*</span>
                   </label>
-                  <span className={`text-[10px] font-mono font-bold ${
-                    (formData.phone || '').length === 10 ? 'text-emerald-600' : 'text-slate-400'
-                  }`}>
+                  <span className={`text-[10px] font-mono font-bold ${(formData.phone || '').length === 10 ? 'text-emerald-600' : 'text-slate-400'
+                    }`}>
                     {(formData.phone || '').length}/10 digits
                   </span>
                 </div>
@@ -522,272 +489,278 @@ export default function NewTrainerModal({
             </div>
           </div>
 
-          {/* Section 2: Skills & Technical Expertise */}
-          <div className="space-y-3">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-slate-400" />
-              <span>2. Skills & Technical Expertise</span>
-            </h4>
+          {/* Sections 2, 3, 4: ONLY VISIBLE FOR TECHNICAL TRAINER */}
+          {isTrainer && (
+            <>
+              {/* Section 2: Skills & Technical Expertise */}
+              <div className="space-y-3">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-slate-400" />
+                  <span>2. Skills & Technical Expertise</span>
+                </h4>
 
-            {/* Selected Skills Chips */}
-            <div className="flex flex-wrap items-center gap-1.5 min-h-[36px] p-2 bg-slate-50 border border-slate-200 rounded-xl">
-              {formData.skills.length === 0 ? (
-                <span className="text-slate-400 text-[11px] italic">No skills added yet. Click suggestions below or type custom skill.</span>
-              ) : (
-                formData.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold shadow-2xs"
-                  >
-                    <span>{skill}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skill)}
-                      className="hover:text-rose-600 transition-colors"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))
-              )}
-            </div>
-
-            {/* Custom Skill Input */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSkillInput}
-                onChange={(e) => setNewSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddSkill();
-                  }
-                }}
-                placeholder="Type skill & press Enter (e.g. Next.js, FastAPI)..."
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddSkill()}
-                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-lg text-xs transition-colors"
-              >
-                + Add Skill
-              </button>
-            </div>
-
-            {/* Quick Suggestions */}
-            <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
-                Popular Suggestions (Click to Add):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_SKILLS.map((sk) => {
-                  const isSelected = formData.skills.includes(sk);
-                  return (
-                    <button
-                      key={sk}
-                      type="button"
-                      disabled={isSelected}
-                      onClick={() => handleAddSkill(sk)}
-                      className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-colors ${
-                        isSelected
-                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 shadow-2xs'
-                      }`}
-                    >
-                      + {sk}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Assigned Courses & Batches */}
-          <div className="space-y-3">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-              <span>3. Assigned Courses & Batches</span>
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Assigned Courses */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <span className="font-bold text-slate-800 text-xs flex items-center justify-between">
-                  <span>Assigned Courses</span>
-                  <span className="text-[10px] text-indigo-600 font-bold">
-                    {formData.assignedCourses.length} Selected
-                  </span>
-                </span>
-                <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                  {courses.length === 0 ? (
-                    <p className="text-[11px] text-slate-400 italic">No courses created yet in Courses module.</p>
+                {/* Selected Skills Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 min-h-[36px] p-2 bg-slate-50 border border-slate-200 rounded-xl">
+                  {formData.skills.length === 0 ? (
+                    <span className="text-slate-400 text-[11px] italic">No skills added yet. Click suggestions below or type custom skill.</span>
                   ) : (
-                    courses.map((c) => {
-                      const isChecked = formData.assignedCourses.includes(c.name);
-                      return (
-                        <label
-                          key={c.id || c.name}
-                          className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
-                            isChecked
-                              ? 'bg-indigo-50 text-indigo-900 border-indigo-200 font-semibold'
-                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
+                    formData.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold shadow-2xs"
+                      >
+                        <span>{skill}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="hover:text-rose-600 transition-colors"
                         >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleToggleCourse(c.name)}
-                            className="rounded text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="truncate text-xs">{c.name}</span>
-                        </label>
-                      );
-                    })
+                          ✕
+                        </button>
+                      </span>
+                    ))
                   )}
+                </div>
+
+                {/* Custom Skill Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newSkillInput}
+                    onChange={(e) => setNewSkillInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSkill();
+                      }
+                    }}
+                    placeholder="Type skill & press Enter (e.g. Next.js, FastAPI)..."
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddSkill()}
+                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-lg text-xs transition-colors"
+                  >
+                    + Add Skill
+                  </button>
+                </div>
+
+                {/* Quick Suggestions */}
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                    Popular Suggestions (Click to Add):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {POPULAR_SKILLS.map((sk) => {
+                      const isSelected = formData.skills.includes(sk);
+                      return (
+                        <button
+                          key={sk}
+                          type="button"
+                          disabled={isSelected}
+                          onClick={() => handleAddSkill(sk)}
+                          className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-colors ${isSelected
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 shadow-2xs'
+                            }`}
+                        >
+                          + {sk}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Assigned Batches */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <span className="font-bold text-slate-800 text-xs flex items-center justify-between">
-                  <span>Assigned Batches / Cohorts</span>
-                  <span className="text-[10px] text-indigo-600 font-bold">
-                    {formData.assignedBatches.length} Selected
-                  </span>
-                </span>
-                <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                  {batches.length === 0 ? (
-                    <p className="text-[11px] text-slate-400 italic">No batches created yet in Batches module.</p>
-                  ) : (
-                    batches.map((b) => {
-                      const isChecked = formData.assignedBatches.includes(b.name);
-                      return (
-                        <label
-                          key={b.id || b.name}
-                          className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
-                            isChecked
-                              ? 'bg-indigo-50 text-indigo-900 border-indigo-200 font-semibold'
-                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleToggleBatch(b.name)}
-                            className="rounded text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="truncate text-xs">{b.name}</span>
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+              {/* Section 3: Assigned Courses & Batches */}
+              <div className="space-y-3">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                  <span>3. Assigned Courses & Batches</span>
+                </h4>
 
-          {/* Section 4: Weekly Teaching Schedule */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-                <span>4. Trainer Schedule & Class Slots</span>
-              </h4>
-              <button
-                type="button"
-                onClick={handleAddScheduleSlot}
-                className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1 border border-indigo-200"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Add Class Slot</span>
-              </button>
-            </div>
-
-            {formData.schedule.length === 0 ? (
-              <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs space-y-1">
-                <Clock className="w-6 h-6 mx-auto text-slate-300" />
-                <p className="font-semibold text-slate-600">No schedule slots configured yet.</p>
-                <p className="text-[11px] text-slate-400">Click &ldquo;Add Class Slot&rdquo; above to assign timetable slots (e.g. Mon/Wed/Fri mornings).</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {formData.schedule.map((slot, index) => (
-                  <div
-                    key={slot.id || index}
-                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 sm:grid-cols-5 gap-2 items-center"
-                  >
-                    <div>
-                      <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Day</label>
-                      <select
-                        value={slot.day}
-                        onChange={(e) => handleUpdateScheduleSlot(slot.id, 'day', e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      >
-                        {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Time Slot</label>
-                      <select
-                        value={slot.time || '09:00 AM - 11:30 AM'}
-                        onChange={(e) => handleUpdateScheduleSlot(slot.id, 'time', e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      >
-                        {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Batch / Course</label>
-                      <input
-                        type="text"
-                        value={slot.batch || ''}
-                        onChange={(e) => handleUpdateScheduleSlot(slot.id, 'batch', e.target.value)}
-                        placeholder="Batch / Course"
-                        className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Room / Lab</label>
-                      <input
-                        type="text"
-                        value={slot.room || ''}
-                        onChange={(e) => handleUpdateScheduleSlot(slot.id, 'room', e.target.value)}
-                        placeholder="Room / Lab"
-                        className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-end pt-3 sm:pt-0">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveScheduleSlot(slot.id)}
-                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
-                        title="Remove Slot"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Assigned Courses */}
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                    <span className="font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span>Assigned Courses</span>
+                      <span className="text-[10px] text-indigo-600 font-bold">
+                        {formData.assignedCourses.length} Selected
+                      </span>
+                    </span>
+                    <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                      {courses.length === 0 ? (
+                        <p className="text-[11px] text-slate-400 italic">No courses created yet in Courses module.</p>
+                      ) : (
+                        courses.map((c) => {
+                          const isChecked = formData.assignedCourses.includes(c.name);
+                          return (
+                            <label
+                              key={c.id || c.name}
+                              className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${isChecked
+                                ? 'bg-indigo-50 text-indigo-900 border-indigo-200 font-semibold'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                                }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleCourse(c.name)}
+                                className="rounded text-indigo-600 focus:ring-indigo-500"
+                              />
+                              <span className="truncate text-xs">{c.name}</span>
+                            </label>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
-                ))}
+
+                  {/* Assigned Batches */}
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                    <span className="font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span>Assigned Batches / Cohorts</span>
+                      <span className="text-[10px] text-indigo-600 font-bold">
+                        {formData.assignedBatches.length} Selected
+                      </span>
+                    </span>
+                    <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                      {batches.length === 0 ? (
+                        <p className="text-[11px] text-slate-400 italic">No batches created yet in Batches module.</p>
+                      ) : (
+                        batches.map((b) => {
+                          const isChecked = formData.assignedBatches.includes(b.name);
+                          return (
+                            <label
+                              key={b.id || b.name}
+                              className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${isChecked
+                                ? 'bg-indigo-50 text-indigo-900 border-indigo-200 font-semibold'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                                }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleBatch(b.name)}
+                                className="rounded text-indigo-600 focus:ring-indigo-500"
+                              />
+                              <span className="truncate text-xs">{b.name}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Section 4: Weekly Teaching Schedule */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+                    <span>4. Trainer Schedule & Class Slots</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleAddScheduleSlot}
+                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1 border border-indigo-200"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add Class Slot</span>
+                  </button>
+                </div>
+
+                {formData.schedule.length === 0 ? (
+                  <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs space-y-1">
+                    <Clock className="w-6 h-6 mx-auto text-slate-300" />
+                    <p className="font-semibold text-slate-600">No schedule slots configured yet.</p>
+                    <p className="text-[11px] text-slate-400">Click &ldquo;Add Class Slot&rdquo; above to assign timetable slots (e.g. Mon/Wed/Fri mornings).</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {formData.schedule.map((slot, index) => (
+                      <div
+                        key={slot.id || index}
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 sm:grid-cols-5 gap-2 items-center"
+                      >
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Day</label>
+                          <select
+                            value={slot.day}
+                            onChange={(e) => handleUpdateScheduleSlot(slot.id, 'day', e.target.value)}
+                            className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          >
+                            {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Time Slot</label>
+                          <select
+                            value={slot.time || '09:00 AM - 11:30 AM'}
+                            onChange={(e) => handleUpdateScheduleSlot(slot.id, 'time', e.target.value)}
+                            className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          >
+                            {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Batch / Course</label>
+                          <input
+                            type="text"
+                            value={slot.batch || ''}
+                            onChange={(e) => handleUpdateScheduleSlot(slot.id, 'batch', e.target.value)}
+                            placeholder="Batch / Course"
+                            className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Room / Lab</label>
+                          <input
+                            type="text"
+                            value={slot.room || ''}
+                            onChange={(e) => handleUpdateScheduleSlot(slot.id, 'room', e.target.value)}
+                            placeholder="Room / Lab"
+                            className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end pt-3 sm:pt-0">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveScheduleSlot(slot.id)}
+                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                            title="Remove Slot"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Section 5: Biography / Notes */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
-              Trainer Bio / Instructor Overview
+              {isTrainer ? 'Trainer Bio / Instructor Overview' : 'Counsellor Bio / Professional Overview'}
             </label>
             <textarea
               rows={2}
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              placeholder="e.g. Specialist in React, TypeScript, and architectural patterns. Mentored 400+ students in web development..."
+              placeholder={
+                isTrainer
+                  ? 'e.g. Specialist in React, TypeScript, and architectural patterns. Mentored 400+ students in web development...'
+                  : 'e.g. Experienced career counselor advising prospective students on course curriculums, fee structures, and career roadmaps...'
+              }
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -806,7 +779,7 @@ export default function NewTrainerModal({
               className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm inline-flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
-              <span>{isEditMode ? 'Save Changes' : 'Save Trainer Profile'}</span>
+              <span>{isEditMode ? 'Save Changes' : (isTrainer ? 'Save Trainer Profile' : 'Save Counsellor Profile')}</span>
             </button>
           </div>
         </form>

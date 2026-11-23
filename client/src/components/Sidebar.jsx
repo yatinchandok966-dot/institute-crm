@@ -4,10 +4,7 @@ import {
   UserPlus,
   UserCheck,
   BookOpen,
-  CalendarDays,
   GraduationCap,
-  CreditCard,
-  ClipboardCheck,
   School,
   ShieldCheck,
   Users
@@ -16,10 +13,8 @@ import {
 export default function Sidebar({ activeTab, setActiveTab, data }) {
   const leadsCount = data?.recentLeads?.length || 0;
   const admissionsCount = data?.admissions?.length || 0;
-  const batchesCount = data?.batches?.length || 0;
   const trainersCount = data?.trainers?.length || 0;
   const studentsCount = data?.students?.length || 0;
-  const pendingFees = data?.stats?.pendingFees || 0;
 
   const sections = [
     {
@@ -34,16 +29,8 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
       title: 'ACADEMIC OPERATIONS',
       items: [
         { id: 'courses', label: 'Courses & Syllabus', icon: BookOpen },
-        { id: 'batches', label: 'Batches & Cohorts', icon: CalendarDays, badge: batchesCount > 0 ? `${batchesCount}` : null },
         { id: 'trainers', label: 'Trainers / Faculty', icon: Users, badge: trainersCount > 0 ? `${trainersCount}` : null },
         { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: studentsCount > 0 ? `${studentsCount}` : null }
-      ]
-    },
-    {
-      title: 'FINANCE & ATTENDANCE',
-      items: [
-        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard, badge: pendingFees > 0 ? 'Due' : null, badgeColor: 'bg-amber-50 text-amber-700 border border-amber-200' },
-        { id: 'attendance', label: 'Attendance Register', icon: ClipboardCheck }
       ]
     }
   ];

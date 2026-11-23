@@ -59,7 +59,7 @@ export default function TrainersModule({
       (t.role || '').toLowerCase().includes('counsel') ||
       (t.department || '').toLowerCase().includes('counsel')
     ).length;
-    
+
     // Unique courses covered
     const coursesCovered = new Set();
     trainers.forEach(t => {
@@ -127,7 +127,7 @@ export default function TrainersModule({
         (t.assignedCourses || []).some(c => c.toLowerCase().includes(q));
 
       const matchesRole = roleFilter === 'All' || t.role === roleFilter;
-      const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
+      const matchesStatus = statusFilter === 'All' || t.status === statusFilter || (statusFilter === 'Full Time' && (t.status === 'Active' || !t.status));
       const matchesCourse = courseFilter === 'All' || (t.assignedCourses || []).includes(courseFilter);
 
       // Counsellor dropdown filter logic
@@ -241,20 +241,12 @@ export default function TrainersModule({
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
-            onClick={handleOpenAddCounsellor}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-            title="Add a new Admission or Academic Counsellor"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Add Counsellor</span>
-          </button>
-          <button
             onClick={handleOpenAddTrainer}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-            title="Add a new Technical Trainer or Instructor"
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+            title="Add a new Counsellor or Trainer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>+ Add Trainer</span>
+            <span>+ Add Counsellor & Trainer</span>
           </button>
         </div>
       </div>
@@ -335,22 +327,20 @@ export default function TrainersModule({
             <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === 'grid'
+                className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid'
                     ? 'bg-white text-indigo-700 shadow-2xs font-bold'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
                 title="Profile Cards Grid View"
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === 'table'
+                className={`p-1.5 rounded-md transition-colors ${viewMode === 'table'
                     ? 'bg-white text-indigo-700 shadow-2xs font-bold'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
                 title="Tabular List View"
               >
                 <List className="w-4 h-4" />
@@ -404,9 +394,8 @@ export default function TrainersModule({
               className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="All">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="On Leave">On Leave</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Full Time">Full Time</option>
+              <option value="Part Time">Part Time</option>
             </select>
           </div>
 
@@ -446,18 +435,11 @@ export default function TrainersModule({
             {trainers.length === 0 ? (
               <div className="flex items-center justify-center gap-2">
                 <button
-                  onClick={handleOpenAddCounsellor}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors inline-flex items-center gap-1.5"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>+ Add Counsellor</span>
-                </button>
-                <button
                   onClick={handleOpenAddTrainer}
-                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors inline-flex items-center gap-1.5"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors inline-flex items-center gap-1.5"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>+ Add Trainer</span>
+                  <span>+ Add Counsellor & Trainer</span>
                 </button>
               </div>
             ) : (
@@ -485,11 +467,10 @@ export default function TrainersModule({
                 <div className="p-5 space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-2xl border text-base font-black flex items-center justify-center shrink-0 shadow-2xs ${
-                        isCounselor
+                      <div className={`w-12 h-12 rounded-2xl border text-base font-black flex items-center justify-center shrink-0 shadow-2xs ${isCounselor
                           ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-700'
                           : 'bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 text-indigo-700'
-                      }`}>
+                        }`}>
                         {(trainer.name || 'T').charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -500,11 +481,10 @@ export default function TrainersModule({
                           <span className="font-mono text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
                             {trainer.employeeId}
                           </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                            isCounselor
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${isCounselor
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : 'bg-slate-50 text-slate-600 border-slate-200'
-                          }`}>
+                            }`}>
                             {trainer.role}
                           </span>
                         </div>
@@ -512,136 +492,155 @@ export default function TrainersModule({
                     </div>
 
                     {/* Status Pill */}
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${
-                      trainer.status === 'Active'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : trainer.status === 'On Leave'
-                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-slate-100 text-slate-600 border-slate-300'
+                      trainer.status === 'Part Time'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     }`}>
-                      {trainer.status}
+                    {trainer.status === 'Part Time' ? 'Part Time' : 'Full Time'}
+                  </span>
+                </div>
+
+                {/* Qualification & Experience */}
+                <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium pt-1 border-t border-slate-100">
+                  {trainer.qualification && (
+                    <span className="inline-flex items-center gap-1 truncate">
+                      <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="truncate">{trainer.qualification}</span>
                     </span>
-                  </div>
+                  )}
+                  {trainer.experience && (
+                    <span className="inline-flex items-center gap-1 text-slate-500 shrink-0">
+                      <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{trainer.experience}</span>
+                    </span>
+                  )}
+                </div>
 
-                  {/* Qualification & Experience */}
-                  <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium pt-1 border-t border-slate-100">
-                    {trainer.qualification && (
-                      <span className="inline-flex items-center gap-1 truncate">
-                        <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate">{trainer.qualification}</span>
-                      </span>
-                    )}
-                    {trainer.experience && (
-                      <span className="inline-flex items-center gap-1 text-slate-500 shrink-0">
-                        <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{trainer.experience}</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Contact Info with Quick Connect */}
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-slate-800 font-mono font-semibold text-[11px]">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{formatPhoneNumber(trainer.phone)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openWhatsApp(trainer)}
-                          className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors shadow-2xs"
-                          title="Message on WhatsApp"
-                        >
-                          <MessageSquare className="w-3 h-3" />
-                        </button>
-                        <a
-                          href={`tel:${trainer.phone}`}
-                          className="p-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
-                          title="Call"
-                        >
-                          <Phone className="w-3 h-3" />
-                        </a>
-                      </div>
+                {/* Contact Info with Quick Connect */}
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-slate-800 font-mono font-semibold text-[11px]">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{formatPhoneNumber(trainer.phone)}</span>
                     </div>
-
-                    {trainer.email && (
-                      <div className="flex items-center gap-1.5 text-slate-500 text-[11px] truncate">
-                        <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <a href={`mailto:${trainer.email}`} className="truncate hover:text-indigo-600">
-                          {trainer.email}
-                        </a>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openWhatsApp(trainer)}
+                        className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors shadow-2xs"
+                        title="Message on WhatsApp"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                      </button>
+                      <a
+                        href={`tel:${trainer.phone}`}
+                        className="p-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                        title="Call"
+                      >
+                        <Phone className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Skills & Expertise */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Skills & Expertise ({trainer.skills?.length || 0})
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {trainer.skills && trainer.skills.length > 0 ? (
-                        trainer.skills.map((skill) => (
-                          <span
-                            key={skill}
-                            className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-semibold border border-slate-200 shadow-2xs"
-                          >
-                            {skill}
+                  {trainer.email && (
+                    <div className="flex items-center gap-1.5 text-slate-500 text-[11px] truncate">
+                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <a href={`mailto:${trainer.email}`} className="truncate hover:text-indigo-600">
+                        {trainer.email}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                    {/* For Counselors: clean counselor summary */}
+                    {trainer.role === 'Admission Counsellor' ? (
+                      <div className="space-y-2 pt-1">
+                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
+                          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                            Admissions & Career Counseling
                           </span>
-                        ))
-                      ) : (
-                        <span className="text-[11px] text-slate-400 italic">No skills listed</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Assigned Courses & Batches */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                      <span>Assigned Curriculum</span>
-                      <span className="text-slate-500 font-mono">
-                        {(trainer.assignedCourses?.length || 0)} courses • {(trainer.assignedBatches?.length || 0)} batches
+                          <p className="text-[11px] text-slate-600 line-clamp-3">
+                            {trainer.bio || 'Admissions Counselor advising prospective students on IT & engineering programs.'}
+                          </p>
+                        </div>
+                      </div>
+                  ) : (
+                  <>
+                    {/* Skills & Expertise */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Skills & Expertise ({trainer.skills?.length || 0})
                       </span>
+                      <div className="flex flex-wrap gap-1">
+                        {trainer.skills && trainer.skills.length > 0 ? (
+                          trainer.skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-semibold border border-slate-200 shadow-2xs"
+                            >
+                              {skill}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">No skills listed</span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1">
-                      {(trainer.assignedCourses || []).map((c) => (
-                        <span
-                          key={c}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded-md text-[10px] font-semibold border border-indigo-100 truncate max-w-[200px]"
-                          title={c}
-                        >
-                          <BookOpen className="w-3 h-3 text-indigo-500 shrink-0" />
-                          <span className="truncate">{c}</span>
-                        </span>
-                      ))}
+                      {/* Assigned Courses & Batches */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                          <span>Assigned Curriculum</span>
+                          <span className="text-slate-500 font-mono">
+                            {(trainer.assignedCourses?.length || 0)} courses • {(trainer.assignedBatches?.length || 0)} batches
+                          </span>
+                        </div>
 
-                      {(trainer.assignedBatches || []).map((b) => (
-                        <span
-                          key={b}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[10px] font-medium border border-slate-200 truncate max-w-[200px]"
-                          title={b}
-                        >
-                          <CalendarDays className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate">{b}</span>
-                        </span>
-                      ))}
+                          <div className="flex flex-wrap gap-1">
+                            {(trainer.assignedCourses || []).map((c) => (
+                              <span
+                                key={c}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded-md text-[10px] font-semibold border border-indigo-100 truncate max-w-[200px]"
+                                title={c}
+                              >
+                                <BookOpen className="w-3 h-3 text-indigo-500 shrink-0" />
+                                <span className="truncate">{c}</span>
+                              </span>
+                            ))}
+
+                        {(trainer.assignedBatches || []).map((b) => (
+                          <span
+                            key={b}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[10px] font-medium border border-slate-200 truncate max-w-[200px]"
+                            title={b}
+                          >
+                            <CalendarDays className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{b}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </>
+                  )}
                 </div>
 
                 {/* Card Footer: Schedule Button & Actions */}
                 <div className="px-5 py-3.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTrainerForSchedule(trainer)}
-                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg shadow-2xs transition-colors inline-flex items-center gap-1.5"
-                    title="View & manage class schedule"
-                  >
-                    <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Schedule ({sessionsCount})</span>
-                  </button>
+                  {trainer.role !== 'Admission Counsellor' ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTrainerForSchedule(trainer)}
+                      className="px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg shadow-2xs transition-colors inline-flex items-center gap-1.5"
+                      title="View & manage class schedule"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Schedule ({sessionsCount})</span>
+                    </button>
+                  ) : (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                      Admissions Desk
+                    </span>
+                  )}
 
                   <div className="flex items-center gap-1.5">
                     <button
@@ -716,19 +715,17 @@ export default function TrainersModule({
                           const isCounselor = (trainer.role || '').toLowerCase().includes('counsel') || (trainer.department || '').toLowerCase().includes('counsel');
                           return (
                             <div>
-                              <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded border ${
-                                isCounselor ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'
-                              }`}>
+                              <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded border ${isCounselor ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'
+                                }`}>
                                 {trainer.role}
                               </span>
                               <div>
-                                <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                  trainer.status === 'Active'
+                                <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${trainer.status === 'Active'
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     : trainer.status === 'On Leave'
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                    : 'bg-slate-100 text-slate-600 border-slate-300'
-                                }`}>
+                                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                      : 'bg-slate-100 text-slate-600 border-slate-300'
+                                  }`}>
                                   {trainer.status}
                                 </span>
                               </div>

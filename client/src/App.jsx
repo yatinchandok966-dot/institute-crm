@@ -41,7 +41,7 @@ export default function App() {
             ...initialInstituteData,
             ...parsed,
             recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
-            trainers: (Array.isArray(parsed.trainers) ? parsed.trainers : []).map(t => {
+            trainers: (Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : initialInstituteData.trainers).map(t => {
               if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
                 return {
                   ...t,
@@ -157,10 +157,8 @@ export default function App() {
             // Smart merge for trainers
             const serverTrainers = Array.isArray(result.trainers) ? result.trainers : [];
             const localTrainers = Array.isArray(prev.trainers) ? prev.trainers : [];
-            let mergedTrainers = localTrainers;
-            if (serverTrainers.length > 0 && localTrainers.length === 0) {
-              mergedTrainers = serverTrainers;
-            } else if (serverTrainers.length > 0 && localTrainers.length > 0) {
+            let mergedTrainers = localTrainers.length > 0 ? localTrainers : (serverTrainers.length > 0 ? serverTrainers : initialInstituteData.trainers);
+            if (serverTrainers.length > 0 && localTrainers.length > 0) {
               const tMap = new Map();
               localTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
               serverTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
@@ -561,6 +559,7 @@ export default function App() {
           <LeadsModule
             leads={instituteData.recentLeads}
             courses={instituteData.courses}
+            trainers={instituteData.trainers}
             onOpenShareQR={() => setIsShareQROpen(true)}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onConvertToAdmission={handleConvertToAdmission}
@@ -580,6 +579,7 @@ export default function App() {
             admissions={instituteData.admissions}
             courses={instituteData.courses}
             batches={instituteData.batches}
+            trainers={instituteData.trainers}
             onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onUpdateAdmissionStatus={handleUpdateAdmissionStatus}
@@ -708,6 +708,7 @@ export default function App() {
         onClose={() => setIsLeadModalOpen(false)}
         onLeadCreated={handleLeadCreated}
         courses={instituteData.courses}
+        trainers={instituteData.trainers}
         existingLeads={instituteData.recentLeads}
       />
 
@@ -718,6 +719,7 @@ export default function App() {
         leadToConvert={leadForConversion}
         courses={instituteData.courses}
         batches={instituteData.batches}
+        trainers={instituteData.trainers}
         onAdmissionCreated={handleAdmissionCreated}
       />
 

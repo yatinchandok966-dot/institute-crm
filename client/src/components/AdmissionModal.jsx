@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar } from 'lucide-react';
+import { OFFICIAL_TRAINERS } from '../data/mockData';
 
 export default function AdmissionModal({
   isOpen,
@@ -11,6 +12,27 @@ export default function AdmissionModal({
   trainers = [],
   onAdmissionCreated
 }) {
+  // Always ensure trainers list contains registered faculty (with fallback so it never empties)
+  const effectiveTrainers = useMemo(() => {
+    const list = (Array.isArray(trainers) && trainers.length > 0) ? trainers : OFFICIAL_TRAINERS;
+    return list.map(t => {
+      if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
+        return {
+          ...t,
+          role: 'Technical Trainer',
+          department: 'Academic Faculty',
+          assignedCourses: ['Full Stack Web Development (MERN)'],
+          assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
+          schedule: [
+            { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
+            { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
+          ]
+        };
+      }
+      return t;
+    });
+  }, [trainers]);
+
   const [formData, setFormData] = useState({
     studentName: '',
     phone: '',
@@ -42,7 +64,7 @@ export default function AdmissionModal({
     try {
       const safeCourses = Array.isArray(courses) ? courses : [];
       const safeBatches = Array.isArray(batches) ? batches : [];
-      const safeTrainers = Array.isArray(trainers) ? trainers : [];
+      const safeTrainers = effectiveTrainers;
 
       if (leadToConvert) {
         const leadCourseStr = typeof leadToConvert.course === 'string'
@@ -163,14 +185,14 @@ export default function AdmissionModal({
     } catch (err) {
       console.error('Error pre-filling admission modal:', err);
     }
-  }, [leadToConvert, courses, batches, trainers, isOpen]);
+  }, [leadToConvert, courses, batches, effectiveTrainers, isOpen]);
 
   // Selected trainer object
   const selectedTrainerObj = useMemo(() => {
-    return (trainers || []).find(
+    return effectiveTrainers.find(
       t => t && (t.name === formData.trainer || t.employeeId === formData.trainer)
-    );
-  }, [trainers, formData.trainer]);
+    ) || effectiveTrainers[0];
+  }, [effectiveTrainers, formData.trainer]);
 
   // Dynamic available batches for selected trainer (shows all batch availability of that trainer)
   const trainerAvailableBatches = useMemo(() => {
@@ -202,20 +224,22 @@ export default function AdmissionModal({
       : [];
 
     // Directly assigned or scheduled
-    const matchedDirect = safeBatches.filter(b =>
+    let matched = safeBatches.filter(b =>
       b && (assignedBatchNames.includes(b.name) || scheduleBatchNames.includes(b.name))
     );
-    if (matchedDirect.length > 0) {
-      return matchedDirect;
+
+    // If none directly matched, check by trainer's assigned courses: ONLY return batches of courses this trainer teaches!
+    if (matched.length === 0 && assignedCourses.length > 0) {
+      matched = safeBatches.filter(b => b && assignedCourses.includes(b.course));
     }
 
-    // By trainer's assigned courses: ONLY return batches of courses this trainer teaches!
-    if (assignedCourses.length > 0) {
-      const courseBatches = safeBatches.filter(b => b && assignedCourses.includes(b.course));
-      if (courseBatches.length > 0) {
-        return courseBatches;
-      }
+    // Filter by selected course if specified
+    if (formData.course && matched.length > 0) {
+      const courseFiltered = matched.filter(b => b && b.course === formData.course);
+      if (courseFiltered.length > 0) return courseFiltered;
     }
+
+    if (matched.length > 0) return matched;
 
     // By instructor name or role match
     const instructorBatches = safeBatches.filter(b =>
@@ -240,17 +264,17 @@ export default function AdmissionModal({
   const availableCounselors = useMemo(() => {
     const set = new Set();
     set.add('Admissions Desk');
-    (trainers || []).forEach(t => {
+    (effectiveTrainers || []).forEach(t => {
       if (t && t.name) set.add(t.name);
     });
     if (leadToConvert?.counselor) set.add(leadToConvert.counselor);
     return Array.from(set).sort();
-  }, [trainers, leadToConvert]);
+  }, [effectiveTrainers, leadToConvert]);
 
   // Handler when user selects a Trainer: shows available batches of this trainer and auto-syncs batch + course
   const handleTrainerChange = (e) => {
     const trainerName = e.target.value;
-    const safeTrainers = Array.isArray(trainers) ? trainers : [];
+    const safeTrainers = effectiveTrainers;
     const selectedTrainerObj = safeTrainers.find(t => t && t.name === trainerName);
     const safeBatches = Array.isArray(batches) ? batches : [];
     const safeCourses = Array.isArray(courses) ? courses : [];
@@ -338,7 +362,7 @@ export default function AdmissionModal({
     const matchedBatches = safeBatches.filter(b => b && b.course === courseName);
     const matchedBatch = matchedBatches[0] || safeBatches[0];
     const fee = (selectedCourse && typeof selectedCourse === 'object' && selectedCourse.fee) ? selectedCourse.fee : 45000;
-    const safeTrainers = Array.isArray(trainers) ? trainers : [];
+    const safeTrainers = effectiveTrainers;
     const matchedTrainer = safeTrainers.find(t => t && Array.isArray(t.assignedCourses) && t.assignedCourses.includes(courseName)) || safeTrainers[0];
 
     setFormData(prev => ({
@@ -780,7 +804,7 @@ export default function AdmissionModal({
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">Select Trainer / Faculty</option>
-                  {(trainers || []).map((t, i) => {
+                  {effectiveTrainers.map((t, i) => {
                     const tName = typeof t === 'string' ? t : (t?.name || `Trainer ${i + 1}`);
                     const tEmp = t?.employeeId ? ` (${t.employeeId})` : '';
                     const rawRole = (tName === 'Deepika') ? 'Technical Trainer' : (t?.role || 'Technical Trainer');
@@ -825,52 +849,69 @@ export default function AdmissionModal({
                     <option value="">No batches available for this trainer</option>
                   )}
                 </select>
-
-                {/* Trainer Schedule & Class Timetable Details */}
-                {selectedTrainerObj && (
-                  <div className="mt-2 p-2.5 bg-slate-50 border border-indigo-100 rounded-xl space-y-1.5 shadow-2xs">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                        <span>{selectedTrainerObj.name}&apos;s Availability Timetable</span>
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        Active Schedule
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                      {Array.isArray(selectedTrainerObj.schedule) && selectedTrainerObj.schedule.length > 0 ? (
-                        selectedTrainerObj.schedule.map((slot, idx) => (
-                          <div
-                            key={slot.id || idx}
-                            className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-medium text-slate-700 shadow-2xs flex items-center gap-1.5"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                            <strong className="text-slate-900">{slot.day || 'Mon-Fri'}:</strong>
-                            <span>{slot.time}</span>
-                            {slot.batch && <span className="text-indigo-600 font-semibold">({slot.batch})</span>}
-                            {slot.room && <span className="text-slate-400 font-mono">[{slot.room}]</span>}
-                          </div>
-                        ))
-                      ) : (
-                        trainerAvailableBatches.map((b, idx) => (
-                          <div
-                            key={b.id || idx}
-                            className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-medium text-slate-700 shadow-2xs flex items-center gap-1.5"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                            <strong className="text-slate-900">{b.name}:</strong>
-                            <span>{b.timing || 'Mon-Fri 09:00 AM - 11:30 AM'}</span>
-                            {b.room && <span className="text-slate-400 font-mono">[{b.room}]</span>}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Trainer Schedule & Class Timetable Details — Dedicated Clean Card */}
+            {selectedTrainerObj && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>{selectedTrainerObj.name}&apos;s Availability Timetable Slots</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Active Teaching Slots
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {Array.isArray(selectedTrainerObj.schedule) && selectedTrainerObj.schedule.length > 0 ? (
+                    selectedTrainerObj.schedule.map((slot, idx) => (
+                      <div
+                        key={slot.id || idx}
+                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                          <div>
+                            <span className="font-bold text-slate-900 block">{slot.day || 'Mon-Fri'}</span>
+                            <span className="text-[11px] text-indigo-600 font-semibold">{slot.time}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {slot.batch && <span className="block text-[11px] font-bold text-slate-800">{slot.batch}</span>}
+                          {slot.room && (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              [{slot.room}]{slot.mode ? ` • ${slot.mode}` : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    trainerAvailableBatches.map((b, idx) => (
+                      <div
+                        key={b.id || idx}
+                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                          <div>
+                            <span className="font-bold text-slate-900 block">{b.name}</span>
+                            <span className="text-[11px] text-indigo-600 font-semibold">{b.timing || 'Mon-Fri 09:00 AM - 11:30 AM'}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {b.mode && <span className="block text-[11px] font-bold text-slate-800">{b.mode}</span>}
+                          {b.room && <span className="text-[10px] text-slate-400 font-mono">[{b.room}]</span>}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* 3. Selected Course Program */}

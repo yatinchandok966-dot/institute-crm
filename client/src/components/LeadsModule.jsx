@@ -187,16 +187,38 @@ export default function LeadsModule({
     return leads.filter((lead) => {
       // 1. Text Search across Name, Phone, Email, City, Qualification, College, Course, Counselor
       const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        (lead.name || '').toLowerCase().includes(q) ||
-        (lead.phone || '').includes(q) ||
-        (lead.email || '').toLowerCase().includes(q) ||
-        (lead.city || '').toLowerCase().includes(q) ||
-        (lead.qualification || '').toLowerCase().includes(q) ||
-        (lead.college || '').toLowerCase().includes(q) ||
-        (lead.course || '').toLowerCase().includes(q) ||
-        (lead.counselor || '').toLowerCase().includes(q);
+      let matchesSearch = true;
+      if (q) {
+        const nameStr = (lead.name || '').toLowerCase();
+        const phoneClean = (lead.phone || '').replace(/\D/g, '');
+        const qDigits = q.replace(/\D/g, '');
+        const emailStr = (lead.email || '').toLowerCase();
+        const cityStr = (lead.city || '').toLowerCase();
+        const collegeStr = (lead.college || '').toLowerCase();
+        const courseStr = (lead.course || '').toLowerCase();
+        const counselorStr = (lead.counselor || '').toLowerCase();
+
+        // Check if query matches any lead by name
+        const anyNameMatch = leads.some(l => (l.name || '').toLowerCase().includes(q));
+
+        if (anyNameMatch) {
+          // If query matches a person's name (e.g. "arpita"), strictly filter to that person so other records with email overlap are excluded
+          matchesSearch = nameStr.includes(q);
+        } else if (qDigits.length >= 3 && phoneClean.includes(qDigits)) {
+          matchesSearch = true;
+        } else if (q.includes('@')) {
+          matchesSearch = emailStr.includes(q);
+        } else {
+          matchesSearch =
+            nameStr.includes(q) ||
+            (qDigits.length >= 3 && phoneClean.includes(qDigits)) ||
+            emailStr.includes(q) ||
+            cityStr.includes(q) ||
+            collegeStr.includes(q) ||
+            courseStr.includes(q) ||
+            counselorStr.includes(q);
+        }
+      }
 
       // 2. Source Filter
       const matchesSource = sourceFilter === 'All' || lead.source === sourceFilter;
