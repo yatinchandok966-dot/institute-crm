@@ -66,11 +66,13 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         {sections.map((section, idx) => (
+
           <div key={idx}>
             <div className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               {section.title}
             </div>
             <nav className="space-y-1">
+
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -98,6 +100,8 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
                   </button>
                 );
               })}
+
+              
             </nav>
           </div>
         ))}

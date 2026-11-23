@@ -1,57 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import Dashboard from './components/Dashboard';
-import LeadsModule from './components/LeadsModule';
-import AdmissionsModule from './components/AdmissionsModule';
-import CoursesModule from './components/CoursesModule';
-import BatchesModule from './components/BatchesModule';
-import StudentsModule from './components/StudentsModule';
-import FeesModule from './components/FeesModule';
-import AttendanceModule from './components/AttendanceModule';
+import React, { useState, useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import Dashboard from "./components/Dashboard";
+import LeadsModule from "./components/LeadsModule";
+import AdmissionsModule from "./components/AdmissionsModule";
+import CoursesModule from "./components/CoursesModule";
+import BatchesModule from "./components/BatchesModule";
+import StudentsModule from "./components/StudentsModule";
+import FeesModule from "./components/FeesModule";
+import AttendanceModule from "./components/AttendanceModule";
+
+// Changes by Deepak -->
+import StudentProfile from "./components/Students/StudentProfile.jsx";
 
 // Modals
-import NewLeadModal from './components/NewLeadModal';
-import AdmissionModal from './components/AdmissionModal';
-import AdmissionConfirmationModal from './components/AdmissionConfirmationModal';
-import RecordPaymentModal from './components/RecordPaymentModal';
-import NewBatchModal from './components/NewBatchModal';
-import NewCourseModal from './components/NewCourseModal';
-import ReceiptModal from './components/ReceiptModal';
-import StudentIDModal from './components/StudentIDModal';
-import ShareQRModal from './components/ShareQRModal';
-import PublicInquiryForm from './components/PublicInquiryForm';
+import NewLeadModal from "./components/NewLeadModal";
+import AdmissionModal from "./components/AdmissionModal";
+import AdmissionConfirmationModal from "./components/AdmissionConfirmationModal";
+import RecordPaymentModal from "./components/RecordPaymentModal";
+import NewBatchModal from "./components/NewBatchModal";
+import NewCourseModal from "./components/NewCourseModal";
+import ReceiptModal from "./components/ReceiptModal";
+import StudentIDModal from "./components/StudentIDModal";
+import ShareQRModal from "./components/ShareQRModal";
+import PublicInquiryForm from "./components/PublicInquiryForm";
 
-import { initialInstituteData } from './data/mockData';
+// Deepak : Change mock data to original data
+import { initialInstituteData } from "./data/mockData";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [instituteData, setInstituteData] = useState(initialInstituteData);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [dbStatus, setDbStatus] = useState({ connected: false, engine: 'PostgreSQL' });
-  const [currentHash, setCurrentHash] = useState(typeof window !== 'undefined' ? window.location.hash : '');
+  const [dbStatus, setDbStatus] = useState({
+    connected: false,
+    engine: "PostgreSQL",
+  });
+  const [currentHash, setCurrentHash] = useState(
+    typeof window !== "undefined" ? window.location.hash : "",
+  );
+
+  // Deepak : student data -->
+  const [students, setStudents] = useState([]);
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/students");
+        const result = await response.json();
+
+        if (result.success) {
+          console.log(result);
+          setStudents(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   // Modal states
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isShareQROpen, setIsShareQROpen] = useState(false);
   const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
   const [leadForConversion, setLeadForConversion] = useState(null);
-  const [confirmedAdmissionLetter, setConfirmedAdmissionLetter] = useState(null);
+  const [confirmedAdmissionLetter, setConfirmedAdmissionLetter] =
+    useState(null);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+
   const [selectedStudentID, setSelectedStudentID] = useState(null);
+
+  // Changes  By Deepak -->
+  const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
 
   // Force pure light theme & listen to URL hash for QR public form
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    localStorage.removeItem('theme');
+    document.documentElement.classList.remove("dark");
+    localStorage.removeItem("theme");
 
     const handleHashChange = () => setCurrentHash(window.location.hash);
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   // Fetch initial dashboard stats & DB status from Express backend
@@ -59,8 +93,8 @@ export default function App() {
     setIsRefreshing(true);
     try {
       const [statsRes, healthRes] = await Promise.all([
-        fetch('/api/dashboard/stats').catch(() => null),
-        fetch('/api/health').catch(() => null)
+        fetch("/api/dashboard/stats").catch(() => null),
+        fetch("/api/health").catch(() => null),
       ]);
 
       if (healthRes && healthRes.ok) {
@@ -71,7 +105,7 @@ export default function App() {
       if (statsRes && statsRes.ok) {
         const result = await statsRes.json();
         if (result.success) {
-          setInstituteData(prev => ({
+          setInstituteData((prev) => ({
             ...prev,
             stats: result.stats || prev.stats,
             courses: result.courses || prev.courses,
@@ -85,7 +119,7 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.warn('Backend running in local fallback mode:', err);
+      console.warn("Backend running in local fallback mode:", err);
     } finally {
       setIsRefreshing(false);
     }
@@ -97,28 +131,30 @@ export default function App() {
 
   // Handlers for Leads
   const handleLeadCreated = (newLead) => {
-    setInstituteData(prev => {
+    setInstituteData((prev) => {
       const updatedLeads = [newLead, ...prev.recentLeads];
       return {
         ...prev,
         recentLeads: updatedLeads,
         stats: {
           ...prev.stats,
-          newLeadsThisMonth: updatedLeads.length
-        }
+          newLeadsThisMonth: updatedLeads.length,
+        },
       };
     });
   };
 
   const handleUpdateLeadStatus = (leadId, newStatus) => {
-    setInstituteData(prev => ({
+    setInstituteData((prev) => ({
       ...prev,
-      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, status: newStatus } : l))
+      recentLeads: prev.recentLeads.map((l) =>
+        l.id === leadId ? { ...l, status: newStatus } : l,
+      ),
     }));
     fetch(`/api/leads/${leadId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
     }).catch(() => null);
   };
 
@@ -130,39 +166,49 @@ export default function App() {
 
   // On Admission Created (Lead-to-student conversion without re-entering details)
   const handleAdmissionCreated = (newAdmission, newStudent) => {
-    setInstituteData(prev => {
+    setInstituteData((prev) => {
       // 1. Mark corresponding lead as converted
-      const updatedLeads = prev.recentLeads.map(l => {
-        if (l.id === newAdmission.leadId || l.name === newAdmission.studentName) {
-          return { ...l, status: 'Lead Confirmed (Admitted)' };
+      const updatedLeads = prev.recentLeads.map((l) => {
+        if (
+          l.id === newAdmission.leadId ||
+          l.name === newAdmission.studentName
+        ) {
+          return { ...l, status: "Lead Confirmed (Admitted)" };
         }
         return l;
       });
 
       // 2. Add to students roster if not present
-      const updatedStudents = newStudent ? [newStudent, ...prev.students] : prev.students;
+      const updatedStudents =
+        newStudent ? [newStudent, ...prev.students] : prev.students;
       const updatedAdmissions = [newAdmission, ...prev.admissions];
 
       // 3. Add to fee transactions if an admission fee was collected
       const updatedFees = [...prev.feeTransactions];
       const paidAmount = Number(newAdmission.admissionFeePaid) || 0;
       if (paidAmount > 0) {
-        const rcpSeq = String(prev.feeTransactions.length + 1).padStart(4, '0');
+        const rcpSeq = String(prev.feeTransactions.length + 1).padStart(4, "0");
         updatedFees.unshift({
           receiptNo: `RCP-2026-${rcpSeq}`,
           studentName: newAdmission.studentName,
-          studentId: newStudent?.studentId || 'STU-NEW',
+          studentId: newStudent?.studentId || "STU-NEW",
           course: newAdmission.course,
           amount: paidAmount,
-          mode: 'Admission Registration (UPI / Bank)',
-          date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          collectedBy: newAdmission.counselor || 'Admissions Desk',
-          status: 'Success'
+          mode: "Admission Registration (UPI / Bank)",
+          date: new Date().toISOString().replace("T", " ").substring(0, 16),
+          collectedBy: newAdmission.counselor || "Admissions Desk",
+          status: "Success",
         });
       }
 
-      const totalRevenue = updatedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
-      const totalPending = updatedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+      const totalRevenue = updatedFees.reduce(
+        (acc, t) => acc + Number(t.amount || 0),
+        0,
+      );
+      const totalPending = updatedStudents.reduce(
+        (acc, s) => acc + Number(s.feeDue || 0),
+        0,
+      );
 
       return {
         ...prev,
@@ -176,8 +222,11 @@ export default function App() {
           totalStudents: updatedStudents.length,
           monthlyRevenue: totalRevenue,
           pendingFees: totalPending,
-          leadConversionRate: updatedLeads.length > 0 ? `${Math.round((updatedAdmissions.length / updatedLeads.length) * 100)}%` : '0%'
-        }
+          leadConversionRate:
+            updatedLeads.length > 0 ?
+              `${Math.round((updatedAdmissions.length / updatedLeads.length) * 100)}%`
+            : "0%",
+        },
       };
     });
 
@@ -187,36 +236,48 @@ export default function App() {
   };
 
   const handleUpdateAdmissionStatus = (admId, newStatus) => {
-    setInstituteData(prev => ({
+    setInstituteData((prev) => ({
       ...prev,
-      admissions: prev.admissions.map(a => (a.id === admId ? { ...a, status: newStatus } : a))
+      admissions: prev.admissions.map((a) =>
+        a.id === admId ? { ...a, status: newStatus } : a,
+      ),
     }));
     fetch(`/api/admissions/${admId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
     }).catch(() => null);
   };
 
   const handlePaymentRecorded = (newReceipt) => {
-    setInstituteData(prev => {
-      const updatedStudents = prev.students.map(s => {
-        if (s.name.toLowerCase() === newReceipt.studentName.toLowerCase() || s.studentId === newReceipt.studentId) {
-          const newPaid = Number(s.feePaid || 0) + Number(newReceipt.amount || 0);
+    setInstituteData((prev) => {
+      const updatedStudents = prev.students.map((s) => {
+        if (
+          s.name.toLowerCase() === newReceipt.studentName.toLowerCase() ||
+          s.studentId === newReceipt.studentId
+        ) {
+          const newPaid =
+            Number(s.feePaid || 0) + Number(newReceipt.amount || 0);
           const newDue = Math.max(0, Number(s.feeTotal || 0) - newPaid);
           return {
             ...s,
             feePaid: newPaid,
             feeDue: newDue,
-            feeStatus: newDue === 0 ? 'Paid' : 'Partial'
+            feeStatus: newDue === 0 ? "Paid" : "Partial",
           };
         }
         return s;
       });
 
       const updatedFees = [newReceipt, ...prev.feeTransactions];
-      const totalRevenue = updatedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
-      const totalPending = updatedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
+      const totalRevenue = updatedFees.reduce(
+        (acc, t) => acc + Number(t.amount || 0),
+        0,
+      );
+      const totalPending = updatedStudents.reduce(
+        (acc, s) => acc + Number(s.feeDue || 0),
+        0,
+      );
 
       return {
         ...prev,
@@ -226,38 +287,39 @@ export default function App() {
           ...prev.stats,
           monthlyRevenue: totalRevenue,
           pendingFees: totalPending,
-          feeCollectionRate: totalRevenue + totalPending > 0
-            ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
-            : '100%'
-        }
+          feeCollectionRate:
+            totalRevenue + totalPending > 0 ?
+              `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+            : "100%",
+        },
       };
     });
   };
 
   const handleBatchCreated = (newBatch) => {
-    setInstituteData(prev => {
+    setInstituteData((prev) => {
       const updatedBatches = [newBatch, ...prev.batches];
       return {
         ...prev,
         batches: updatedBatches,
         stats: {
           ...prev.stats,
-          activeBatches: updatedBatches.length
-        }
+          activeBatches: updatedBatches.length,
+        },
       };
     });
   };
 
   const handleCourseCreated = (newCourse) => {
-    setInstituteData(prev => {
+    setInstituteData((prev) => {
       const updatedCourses = [newCourse, ...prev.courses];
       return {
         ...prev,
         courses: updatedCourses,
         stats: {
           ...prev.stats,
-          activeCourses: updatedCourses.length
-        }
+          activeCourses: updatedCourses.length,
+        },
       };
     });
   };
@@ -265,19 +327,22 @@ export default function App() {
   // Render Module Content
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
+      case "dashboard":
         return (
           <Dashboard
             data={instituteData}
             onOpenNewLead={() => setIsLeadModalOpen(true)}
-            onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
+            onOpenNewAdmission={() => {
+              setLeadForConversion(null);
+              setIsAdmissionModalOpen(true);
+            }}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onNavigate={(tab) => setActiveTab(tab)}
             onConvertToAdmission={handleConvertToAdmission}
           />
         );
-      case 'leads':
+      case "leads":
         return (
           <LeadsModule
             leads={instituteData.recentLeads}
@@ -288,25 +353,28 @@ export default function App() {
             onConvertToAdmission={handleConvertToAdmission}
           />
         );
-      case 'admissions':
+      case "admissions":
         return (
           <AdmissionsModule
             admissions={instituteData.admissions}
             courses={instituteData.courses}
             batches={instituteData.batches}
-            onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
+            onOpenNewAdmission={() => {
+              setLeadForConversion(null);
+              setIsAdmissionModalOpen(true);
+            }}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onUpdateAdmissionStatus={handleUpdateAdmissionStatus}
           />
         );
-      case 'courses':
+      case "courses":
         return (
           <CoursesModule
             courses={instituteData.courses}
             onOpenNewCourse={() => setIsCourseModalOpen(true)}
           />
         );
-      case 'batches':
+      case "batches":
         return (
           <BatchesModule
             batches={instituteData.batches}
@@ -314,15 +382,26 @@ export default function App() {
             onOpenNewBatch={() => setIsBatchModalOpen(true)}
           />
         );
-      case 'students':
-        return (
-          <StudentsModule
-            students={instituteData.students}
-            onOpenStudentID={(student) => setSelectedStudentID(student)}
-            onOpenPayment={() => setIsPaymentModalOpen(true)}
-          />
-        );
-      case 'fees':
+
+      // Changes by Deepak -->
+
+      case "students":
+        return selectedStudentProfile ?
+            <StudentProfile
+              student={selectedStudentProfile}
+              onBack={() => setSelectedStudentProfile(null)}
+              onOpenPayment={() => setIsPaymentModalOpen(true)}
+            />
+          : <StudentsModule
+              students={students}
+              onOpenStudentID={(student) => setSelectedStudentID(student)}
+              onOpenPayment={() => setIsPaymentModalOpen(true)}
+              onOpenStudentProfile={(student) =>
+                setSelectedStudentProfile(student)
+              }
+            />;
+
+      case "fees":
         return (
           <FeesModule
             feeTransactions={instituteData.feeTransactions}
@@ -331,7 +410,7 @@ export default function App() {
             onOpenReceipt={(receipt) => setSelectedReceipt(receipt)}
           />
         );
-      case 'attendance':
+      case "attendance":
         return (
           <AttendanceModule
             batches={instituteData.batches}
@@ -343,7 +422,10 @@ export default function App() {
           <Dashboard
             data={instituteData}
             onOpenNewLead={() => setIsLeadModalOpen(true)}
-            onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
+            onOpenNewAdmission={() => {
+              setLeadForConversion(null);
+              setIsAdmissionModalOpen(true);
+            }}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onNavigate={(tab) => setActiveTab(tab)}
@@ -354,7 +436,7 @@ export default function App() {
   };
 
   // If browser navigated to or scanned QR code (#inquire), show clean public inquiry form
-  if (currentHash === '#inquire') {
+  if (currentHash === "#inquire") {
     return (
       <PublicInquiryForm
         courses={instituteData.courses}
@@ -362,8 +444,8 @@ export default function App() {
           handleLeadCreated(newLead);
         }}
         onBackToCRM={() => {
-          window.location.hash = '';
-          setCurrentHash('');
+          window.location.hash = "";
+          setCurrentHash("");
         }}
       />
     );
@@ -382,7 +464,10 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <Header
           onOpenNewLead={() => setIsLeadModalOpen(true)}
-          onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
+          onOpenNewAdmission={() => {
+            setLeadForConversion(null);
+            setIsAdmissionModalOpen(true);
+          }}
           onOpenPayment={() => setIsPaymentModalOpen(true)}
           onRefresh={fetchDashboardData}
           isRefreshing={isRefreshing}
@@ -391,9 +476,7 @@ export default function App() {
           onNavigate={(tab) => setActiveTab(tab)}
         />
 
-        <main className="flex-1 overflow-y-auto">
-          {renderContent()}
-        </main>
+        <main className="flex-1 overflow-y-auto">{renderContent()}</main>
       </div>
 
       {/* Modals */}
@@ -407,7 +490,10 @@ export default function App() {
       {/* Admissions Conversion & New Admission Modal */}
       <AdmissionModal
         isOpen={isAdmissionModalOpen}
-        onClose={() => { setIsAdmissionModalOpen(false); setLeadForConversion(null); }}
+        onClose={() => {
+          setIsAdmissionModalOpen(false);
+          setLeadForConversion(null);
+        }}
         leadToConvert={leadForConversion}
         courses={instituteData.courses}
         batches={instituteData.batches}
