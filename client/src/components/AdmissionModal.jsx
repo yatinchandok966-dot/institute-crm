@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar } from 'lucide-react';
+import { OFFICIAL_TRAINERS } from '../data/constants';
 
 export default function AdmissionModal({
   isOpen,
@@ -11,7 +12,26 @@ export default function AdmissionModal({
   trainers = [],
   onAdmissionCreated
 }) {
-  const effectiveTrainers = Array.isArray(trainers) ? trainers : [];
+  // Always ensure trainers list contains registered faculty (with fallback so it never empties)
+  const effectiveTrainers = useMemo(() => {
+    const list = (Array.isArray(trainers) && trainers.length > 0) ? trainers : OFFICIAL_TRAINERS;
+    return list.map(t => {
+      if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
+        return {
+          ...t,
+          role: 'Technical Trainer',
+          department: 'Academic Faculty',
+          assignedCourses: ['Full Stack Web Development (MERN)'],
+          assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
+          schedule: [
+            { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
+            { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
+          ]
+        };
+      }
+      return t;
+    });
+  }, [trainers]);
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -23,13 +43,13 @@ export default function AdmissionModal({
     course: '',
     batch: '',
     trainer: '',
-    duration: '',
+    duration: '16 Weeks',
     admissionDate: new Date().toISOString().split('T')[0],
-    totalCourseFee: '',
+    totalCourseFee: 45000,
     discount: '', // Scholarship/discount: blank by default or when erased (no sticky zero!)
     discountReason: '',
-    admissionFeePaid: '',
-    paymentPlan: 'One-Time Full Payment',
+    admissionFeePaid: 13500,
+    paymentPlan: '2 Installments (50% now, 50% in 30 days)',
     status: 'Admission Confirmed',
     counselor: 'Admissions Desk',
     notes: ''
@@ -1106,9 +1126,8 @@ export default function AdmissionModal({
                     <div className="text-[10px] font-semibold text-slate-500 truncate" title={inst.name || 'Installment'}>
                       {inst.name || 'Installment'}
                     </div>
-                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded inline-block ${
-                      idx === 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
-                    }`}>
+                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded inline-block ${idx === 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                      }`}>
                       {inst.status || 'Scheduled'}
                     </div>
                   </div>
