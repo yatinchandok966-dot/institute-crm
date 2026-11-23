@@ -1,4 +1,4 @@
-//FeesModule.jsx
+// FeesModule.jsx
 
 import React, { useState } from 'react';
 import { CreditCard, Search, Plus, Printer, AlertCircle } from 'lucide-react';
@@ -7,11 +7,39 @@ export default function FeesModule({ feeTransactions, stats, students, onOpenPay
   const [searchQuery, setSearchQuery] = useState('');
 
   // Overdue Students Logic
-  const overdueStudents = students.filter(s => s.feeStatus === 'Overdue' || (s.installments && s.installments.some(i => i.status === 'Pending' && new Date(i.dueDate) < new Date())));
+  const overdueStudents = students.filter(s => {
+    const hasOverdueInstallment = s.installments && s.installments.some(
+      i => i.status === 'Pending' && new Date(i.dueDate) < new Date()
+    );
+    return (s.feeStatus === 'Overdue' || hasOverdueInstallment) && s.feeDue > 0;
+  });
 
-  const filteredTransactions = feeTransactions.filter(tx => 
-    tx.studentName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    tx.receiptNo.toLowerCase().includes(searchQuery.toLowerCase())
+  // Remove duplicates (just in case)
+  const uniqueOverdueStudents = Array.from(new Map(overdueStudents.map(s => [s.studentId, s])).values());
+
+  // FIX: Added (tx.studentName || '') to prevent crash if undefined
+  // Student-wise fee records with complete payment history
+const studentFeeRows = students
+  .map(student => {
+    const payments = feeTransactions.filter(tx =>
+      (student.studentId && tx.studentId &&
+        student.studentId.toLowerCase() === tx.studentId.toLowerCase()) ||
+      (student.name && tx.studentName &&
+        student.name.toLowerCase() === tx.studentName.toLowerCase())
+    );
+
+    return {
+      student,
+      payments,
+      totalPaid: Number(student.feePaid ?? 0),
+      remaining: Number(student.feeDue ?? 0),
+      totalFees: Number(student.feeTotal ?? 0)
+    };
+  })
+  .filter(row => row.payments.length > 0)
+  .filter(row =>
+    row.student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.student.studentId || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -28,18 +56,23 @@ export default function FeesModule({ feeTransactions, stats, students, onOpenPay
         </button>
       </div>
 
-      {/* Overdue Alerts (NEW) */}
-      {overdueStudents.length > 0 && (
+      {/* Overdue Alerts Section */}
+      {uniqueOverdueStudents.length > 0 && (
         <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-bold text-rose-800 text-sm">Overdue Fee Alerts ({overdueStudents.length} Students)</h4>
-            <p className="text-xs text-rose-600 mt-1">
+          <div className="w-full">
+            <h4 className="font-bold text-rose-800 text-sm">Overdue Fee Alerts ({uniqueOverdueStudents.length} Students)</h4>
+            <p className="text-xs text-rose-600 mt-1 mb-3">
               Some students have pending installments past their due date. Please follow up.
             </p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {overdueStudents.map(s => (
-                 <span key={s.id} className="text-[10px] bg-white border border-rose-200 px-2 py-1 rounded text-rose-700 font-bold">{s.name} (₹{s.feeDue})</span>
+            <div className="flex flex-wrap gap-2">
+              {uniqueOverdueStudents.map(s => (
+                 <div key={s.id} className="text-[11px] bg-white border border-rose-200 px-3 py-1.5 rounded-md text-rose-700 font-bold flex items-center gap-3 shadow-xs">
+                   <span className="text-slate-800">{s.name}</span>
+                   <span className="text-slate-500 font-medium border-l border-slate-200 pl-3">Total: ₹{s.feeTotal?.toLocaleString() || 0}</span>
+                   <span className="text-emerald-600 font-medium border-l border-slate-200 pl-3">Paid: ₹{s.feePaid?.toLocaleString() || 0}</span>
+                   <span className="text-rose-600 border-l border-slate-200 pl-3">Due: ₹{s.feeDue?.toLocaleString() || 0}</span>
+                 </div>
               ))}
             </div>
           </div>
@@ -71,33 +104,71 @@ export default function FeesModule({ feeTransactions, stats, students, onOpenPay
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 text-slate-600 font-bold uppercase border-b">
             <tr>
-              <th className="px-4 py-3">Receipt #</th>
-              <th className="px-4 py-3">Student</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Mode & TXN ID</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3 text-right">Action</th>
+              {/* <th className="px-4 py-3">Receipt #</th> */}
+              {/* <th className="px-4 py-3">Student</th> */}
+              {/* <th className="px-4 py-3">Amount Details</th> */}
+              {/* <th className="px-4 py-3">Mode & TXN ID</th> */}
+              {/* <th className="px-4 py-3">Mode</th> */}
+              {/* <th className="px-4 py-3">Date</th> */}
+              {/* <th className="px-4 py-3 text-right">Action</th> */}
             </tr>
+            <tr>
+  <th className="px-4 py-3">Student</th>
+  <th className="px-4 py-3">Total Paid Fees</th>
+  <th className="px-4 py-3">Remaining Amount</th>
+  <th className="px-4 py-3">Total Fees</th>
+  <th className="px-4 py-3 text-right">Action</th>
+</tr>
           </thead>
           <tbody className="divide-y">
-            {filteredTransactions.map(tx => (
-              <tr key={tx.receiptNo} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-mono font-bold text-indigo-700">{tx.receiptNo}</td>
-                <td className="px-4 py-3 font-bold">{tx.studentName}<br/><span className="text-[10px] text-slate-400 font-mono">{tx.studentId}</span></td>
-                <td className="px-4 py-3 font-black text-sm">₹{Number(tx.amount).toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <span className="bg-slate-100 px-2 py-0.5 rounded text-[10px] font-semibold block w-max">{tx.mode}</span>
-                  <span className="text-[10px] text-slate-500 font-mono mt-1 block">TXN: {tx.transactionId || 'N/A'}</span>
-                </td>
-                <td className="px-4 py-3 text-slate-500 font-mono text-[11px]">{tx.date}</td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => onOpenReceipt(tx)} className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold flex items-center gap-1 ml-auto">
-                    <Printer className="w-3.5 h-3.5" /> Print
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+  {studentFeeRows.map(({ student, payments, totalPaid, remaining, totalFees }) => (
+    <tr key={student.studentId || student.id} className="hover:bg-slate-50">
+
+      {/* Student */}
+      <td className="px-4 py-4 font-bold text-slate-800">
+        {student.name}
+        <div className="text-[10px] text-slate-400 font-medium mt-1">
+          {student.studentId}
+        </div>
+      </td>
+
+      {/* Total Paid Fees */}
+      <td className="px-4 py-4 font-bold text-emerald-600">
+        ₹{totalPaid.toLocaleString('en-IN')}
+      </td>
+
+      {/* Remaining Amount */}
+      <td className="px-4 py-4 font-bold text-rose-600">
+        ₹{remaining.toLocaleString('en-IN')}
+      </td>
+
+      {/* Total Fees */}
+      <td className="px-4 py-4 font-bold text-slate-800">
+        ₹{totalFees.toLocaleString('en-IN')}
+      </td>
+
+      {/* Action */}
+      <td className="px-4 py-4 text-right">
+        <button
+          onClick={() => onOpenReceipt({ student, transactions: payments })}
+          className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          Print Statement
+        </button>
+      </td>
+
+    </tr>
+  ))}
+
+  {studentFeeRows.length === 0 && (
+    <tr>
+      <td colSpan="5" className="text-center py-8 text-slate-400">
+        No fee records found.
+      </td>
+    </tr>
+  )}
+</tbody>
         </table>
       </div>
     </div>

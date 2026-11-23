@@ -1,18 +1,83 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// PostgreSQL Connection Pool configuration
-const pool = new Pool({
-  user: process.env.PGUSER || 'postgres',
-  host: process.env.PGHOST || 'localhost',
-  database: process.env.PGDATABASE || 'institute_crm',
-  password: process.env.PGPASSWORD || 'postgres',
-  port: parseInt(process.env.PGPORT || '5432', 10),
-  connectionTimeoutMillis: 3000,
-});
+// Load .env from server directory first, fallback to root .env / .env.local
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED;
+
+// Resolve Neon hostname if needed (handles ISP DNS resolution issues via DoH fallback)
+async function resolveNeonHost(hostname) {
+  try {
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=A`, { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    if (data.Answer && data.Answer.length > 0) {
+      const aRecords = data.Answer.filter(ans => ans.type === 1);
+      if (aRecords.length > 0) {
+        return aRecords[0].data;
+      }
+    }
+  } catch (err) {
+    // fallback if fetch fails
+  }
+  return hostname;
+}
+
+let poolConfig;
+const rawUrl = databaseUrl;
+
+if (rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    const originalHostname = parsed.hostname;
+    let connectHost = originalHostname;
+
+    if (originalHostname.includes('neon.tech')) {
+      const resolvedIp = await resolveNeonHost(originalHostname);
+      if (resolvedIp) {
+        connectHost = resolvedIp;
+      }
+    }
+
+    poolConfig = {
+      host: connectHost,
+      port: parseInt(parsed.port || '5432', 10),
+      database: parsed.pathname.replace(/^\//, '') || 'neondb',
+      user: decodeURIComponent(parsed.username || 'neondb_owner'),
+      password: decodeURIComponent(parsed.password || ''),
+      ssl: {
+        rejectUnauthorized: false,
+        servername: originalHostname
+      },
+      connectionTimeoutMillis: 10000,
+    };
+  } catch (e) {
+    poolConfig = {
+      connectionString: rawUrl,
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 10000,
+    };
+  }
+} else {
+  poolConfig = {
+    user: process.env.PGUSER || 'postgres',
+    host: process.env.PGHOST || 'localhost',
+    database: process.env.PGDATABASE || 'institute_crm',
+    password: process.env.PGPASSWORD || 'postgres',
+    port: parseInt(process.env.PGPORT || '5432', 10),
+    connectionTimeoutMillis: 5000,
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 let isConnected = false;
 
@@ -169,7 +234,7 @@ const initDb = async (client) => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✅ PostgreSQL database schema verified and initialized.');
+    console.log('✅ Neon PostgreSQL database schema verified and initialized.');
   } catch (err) {
     console.warn('⚠️ Could not initialize PostgreSQL tables:', err.message);
   }
@@ -179,7 +244,7 @@ const initDb = async (client) => {
 pool.connect()
   .then(async (client) => {
     isConnected = true;
-    console.log('✅ Connected to PostgreSQL database successfully.');
+    console.log('✅ Connected to Neon Cloud PostgreSQL database successfully.');
     await initDb(client);
     client.release();
   })

@@ -655,13 +655,15 @@ app.post('/api/admissions', async (req, res) => {
     );
 
     const studentDbId = stuResult.rows[0]?.id;
+    let enrollmentId = null;
     if (studentDbId) {
       // 3. Insert enrollment
-      await pool.query(
+      const enrollResult = await pool.query(
         `INSERT INTO enrollments (student_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [studentDbId, numTotalFee, numDiscount, numPaid, numDue, admissionDate, numDue === 0 ? 'Enrolled' : 'Fee Pending']
       );
+      enrollmentId = enrollResult.rows[0]?.id;
     }
 
     // 4. If fee paid, insert receipt
@@ -670,10 +672,10 @@ app.post('/api/admissions', async (req, res) => {
       const rcpSeq = String(Number(feeCountRes.rows[0].count) + 1).padStart(4, '0');
       const receiptNo = `RCP-2026-${rcpSeq}`;
       await pool.query(
-        `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO fee_payments (enrollment_id, receipt_no, amount, payment_mode, received_by, transaction_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (receipt_no) DO NOTHING`,
-        [receiptNo, numPaid, 'UPI / Bank', counselor]
+        [enrollmentId, receiptNo, numPaid, 'UPI / Bank', counselor || 'Admissions Desk', 'ADMISSION-PAYMENT']
       );
     }
 
