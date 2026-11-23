@@ -98,6 +98,7 @@ export default function App() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [courseForEdit, setCourseForEdit] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedStudentID, setSelectedStudentID] = useState(null);
 
@@ -472,9 +473,28 @@ export default function App() {
     });
   };
 
-  const handleCourseCreated = (newCourse) => {
+  const handleCourseCreated = (courseData, isEdit) => {
     setInstituteData(prev => {
-      const updatedCourses = [newCourse, ...prev.courses];
+      const updatedCourses = isEdit
+        ? prev.courses.map(c => (c.id === courseData.id ? courseData : c))
+        : [courseData, ...prev.courses];
+
+      return {
+        ...prev,
+        courses: updatedCourses,
+        stats: {
+          ...prev.stats,
+          activeCourses: updatedCourses.length
+        }
+      };
+    });
+  };
+
+  const handleDeleteCourse = (courseId) => {
+    if (!window.confirm('Are you sure you want to delete this course?')) return;
+
+    setInstituteData(prev => {
+      const updatedCourses = prev.courses.filter(c => c.id !== courseId);
       return {
         ...prev,
         courses: updatedCourses,
@@ -569,7 +589,15 @@ export default function App() {
         return (
           <CoursesModule
             courses={instituteData.courses}
-            onOpenNewCourse={() => setIsCourseModalOpen(true)}
+            onOpenNewCourse={() => {
+              setCourseForEdit(null);
+              setIsCourseModalOpen(true);
+            }}
+            onEditCourse={(course) => {
+              setCourseForEdit(course);
+              setIsCourseModalOpen(true);
+            }}
+            onDeleteCourse={handleDeleteCourse}
           />
         );
       case 'batches':
@@ -604,6 +632,7 @@ export default function App() {
           <FeesModule
             feeTransactions={instituteData.feeTransactions}
             stats={instituteData.stats}
+            students={instituteData.students}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenReceipt={(receipt) => setSelectedReceipt(receipt)}
           />
@@ -715,8 +744,13 @@ export default function App() {
 
       <NewCourseModal
         isOpen={isCourseModalOpen}
-        onClose={() => setIsCourseModalOpen(false)}
+        onClose={() => {
+          setIsCourseModalOpen(false);
+          setCourseForEdit(null);
+        }}
         onCourseCreated={handleCourseCreated}
+        courseToEdit={courseForEdit}
+        trainers={instituteData.trainers || []}
       />
 
       <ReceiptModal
