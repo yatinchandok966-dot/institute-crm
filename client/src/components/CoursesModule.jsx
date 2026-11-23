@@ -1,7 +1,7 @@
 // CourseModule.jsx
 
 import React, { useState } from 'react';
-import { Plus, Search, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2, User } from 'lucide-react';
+import { Plus, Search, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2, User, BookOpen } from 'lucide-react';
 
 export default function CoursesModule({ courses, onOpenNewCourse, onEditCourse, onDeleteCourse }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -41,56 +41,76 @@ export default function CoursesModule({ courses, onOpenNewCourse, onEditCourse, 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.map(course => {
-          const isExpanded = expandedCourseId === course.id;
-          return (
-            <div key={course.id} className="bg-white rounded-xl border shadow-xs flex flex-col justify-between overflow-hidden">
-              <div className="p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100">{course.category}</span>
-                  <span className="text-xs font-mono font-bold text-slate-500">{course.code}</span>
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base leading-snug">{course.name}</h3>
-                  <p className="text-[11px] text-indigo-600 mt-1 flex items-center gap-1 font-semibold">
-                    <User className="w-3 h-3" /> Trainer: {course.trainerName || 'Unassigned'}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border text-xs">
-                  <div><span className="text-[10px] text-slate-400">Duration</span><p className="font-bold">{course.durationWeeks} Weeks</p></div>
-                  <div><span className="text-[10px] text-slate-400">Students</span><p className="font-bold text-indigo-700">{course.activeStudents}</p></div>
-                </div>
-
-                {isExpanded && course.modules && (
-                  <div className="pt-2 border-t space-y-1.5 text-xs">
-                    <h4 className="font-bold text-slate-800 text-[11px] uppercase">Syllabus</h4>
-                    {course.modules.map((mod, i) => (
-                      <div key={i} className="flex items-start gap-2 text-slate-600 text-[11px]"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />{mod}</div>
-                    ))}
+      {filteredCourses.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-xs">
+          <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="font-bold text-slate-900 text-sm">No Courses Available</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            {courses.length === 0
+              ? 'No courses have been added yet. Click "+ Add Course" to configure your academic programs.'
+              : 'No courses match your selected search or category filter.'}
+          </p>
+          {courses.length === 0 && (
+            <button
+              onClick={onOpenNewCourse}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4" /> Add First Course
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map(course => {
+            const isExpanded = expandedCourseId === course.id;
+            return (
+              <div key={course.id} className="bg-white rounded-xl border shadow-xs flex flex-col justify-between overflow-hidden">
+                <div className="p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100">{course.category}</span>
+                    <span className="text-xs font-mono font-bold text-slate-500">{course.code}</span>
                   </div>
-                )}
-              </div>
 
-              <div className="p-5 pt-0">
-                <div className="pt-3 border-t flex items-center justify-between">
-                  <div><span className="text-[10px] text-slate-400 uppercase">Fee</span><p className="font-black text-slate-900 text-base">₹{Number(course.fee).toLocaleString()}</p></div>
-                  
-                  <div className="flex gap-2">
-                    <button onClick={() => onEditCourse(course)} className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => onDeleteCourse(course.id)} className="p-1.5 bg-rose-50 text-rose-600 rounded hover:bg-rose-100"><Trash2 className="w-4 h-4" /></button>
-                    <button onClick={() => setExpandedCourseId(isExpanded ? null : course.id)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 font-semibold text-xs rounded transition-colors">
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base leading-snug">{course.name}</h3>
+                    <p className="text-[11px] text-indigo-600 mt-1 flex items-center gap-1 font-semibold">
+                      <User className="w-3 h-3" /> Trainer: {course.trainerName || 'Unassigned'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border text-xs">
+                    <div><span className="text-[10px] text-slate-400">Duration</span><p className="font-bold">{course.durationWeeks} Weeks</p></div>
+                    <div><span className="text-[10px] text-slate-400">Students</span><p className="font-bold text-indigo-700">{course.activeStudents || 0}</p></div>
+                  </div>
+
+                  {isExpanded && course.modules && (
+                    <div className="pt-2 border-t space-y-1.5 text-xs">
+                      <h4 className="font-bold text-slate-800 text-[11px] uppercase">Syllabus</h4>
+                      {course.modules.map((mod, i) => (
+                        <div key={i} className="flex items-start gap-2 text-slate-600 text-[11px]"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />{mod}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-5 pt-0">
+                  <div className="pt-3 border-t flex items-center justify-between">
+                    <div><span className="text-[10px] text-slate-400 uppercase">Fee</span><p className="font-black text-slate-900 text-base">₹{Number(course.fee).toLocaleString()}</p></div>
+                    
+                    <div className="flex gap-2">
+                      <button onClick={() => onEditCourse(course)} className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => onDeleteCourse(course.id)} className="p-1.5 bg-rose-50 text-rose-600 rounded hover:bg-rose-100"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={() => setExpandedCourseId(isExpanded ? null : course.id)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 font-semibold text-xs rounded transition-colors">
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
