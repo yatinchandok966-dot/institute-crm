@@ -1,10 +1,12 @@
 //RecordPaymentModal
 
 import React, { useState } from 'react';
-import { X, CreditCard, CheckCircle2 } from 'lucide-react';
+import { X, CreditCard, CheckCircle2, Search } from 'lucide-react';
 
 export default function RecordPaymentModal({ isOpen, onClose, onPaymentRecorded, students }) {
   const [studentId, setStudentId] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [amount, setAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('UPI (Google Pay / PhonePe)');
@@ -13,23 +15,37 @@ export default function RecordPaymentModal({ isOpen, onClose, onPaymentRecorded,
 
   if (!isOpen) return null;
 
-  const handleStudentSelect = (e) => {
-    const sId = e.target.value;
-    setStudentId(sId);
-    const found = students.find(s => s.studentId === sId);
-    if (found) {
-      setSelectedStudent(found);
-      // Auto-fill next installment amount if exists
-      if (found.installments) {
-        const nextPending = found.installments.find(inst => inst.status === 'Pending');
-        setAmount(nextPending ? nextPending.amount : found.feeDue);
-      } else {
-        setAmount(found.feeDue);
-      }
-    } else {
-      setSelectedStudent(null);
-    }
-  };
+  const handleStudentSelect = (student) => {
+  setStudentId(student.studentId);
+  setSelectedStudent(student);
+
+  setStudentSearch(
+    `${student.name} (${student.studentId})`
+  );
+
+  setIsStudentDropdownOpen(false);
+
+  // Auto-fill pending amount
+  if (student.installments) {
+    const nextPending = student.installments.find(
+      inst => inst.status === 'Pending'
+    );
+
+    setAmount(nextPending ? nextPending.amount : student.feeDue);
+  } else {
+    setAmount(student.feeDue);
+  }
+};
+
+const filteredStudents = students.filter(student => {
+  const query = studentSearch.toLowerCase().trim();
+
+  return (
+    (student.name || '').toLowerCase().includes(query) ||
+    (student.studentId || '').toLowerCase().includes(query) ||
+    (student.phone || '').toLowerCase().includes(query)
+  );
+});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,13 +83,111 @@ export default function RecordPaymentModal({ isOpen, onClose, onPaymentRecorded,
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
-          <div>
-            <label className="block font-semibold mb-1">Select Student *</label>
-            <select required value={studentId} onChange={handleStudentSelect} className="w-full px-3 py-2 border rounded-lg font-medium">
-              <option value="">-- Choose Student --</option>
-              {students.map(s => <option key={s.id} value={s.studentId}>{s.name} ({s.studentId}) — Due: ₹{s.feeDue}</option>)}
-            </select>
-          </div>
+          
+<div className="relative">
+
+  <label className="block font-semibold mb-1">
+    Search & Select Student *
+  </label>
+
+  {/* Search Input */}
+  <div className="relative">
+
+    <input
+      type="text"
+      required
+      value={studentSearch}
+      placeholder="Search by student name, ID or phone..."
+      onFocus={() => {
+        if (selectedStudent) {
+          setStudentSearch('');
+          setStudentId('');
+          setSelectedStudent(null);
+          setAmount('');
+        }
+        setIsStudentDropdownOpen(true);
+      }}
+      onChange={(e) => {
+        setStudentSearch(e.target.value);
+        setStudentId('');
+        setSelectedStudent(null);
+        setAmount('');
+        setIsStudentDropdownOpen(true);
+      }}
+      className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+
+    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+      <Search className="w-4 h-4" />
+    </span>
+
+  </div>
+
+  {/* Search Results Dropdown */}
+  {isStudentDropdownOpen && (
+    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+
+      {filteredStudents.length > 0 ? (
+
+        filteredStudents.map(student => (
+          <button
+            type="button"
+            key={student.id}
+            onClick={() => handleStudentSelect(student)}
+            className="w-full px-3 py-3 text-left hover:bg-indigo-50 border-b border-slate-100 last:border-0 transition-colors"
+          >
+
+            <div className="flex justify-between items-center gap-2">
+
+              <div>
+                <p className="font-bold text-slate-800 text-xs">
+                  {student.name}
+                </p>
+
+                <p className="text-[10px] text-slate-500 mt-1">
+                  ID: {student.studentId}
+                </p>
+
+                <p className="text-[10px] text-slate-500">
+                  {student.phone || 'No phone number'}
+                </p>
+              </div>
+
+              <div className="text-right shrink-0">
+                <p className="text-[10px] text-slate-400">
+                  Remaining Fee
+                </p>
+
+                <p className="font-bold text-rose-600 text-xs">
+                  ₹{Number(student.feeDue || 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+
+            </div>
+
+          </button>
+        ))
+
+      ) : (
+
+        <div className="p-4 text-center text-xs text-slate-400">
+          No students found.
+        </div>
+
+      )}
+
+    </div>
+  )}
+
+  {/* Selected Student Confirmation */}
+  {selectedStudent && !isStudentDropdownOpen && (
+    <p className="text-[10px] text-emerald-600 font-semibold mt-2">
+      ✓ Student selected successfully
+    </p>
+  )}
+
+</div>
+
 
           {selectedStudent && selectedStudent.installments && (
             <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
@@ -103,8 +217,8 @@ export default function RecordPaymentModal({ isOpen, onClose, onPaymentRecorded,
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Transaction ID / UTR *</label>
-            <input type="text" required value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="Enter UTR or TXN ID" className="w-full px-3 py-2 border rounded-lg" />
+            <label className="block font-semibold mb-1">Transaction ID / UTR </label>
+            <input type="text" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="Enter UTR or TXN ID" className="w-full px-3 py-2 border rounded-lg" />
           </div>
 
           <div className="pt-3 border-t flex justify-end gap-3">

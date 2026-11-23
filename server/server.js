@@ -54,7 +54,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN batches b ON e.batch_id = b.id
         ORDER BY s.id DESC
       `),
-      pool.query('SELECT * FROM fee_payments ORDER BY id DESC'),
+      pool.query(`
+        SELECT f.*, s.student_id_code, CONCAT_WS(' ', s.first_name, s.last_name) as student_name, c.name as course_name
+        FROM fee_payments f
+        LEFT JOIN enrollments e ON f.enrollment_id = e.id
+        LEFT JOIN students s ON e.student_id = s.id
+        LEFT JOIN courses c ON e.course_id = c.id
+        ORDER BY f.id DESC
+      `),
       pool.query('SELECT * FROM trainers ORDER BY id ASC')
     ]);
 
@@ -139,18 +146,19 @@ app.get('/api/dashboard/stats', async (req, res) => {
               : 'Overdue'
     }));
 
-    const feeTransactions = feesRes.rows.map(f => ({
-      id: f.id,
-      receiptNo: f.receipt_no,
-      studentName: 'Registered Student',
-      studentId: 'STU',
-      course: 'Tuition Fee',
-      amount: Number(f.amount),
-      mode: f.payment_mode,
-      date: f.payment_date,
-      collectedBy: f.received_by || 'Finance Desk',
-      status: 'Success'
-    }));
+        const feeTransactions = feesRes.rows.map(f => ({
+          id: f.id,
+          receiptNo: f.receipt_no,
+          studentName: f.student_name || 'Unknown Student', // HUN ASLI NAAM AAYEGA
+          studentId: f.student_id_code || 'STU-UNKNOWN',    // HUN ASLI ID AAYEGI
+          course: f.course_name || 'Tuition Fee',
+          amount: Number(f.amount),
+          mode: f.payment_mode,
+          transactionId: f.transaction_id || 'N/A', 
+          date: f.payment_date,
+          collectedBy: f.received_by || 'Finance Desk',
+          status: 'Success'
+        }));
 
     const trainers = trainersRes.rows.map(t => ({
       id: t.id,
@@ -646,27 +654,30 @@ app.post('/api/admissions', async (req, res) => {
     );
 
     const studentDbId = stuResult.rows[0]?.id;
-    if (studentDbId) {
-      // 3. Insert enrollment
-      await pool.query(
-        `INSERT INTO enrollments (student_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [studentDbId, numTotalFee, numDiscount, numPaid, numDue, admissionDate || new Date().toISOString().split('T')[0], numDue === 0 ? 'Enrolled' : 'Fee Pending']
-      );
-    }
+      let enrollmentId = null; 
 
-    // 4. If fee paid, insert receipt
-    if (numPaid > 0) {
-      const feeCountRes = await pool.query('SELECT COUNT(*) FROM fee_payments');
-      const rcpSeq = String(Number(feeCountRes.rows[0].count) + 1).padStart(4, '0');
-      const receiptNo = `RCP-2026-${rcpSeq}`;
-      await pool.query(
-        `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (receipt_no) DO NOTHING`,
-        [receiptNo, numPaid, 'UPI / Bank', counselor || 'Admissions Desk']
-      );
-    }
+      if (studentDbId) {
+        // 3. Insert enrollment 
+        const enrollResult = await pool.query(
+          `INSERT INTO enrollments (student_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
+          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`, 
+          [studentDbId, numTotalFee, numDiscount, numPaid, numDue, admissionDate || new Date().toISOString().split('T')[0], numDue === 0 ? 'Enrolled' : 'Fee Pending']
+        );
+        enrollmentId = enrollResult.rows[0]?.id; // ID save kiti
+      }
+
+      // 4. If fee paid, insert receipt
+      if (numPaid > 0) {
+        const feeCountRes = await pool.query('SELECT COUNT(*) FROM fee_payments');
+        const rcpSeq = String(Number(feeCountRes.rows[0].count) + 1).padStart(4, '0');
+        const receiptNo = `RCP-2026-${rcpSeq}`;
+        await pool.query(
+          `INSERT INTO fee_payments (enrollment_id, receipt_no, amount, payment_mode, received_by, transaction_id)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          ON CONFLICT (receipt_no) DO NOTHING`,
+          [enrollmentId, receiptNo, numPaid, 'UPI / Bank', counselor || 'Admissions Desk', 'ADMISSION-PAYMENT'] 
+        );
+      }
 
     res.status(201).json({
       success: true,
@@ -739,17 +750,29 @@ app.get('/api/fees', async (req, res) => {
 
 app.post('/api/fees', async (req, res) => {
   try {
-    const { receiptNo, amount, mode, collectedBy, studentId } = req.body;
+    const { receiptNo, amount, mode, collectedBy, studentId, transactionId } = req.body;
     const numAmount = Number(amount) || 0;
     const countRes = await pool.query('SELECT COUNT(*) FROM fee_payments');
     const rcpSeq = String(Number(countRes.rows[0].count) + 1).padStart(4, '0');
     const rNo = receiptNo || `RCP-2026-${rcpSeq}`;
 
+    // Pehla Enrollment ID labho
+    let enrollmentId = null;
+    if (studentId) {
+      const enrRes = await pool.query(
+        `SELECT e.id FROM enrollments e 
+         JOIN students s ON e.student_id = s.id 
+         WHERE s.student_id_code = $1 ORDER BY e.id DESC LIMIT 1`, 
+        [studentId]
+      );
+      enrollmentId = enrRes.rows[0]?.id;
+    }
+
     const result = await pool.query(
-      `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO fee_payments (enrollment_id, receipt_no, amount, payment_mode, received_by, transaction_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [rNo, numAmount, mode || 'UPI', collectedBy || 'Finance Desk']
+      [enrollmentId, rNo, numAmount, mode || 'UPI', collectedBy || 'Finance Desk', transactionId || 'N/A'] 
     );
 
     // Update enrollment if studentId matches
