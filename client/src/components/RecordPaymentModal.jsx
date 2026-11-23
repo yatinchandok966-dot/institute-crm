@@ -15,29 +15,35 @@ export default function RecordPaymentModal({ isOpen, onClose, onPaymentRecorded,
 
   if (!isOpen) return null;
 
-  const handleStudentSelect = (student) => {
+const handleStudentSelect = (student) => {
+  const remainingFee = Number(student.feeDue || 0);
+
+  // Fully paid student cannot be selected
+  if (remainingFee <= 0) return;
+
   setStudentId(student.studentId);
   setSelectedStudent(student);
-
-  setStudentSearch(
-    `${student.name} (${student.studentId})`
-  );
-
+  setStudentSearch(`${student.name} (${student.studentId})`);
   setIsStudentDropdownOpen(false);
 
-  // Auto-fill pending amount
-  if (student.installments) {
-    const nextPending = student.installments.find(
-      inst => inst.status === 'Pending'
-    );
+  // Installment amount can never exceed remaining fee
+  const nextPending = student.installments?.find(
+    inst => inst.status === 'Pending' && Number(inst.amount) > 0
+  );
 
-    setAmount(nextPending ? nextPending.amount : student.feeDue);
-  } else {
-    setAmount(student.feeDue);
-  }
+  const suggestedAmount = nextPending
+    ? Math.min(Number(nextPending.amount), remainingFee)
+    : remainingFee;
+
+  setAmount(String(suggestedAmount));
 };
 
 const filteredStudents = students.filter(student => {
+  const remainingFee = Number(student.feeDue || 0);
+
+  // Hide students whose fees are completely paid
+  if (remainingFee <= 0) return false;
+
   const query = studentSearch.toLowerCase().trim();
 
   return (
@@ -47,32 +53,62 @@ const filteredStudents = students.filter(student => {
   );
 });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedStudent) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setIsSubmitting(true);
+  if (!selectedStudent) {
+    alert('Please select a student.');
+    return;
+  }
+
+  const paymentAmount = Number(amount);
+  const remainingFee = Number(selectedStudent.feeDue || 0);
+
+  if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+    alert('Payment amount must be greater than ₹0.');
+    return;
+  }
+
+  if (remainingFee <= 0) {
+    alert('This student has already paid the complete fee.');
+    return;
+  }
+
+  if (paymentAmount > remainingFee) {
+    alert(
+      `Payment cannot exceed the remaining fee of ₹${remainingFee.toLocaleString('en-IN')}.`
+    );
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
     const paymentData = {
       studentName: selectedStudent.name,
       studentId: selectedStudent.studentId,
       course: selectedStudent.course,
-      amount: Number(amount),
+      amount: paymentAmount,
       mode: paymentMode,
       transactionId: transactionId || `TXN-${Date.now()}`
     };
 
-    // API call logic (same as yours)
-    onPaymentRecorded({
+    await onPaymentRecorded({
       receiptNo: `RCP-2026-0${Math.floor(100 + Math.random() * 900)}`,
       ...paymentData,
       date: new Date().toISOString().replace('T', ' ').substring(0, 16),
       collectedBy: 'Finance Desk',
       status: 'Success'
     });
-    
-    setIsSubmitting(false);
+
     onClose();
-  };
+  } catch (error) {
+    console.error('Payment recording failed:', error);
+    alert('Payment could not be recorded. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -202,9 +238,29 @@ const filteredStudents = students.filter(student => {
           )}
 
           <div>
-            <label className="block font-semibold mb-1">Amount Received (INR) *</label>
-            <input type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-3 py-2 border rounded-lg font-bold text-sm" />
-          </div>
+  <label className="block font-semibold mb-1">
+    Amount Received (INR) *
+  </label>
+
+  <input
+    type="number"
+    required
+    min="1"
+    max={Number(selectedStudent?.feeDue || 0)}
+    step="1"
+    value={amount}
+    onChange={(e) => setAmount(e.target.value)}
+    disabled={!selectedStudent || Number(selectedStudent.feeDue || 0) <= 0}
+    className="w-full px-3 py-2 border rounded-lg font-bold text-sm disabled:bg-slate-100"
+  />
+
+  {selectedStudent && (
+    <p className="text-[10px] text-slate-500 mt-1">
+      Maximum payable amount: ₹
+      {Number(selectedStudent.feeDue || 0).toLocaleString('en-IN')}
+    </p>
+  )}
+</div>
 
           <div>
             <label className="block font-semibold mb-1">Payment Method *</label>
