@@ -147,14 +147,12 @@ export default function StudentsModule({
                     className="hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      {/* Changes by Deepak  */}
                       <button
-                        onClick={() => onOpenStudentProfile(student)}
-                        className="font-bold text-slate-900 text-sm hover:text-indigo-600 hover:underline text-left transition-colors"
+                        onClick={() => onOpenStudentProfile && onOpenStudentProfile(student)}
+                        className="font-bold text-slate-900 text-sm hover:text-indigo-600 hover:underline text-left transition-colors cursor-pointer"
                       >
                         {student.name}
                       </button>
-
                       <div className="text-[11px] text-indigo-700 font-mono font-semibold">
                         {student.studentId}
                       </div>
