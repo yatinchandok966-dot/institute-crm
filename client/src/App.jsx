@@ -499,12 +499,40 @@ export default function App() {
 
   // On Admission Created (Lead-to-student conversion without re-entering details)
   const handleAdmissionCreated = (newAdmission, newStudent) => {
+    if (!newAdmission) return;
+    const safeStudentName = newAdmission.studentName || newAdmission.student_name || newAdmission.name || 'Student';
+    const safeAdmNo = newAdmission.admissionNo || newAdmission.admission_no || `ADM-2026-${Date.now().toString().slice(-4)}`;
+    const safeAppNo = newAdmission.applicationNo || newAdmission.application_no || `APP-2026-${Date.now().toString().slice(-4)}`;
+    const safePaid = Number(newAdmission.admissionFeePaid ?? newAdmission.admission_fee_paid ?? 0);
+    const safeDue = Number(newAdmission.feeDue ?? newAdmission.fee_due ?? 0);
+    const safeTotal = Number(newAdmission.totalCourseFee ?? newAdmission.total_course_fee ?? (safePaid + safeDue));
+
+    const safeAdmission = {
+      ...newAdmission,
+      studentName: safeStudentName,
+      student_name: safeStudentName,
+      admissionNo: safeAdmNo,
+      admission_no: safeAdmNo,
+      applicationNo: safeAppNo,
+      application_no: safeAppNo,
+      admissionFeePaid: safePaid,
+      admission_fee_paid: safePaid,
+      feeDue: safeDue,
+      fee_due: safeDue,
+      totalCourseFee: safeTotal,
+      total_course_fee: safeTotal,
+      course: newAdmission.course || 'Full Stack Web Development (MERN)',
+      batch: newAdmission.batch || 'General Cohort',
+      status: newAdmission.status || 'Admission Confirmed',
+      admissionDate: newAdmission.admissionDate || newAdmission.admission_date || new Date().toISOString().split('T')[0]
+    };
+
     setInstituteData((prev) => {
       // 1. Mark corresponding lead as converted
-      const updatedLeads = prev.recentLeads.map((l) => {
+      const updatedLeads = (prev.recentLeads || []).map((l) => {
         if (
-          l.id === newAdmission.leadId ||
-          l.name === newAdmission.studentName
+          l.id === safeAdmission.leadId ||
+          l.name === safeAdmission.studentName
         ) {
           return { ...l, status: "Lead Confirmed (Admitted)" };
         }
@@ -513,23 +541,23 @@ export default function App() {
 
       // 2. Add to students roster if not present
       const updatedStudents =
-        newStudent ? [newStudent, ...prev.students] : prev.students;
-      const updatedAdmissions = [newAdmission, ...prev.admissions];
+        newStudent ? [newStudent, ...(prev.students || [])] : (prev.students || []);
+      const updatedAdmissions = [safeAdmission, ...(prev.admissions || [])];
 
       // 3. Add to fee transactions if an admission fee was collected
-      const updatedFees = [...prev.feeTransactions];
-      const paidAmount = Number(newAdmission.admissionFeePaid) || 0;
+      const updatedFees = [...(prev.feeTransactions || [])];
+      const paidAmount = safePaid;
       if (paidAmount > 0) {
-        const rcpSeq = String(prev.feeTransactions.length + 1).padStart(4, "0");
+        const rcpSeq = String(updatedFees.length + 1).padStart(4, "0");
         updatedFees.unshift({
           receiptNo: `RCP-2026-${rcpSeq}`,
-          studentName: newAdmission.studentName,
+          studentName: safeAdmission.studentName,
           studentId: newStudent?.studentId || "STU-NEW",
-          course: newAdmission.course,
+          course: safeAdmission.course,
           amount: paidAmount,
           mode: "Admission Registration (UPI / Bank)",
           date: new Date().toISOString().replace("T", " ").substring(0, 16),
-          collectedBy: newAdmission.counselor || "Admissions Desk",
+          collectedBy: safeAdmission.counselor || "Admissions Desk",
           status: "Success",
         });
       }

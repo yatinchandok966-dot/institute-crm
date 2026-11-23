@@ -36,21 +36,39 @@ export default function AdmissionsModule({
     { id: 'Admission Confirmed', label: 'Admission Confirmed', border: 'border-emerald-500', bg: 'bg-emerald-50 text-emerald-800' }
   ];
 
-  const filtered = admissions.filter(adm => {
-    const matchesSearch = adm.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      adm.admissionNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      adm.applicationNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      adm.phone.includes(searchQuery) ||
-      adm.course.toLowerCase().includes(searchQuery.toLowerCase());
+  const filtered = (Array.isArray(admissions) ? admissions : []).filter(adm => {
+    if (!adm) return false;
+    const sName = String(adm.studentName || adm.student_name || adm.name || '').toLowerCase();
+    const admNo = String(adm.admissionNo || adm.admission_no || '').toLowerCase();
+    const appNo = String(adm.applicationNo || adm.application_no || '').toLowerCase();
+    const phone = String(adm.phone || '');
+    const course = String(adm.course || '').toLowerCase();
+    const q = (searchQuery || '').trim().toLowerCase();
+
+    const matchesSearch = !q || (
+      sName.includes(q) ||
+      admNo.includes(q) ||
+      appNo.includes(q) ||
+      phone.includes(q) ||
+      course.includes(q)
+    );
     const matchesCourse = courseFilter === 'All' || adm.course === courseFilter;
-    const matchesStatus = statusFilter === 'All' || adm.status === statusFilter;
+    const matchesStatus = statusFilter === 'All' || (adm.status || 'Admission Confirmed') === statusFilter;
     return matchesSearch && matchesCourse && matchesStatus;
   });
 
   const openWhatsApp = (adm) => {
-    const cleanPhone = adm.phone.replace(/[^0-9]/g, '');
-    const msg = encodeURIComponent(`Hello ${adm.studentName}! Your admission for ${adm.course} (${adm.batch}) at EduPulse Academy is confirmed under Admission No: ${adm.admissionNo}. Please contact counselor ${adm.counselor} for any queries.`);
-    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+    if (!adm) return;
+    const cleanPhone = String(adm.phone || '').replace(/[^0-9]/g, '');
+    const sName = adm.studentName || adm.student_name || 'Student';
+    const aNo = adm.admissionNo || adm.admission_no || 'ADM';
+    const cName = adm.course || 'Course';
+    const bName = adm.batch || 'Batch';
+    const counselorName = adm.counselor || 'Admissions Desk';
+    const msg = encodeURIComponent(`Hello ${sName}! Your admission for ${cName} (${bName}) at EduPulse Academy is confirmed under Admission No: ${aNo}. Please contact counselor ${counselorName} for any queries.`);
+    if (cleanPhone) {
+      window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+    }
   };
 
   return (
@@ -184,20 +202,20 @@ export default function AdmissionsModule({
                         <div className="flex items-start justify-between">
                           <div>
                             <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[10px] border border-indigo-200">
-                              {adm.admissionNo}
+                              {adm.admissionNo || adm.admission_no || 'ADM-2026'}
                             </span>
-                            <h4 className="font-bold text-slate-900 text-sm mt-1.5">{adm.studentName}</h4>
-                            <p className="text-[11px] text-slate-500">{adm.phone}</p>
+                            <h4 className="font-bold text-slate-900 text-sm mt-1.5">{adm.studentName || adm.student_name || 'Student'}</h4>
+                            <p className="text-[11px] text-slate-500">{adm.phone || '-'}</p>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium">{adm.admissionDate}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">{adm.admissionDate || adm.admission_date || ''}</span>
                         </div>
 
                         {/* Program & Batch & Trainer */}
                         <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px] space-y-1">
-                          <p className="font-bold text-slate-800 truncate">{adm.course}</p>
+                          <p className="font-bold text-slate-800 truncate">{adm.course || '-'}</p>
                           <div className="flex justify-between text-slate-500">
-                            <span>Batch: {adm.batch?.split(' ')[0]}</span>
-                            <span>{adm.duration}</span>
+                            <span>Batch: {(adm.batch || 'General Cohort')?.split(' ')[0]}</span>
+                            <span>{adm.duration || '16 Weeks'}</span>
                           </div>
                           {adm.trainer && adm.trainer !== 'Unassigned' && (
                             <div className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-semibold inline-block">
@@ -210,17 +228,17 @@ export default function AdmissionsModule({
                         <div className="flex items-center justify-between text-[11px] pt-1">
                           <div>
                             <span className="text-slate-400 text-[10px] block">Fee Paid:</span>
-                            <span className="font-extrabold text-emerald-700">₹{Number(adm.admissionFeePaid).toLocaleString()}</span>
+                            <span className="font-extrabold text-emerald-700">₹{Number(adm.admissionFeePaid ?? adm.admission_fee_paid ?? 0).toLocaleString()}</span>
                           </div>
                           <div className="text-right">
                             <span className="text-slate-400 text-[10px] block">Balance Due:</span>
-                            <span className="font-bold text-slate-800">₹{Number(adm.feeDue).toLocaleString()}</span>
+                            <span className="font-bold text-slate-800">₹{Number(adm.feeDue ?? adm.fee_due ?? 0).toLocaleString()}</span>
                           </div>
                         </div>
 
                         {/* Payment Plan Pill */}
                         <div className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded truncate">
-                          Plan: {adm.paymentPlan}
+                          Plan: {adm.paymentPlan || adm.payment_plan || 'Standard'}
                         </div>
 
                         {/* Stage Selector & Action Buttons */}
@@ -291,17 +309,17 @@ export default function AdmissionsModule({
                   filtered.map(adm => (
                     <tr key={adm.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-mono font-bold text-indigo-700">
-                        {adm.admissionNo}
+                        {adm.admissionNo || adm.admission_no || 'ADM-2026'}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">{adm.studentName}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{adm.phone}</div>
+                        <div className="font-bold text-slate-900">{adm.studentName || adm.student_name || 'Student'}</div>
+                        <div className="text-[11px] text-slate-400 font-mono">{adm.phone || '-'}</div>
                       </td>
                       <td className="px-4 py-3 text-slate-800">
-                        {adm.course}
+                        {adm.course || '-'}
                       </td>
                       <td className="px-4 py-3 text-slate-600">
-                        <div>{adm.batch}</div>
+                        <div>{adm.batch || 'General Cohort'}</div>
                         {adm.trainer && adm.trainer !== 'Unassigned' && (
                           <span className="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold border border-indigo-200 inline-block mt-0.5">
                             Trainer: {adm.trainer}
@@ -309,13 +327,13 @@ export default function AdmissionsModule({
                         )}
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-900">
-                        ₹{Number(adm.totalCourseFee).toLocaleString()}
+                        ₹{Number(adm.totalCourseFee ?? adm.total_course_fee ?? 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 font-bold text-emerald-700">
-                        ₹{Number(adm.admissionFeePaid).toLocaleString()}
+                        ₹{Number(adm.admissionFeePaid ?? adm.admission_fee_paid ?? 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 font-bold text-slate-800">
-                        ₹{Number(adm.feeDue).toLocaleString()}
+                        ₹{Number(adm.feeDue ?? adm.fee_due ?? 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3">
                         <select
