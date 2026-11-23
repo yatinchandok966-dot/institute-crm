@@ -11,7 +11,7 @@ const pool = new Pool({
   database: process.env.PGDATABASE || 'institute_crm',
   password: process.env.PGPASSWORD || 'postgres',
   port: parseInt(process.env.PGPORT || '5432', 10),
-  connectionTimeoutMillis: 2500, // Quick timeout so fallback can engage smoothly if DB is offline
+  connectionTimeoutMillis: 3000,
 });
 
 let isConnected = false;
@@ -121,6 +121,53 @@ const initDb = async (client) => {
         received_by VARCHAR(100),
         notes TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS trainers (
+        id SERIAL PRIMARY KEY,
+        employee_id VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(120) NOT NULL,
+        role VARCHAR(100) DEFAULT 'Technical Trainer',
+        department VARCHAR(100) DEFAULT 'Academic Faculty',
+        phone VARCHAR(25) NOT NULL,
+        email VARCHAR(150),
+        qualification VARCHAR(100),
+        experience VARCHAR(50),
+        status VARCHAR(30) DEFAULT 'Active',
+        bio TEXT,
+        skills JSONB DEFAULT '[]'::jsonb,
+        assigned_courses JSONB DEFAULT '[]'::jsonb,
+        assigned_batches JSONB DEFAULT '[]'::jsonb,
+        schedule JSONB DEFAULT '[]'::jsonb,
+        joining_date DATE DEFAULT CURRENT_DATE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS admissions (
+        id SERIAL PRIMARY KEY,
+        admission_no VARCHAR(50) UNIQUE NOT NULL,
+        application_no VARCHAR(50),
+        student_name VARCHAR(120) NOT NULL,
+        phone VARCHAR(25) NOT NULL,
+        email VARCHAR(150),
+        guardian_name VARCHAR(120),
+        guardian_phone VARCHAR(25),
+        address TEXT,
+        course VARCHAR(150) NOT NULL,
+        batch VARCHAR(120),
+        duration VARCHAR(50),
+        admission_date DATE DEFAULT CURRENT_DATE,
+        total_course_fee NUMERIC(10, 2) NOT NULL,
+        discount NUMERIC(10, 2) DEFAULT 0.00,
+        discount_reason VARCHAR(150),
+        net_fee NUMERIC(10, 2) NOT NULL,
+        admission_fee_paid NUMERIC(10, 2) DEFAULT 0.00,
+        fee_due NUMERIC(10, 2) DEFAULT 0.00,
+        payment_plan VARCHAR(100),
+        status VARCHAR(50) DEFAULT 'Admission Confirmed',
+        counselor VARCHAR(100) DEFAULT 'Admissions Desk',
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     console.log('✅ PostgreSQL database schema verified and initialized.');
   } catch (err) {
@@ -138,9 +185,7 @@ pool.connect()
   })
   .catch(err => {
     isConnected = false;
-    console.warn('⚠️ PostgreSQL not reachable. Falling back to persistent disk data store (data_store.json).');
-    console.warn(`   Reason: ${err.message}`);
-    console.warn('   To connect PostgreSQL / Cloud SQL: update credentials in server/.env');
+    console.error('❌ PostgreSQL connection error:', err.message);
   });
 
 export { pool, isConnected };

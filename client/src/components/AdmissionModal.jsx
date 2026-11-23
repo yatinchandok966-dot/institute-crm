@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar } from 'lucide-react';
-import { OFFICIAL_TRAINERS } from '../data/mockData';
 
 export default function AdmissionModal({
   isOpen,
@@ -12,23 +11,7 @@ export default function AdmissionModal({
   trainers = [],
   onAdmissionCreated
 }) {
-  // Always ensure trainers list contains registered faculty (with fallback so it never empties)
-  const effectiveTrainers = useMemo(() => {
-    const list = (Array.isArray(trainers) && trainers.length > 0) ? trainers : OFFICIAL_TRAINERS;
-    return list.map(t => {
-      if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
-        return {
-          ...t,
-          role: 'Technical Trainer',
-          department: 'Academic Faculty',
-          assignedCourses: Array.isArray(t.assignedCourses) ? t.assignedCourses.filter(c => c !== 'Full Stack Web Development (MERN)') : [],
-          assignedBatches: Array.isArray(t.assignedBatches) ? t.assignedBatches.filter(b => !b.includes('FSWD')) : [],
-          schedule: []
-        };
-      }
-      return t;
-    });
-  }, [trainers]);
+  const effectiveTrainers = Array.isArray(trainers) ? trainers : [];
 
   const [formData, setFormData] = useState({
     studentName: '',

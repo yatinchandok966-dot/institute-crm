@@ -25,7 +25,7 @@ import ShareQRModal from "./components/ShareQRModal";
 import PublicInquiryForm from "./components/PublicInquiryForm";
 
 // Deepak : Change mock data to original data
-import { initialInstituteData } from "./data/mockData";
+import { initialInstituteData } from "./data/constants";
 
 const STORAGE_KEY = 'edupulse_institute_crm_v2';
 
@@ -43,19 +43,7 @@ export default function App() {
             ...initialInstituteData,
             ...parsed,
             recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
-            trainers: (Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : initialInstituteData.trainers).map(t => {
-              if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
-                return {
-                  ...t,
-                  role: 'Technical Trainer',
-                  department: 'Academic Faculty',
-                  assignedCourses: Array.isArray(t.assignedCourses) ? t.assignedCourses.filter(c => c !== 'Full Stack Web Development (MERN)') : [],
-                  assignedBatches: Array.isArray(t.assignedBatches) ? t.assignedBatches.filter(b => !b.includes('FSWD')) : [],
-                  schedule: []
-                };
-              }
-              return t;
-            }),
+            trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
             courses: (Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses).filter(c => c && c.name !== 'Full Stack Web Development (MERN)'),

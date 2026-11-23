@@ -23,7 +23,7 @@ import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
   LEAD_PRIORITIES
-} from '../data/mockData';
+} from '../data/constants';
 
     export default function NewLeadModal({
       isOpen,
