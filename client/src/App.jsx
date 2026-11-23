@@ -48,7 +48,6 @@ export default function App() {
             ...initialInstituteData,
             ...parsed,
             recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
-<<<<<<< HEAD
             trainers: (Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : initialInstituteData.trainers).map(t => {
               if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
                 return {
@@ -65,9 +64,6 @@ export default function App() {
               }
               return t;
             }),
-=======
-            trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
->>>>>>> 821516974de809080f44b4dc151302f00666c5b9
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
             courses: cleanCourses,
