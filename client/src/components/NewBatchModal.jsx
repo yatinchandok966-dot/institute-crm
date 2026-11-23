@@ -4,7 +4,7 @@ import { X, CalendarDays, CheckCircle2 } from 'lucide-react';
 export default function NewBatchModal({ isOpen, onClose, onBatchCreated, courses }) {
   const [formData, setFormData] = useState({
     name: '',
-    course: courses[0]?.name || 'Full Stack Web Development (MERN)',
+    course: courses?.[0]?.name || '',
     instructor: '',
     timing: 'Mon-Fri 10:00 AM - 12:30 PM',
     startDate: '',

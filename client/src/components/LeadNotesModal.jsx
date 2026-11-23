@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   MessageSquare,
@@ -41,7 +42,7 @@ export default function LeadNotesModal({
     outcome: 'Connected - Interested',
     duration: '3m 00s',
     notes: '',
-    counselor: lead?.counselor || 'Pooja Verma',
+    counselor: lead?.counselor || 'Counselor',
     updateFollowUp: true,
     nextFollowUpDate: ''
   });
@@ -79,7 +80,7 @@ export default function LeadNotesModal({
       outcome: 'Connected - Interested',
       duration: '3m 00s',
       notes: '',
-      counselor: lead?.counselor || 'Pooja Verma',
+      counselor: lead?.counselor || 'Counselor',
       updateFollowUp: true,
       nextFollowUpDate: ''
     });
@@ -91,40 +92,40 @@ export default function LeadNotesModal({
 
   const callHistory = lead.callHistory || [];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl my-6 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl my-auto overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header - Clean Light Header */}
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center font-bold text-white text-sm">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold text-sm shadow-2xs">
               {lead.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">{lead.name}</h3>
+                <h3 className="font-bold text-sm text-slate-900">{lead.name}</h3>
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                   lead.priority === 'Hot'
-                    ? 'bg-rose-950 text-rose-300 border-rose-700'
+                    ? 'bg-rose-50 text-rose-700 border-rose-300'
                     : lead.priority === 'Warm'
-                    ? 'bg-amber-950 text-amber-300 border-amber-700'
-                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                    ? 'bg-amber-50 text-amber-800 border-amber-300'
+                    : 'bg-slate-100 text-slate-700 border-slate-300'
                 }`}>
-                  {lead.priority === 'Hot' && <Flame className="w-3 h-3 text-rose-400" />}
-                  {lead.priority === 'Warm' && <Sun className="w-3 h-3 text-amber-400" />}
-                  {lead.priority === 'Cold' && <Snowflake className="w-3 h-3 text-sky-400" />}
+                  {lead.priority === 'Hot' && <Flame className="w-3 h-3 text-rose-500" />}
+                  {lead.priority === 'Warm' && <Sun className="w-3 h-3 text-amber-500" />}
+                  {lead.priority === 'Cold' && <Snowflake className="w-3 h-3 text-sky-500" />}
                   <span>{lead.priority || 'Warm'} Priority</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                {lead.course} • <span className="font-mono text-indigo-300">{lead.phone}</span>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {lead.course} • <span className="font-mono text-slate-700 font-semibold">{lead.phone}</span>
                 {lead.city ? ` • ${lead.city}` : ''}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -372,4 +373,6 @@ export default function LeadNotesModal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

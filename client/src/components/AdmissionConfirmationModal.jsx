@@ -97,6 +97,9 @@ Welcome to EduPulse Academy!`;
               <p className="font-bold text-slate-900 text-sm mt-0.5">{admission.course}</p>
               <p className="text-slate-600 mt-0.5">Batch: {admission.batch}</p>
               <p className="text-slate-600">Duration: {admission.duration}</p>
+              {admission.trainer && admission.trainer !== 'Unassigned' && (
+                <p className="text-emerald-700 font-semibold mt-0.5">Faculty Trainer: {admission.trainer}</p>
+              )}
               <p className="text-indigo-700 font-semibold mt-1">Application #: {admission.applicationNo}</p>
             </div>
           </div>

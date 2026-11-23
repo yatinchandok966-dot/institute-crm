@@ -401,9 +401,9 @@ export default function Dashboard({
                       <div>
                         <button
                           onClick={() => onConvertToAdmission(lead)}
-                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded text-[10px] transition-colors inline-flex items-center gap-1"
+                          className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-300 font-bold rounded text-[10px] transition-all inline-flex items-center gap-1 group shadow-2xs"
                         >
-                          <UserCheck className="w-3 h-3" />
+                          <UserCheck className="w-3 h-3 text-emerald-600 group-hover:text-white transition-colors" />
                           <span>Convert to Admission</span>
                         </button>
                       </div>

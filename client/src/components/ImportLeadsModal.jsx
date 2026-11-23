@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Upload,
@@ -13,8 +14,7 @@ import {
 import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
-  LEAD_PRIORITIES,
-  COUNSELLORS_LIST
+  LEAD_PRIORITIES
 } from '../data/mockData';
 
 export default function ImportLeadsModal({
@@ -60,9 +60,9 @@ export default function ImportLeadsModal({
       'Pune',
       'B.Tech CS',
       'COEP Tech University',
-      'Full Stack Web Development (MERN)',
+      'Web Development',
       'Website',
-      'Pooja Verma',
+      'Admissions Team',
       'New',
       'Hot',
       '2026-11-22 11:00',
@@ -76,9 +76,9 @@ export default function ImportLeadsModal({
       'Mumbai',
       'BCA',
       'Mumbai University',
-      'Data Science & Machine Learning with Python',
+      'Data Science',
       'Google Ads',
-      'Karan Singhania',
+      'Admissions Desk',
       'Contacted',
       'Warm',
       '2026-11-23 15:00',
@@ -189,9 +189,9 @@ export default function ImportLeadsModal({
           const city = cityIdx !== -1 && r[cityIdx] ? r[cityIdx].trim() : '';
           const qualification = qualIdx !== -1 && r[qualIdx] ? r[qualIdx].trim() : '';
           const college = collIdx !== -1 && r[collIdx] ? r[collIdx].trim() : '';
-          const course = (courseIdx !== -1 && r[courseIdx]?.trim()) || courses?.[0]?.name || 'Full Stack Web Development (MERN)';
+          const course = (courseIdx !== -1 && r[courseIdx]?.trim()) || courses?.[0]?.name || '';
           const source = (sourceIdx !== -1 && r[sourceIdx]?.trim()) || 'Website';
-          const counselor = (counselorIdx !== -1 && r[counselorIdx]?.trim()) || 'Pooja Verma';
+          const counselor = (counselorIdx !== -1 && r[counselorIdx]?.trim()) || 'Unassigned';
           const status = (statusIdx !== -1 && r[statusIdx]?.trim()) || 'New';
           const priority = (priorityIdx !== -1 && r[priorityIdx]?.trim()) || 'Warm';
           const nextFollowUpDate = followUpIdx !== -1 && r[followUpIdx] ? r[followUpIdx].trim() : '';
@@ -294,23 +294,25 @@ export default function ImportLeadsModal({
   const validCount = parsedRows.filter(r => r.isValid).length;
   const readyToImportCount = skipDuplicates ? parsedRows.filter(r => r.isValid && !r.isDuplicate).length : validCount;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-3xl my-6 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <FileSpreadsheet className="w-5 h-5 text-indigo-400" />
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-3xl my-auto overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Header - Clean Light Header */}
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
             <div>
-              <h3 className="font-bold text-sm text-white">Bulk Import Leads via CSV</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="font-bold text-sm text-slate-900">Bulk Import Leads via CSV</h3>
+              <p className="text-xs text-slate-500">
                 Upload lead spreadsheets with auto-validation and duplicate phone/email detection
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -481,4 +483,6 @@ export default function ImportLeadsModal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

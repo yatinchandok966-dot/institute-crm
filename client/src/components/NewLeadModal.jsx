@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   UserPlus,
@@ -21,8 +22,7 @@ import {
 import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
-  LEAD_PRIORITIES,
-  COUNSELLORS_LIST
+  LEAD_PRIORITIES
 } from '../data/mockData';
 
     export default function NewLeadModal({
@@ -32,9 +32,26 @@ import {
       onLeadUpdated,
       leadToEdit = null,
       courses =[],
+      trainers =[],
       existingLeads =[]
     }) {
     const isEditMode = Boolean(leadToEdit);
+
+    // Dynamically collect known counsellors from trainers/employees and existing leads
+    const availableCounselors = useMemo(() => {
+      const set = new Set();
+      (trainers || []).forEach((t) => {
+        if (t.name) {
+          set.add(t.name);
+        }
+      });
+      (existingLeads || []).forEach((l) => {
+        if (l.counselor && l.counselor !== 'Unassigned') {
+          set.add(l.counselor);
+        }
+      });
+      return Array.from(set).sort();
+    }, [existingLeads, trainers]);
 
     const initialForm = {
       name: '',
@@ -43,51 +60,51 @@ import {
       city: '',
       qualification: '',
       college: '',
-      course: courses?.[0]?.name || 'Full Stack Web Development (MERN)',
+      course: courses?.[0]?.name || '',
       source: 'Website',
-      counselor: 'Pooja Verma',
+      counselor: '',
       status: 'New',
       priority: 'Warm',
       nextFollowUpDate: '',
       notes: ''
-};
+    };
 
-const [formData, setFormData] = useState(initialForm);
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState(null);
+    const [formData, setFormData] = useState(initialForm);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-useEffect(() => {
-  if (leadToEdit) {
-    setFormData({
-      name: leadToEdit.name || '',
-      phone: leadToEdit.phone || '',
-      email: leadToEdit.email || '',
-      city: leadToEdit.city || '',
-      qualification: leadToEdit.qualification || '',
-      college: leadToEdit.college || '',
-      course: leadToEdit.course || courses?.[0]?.name || 'Full Stack Web Development (MERN)',
-      source: leadToEdit.source || 'Website',
-      counselor: leadToEdit.counselor || 'Pooja Verma',
-      status: leadToEdit.status || 'New',
-      priority: leadToEdit.priority || 'Warm',
-      nextFollowUpDate: leadToEdit.nextFollowUpDate || '',
-      notes: leadToEdit.notes || ''
-    });
-  } else {
-    // Default next follow-up date to tomorrow 11:00 AM
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(11, 0, 0, 0);
-    const isoDateTime = tomorrow.toISOString().slice(0, 16);
+    useEffect(() => {
+      if (leadToEdit) {
+        setFormData({
+          name: leadToEdit.name || '',
+          phone: leadToEdit.phone || '',
+          email: leadToEdit.email || '',
+          city: leadToEdit.city || '',
+          qualification: leadToEdit.qualification || '',
+          college: leadToEdit.college || '',
+          course: leadToEdit.course || courses?.[0]?.name || '',
+          source: leadToEdit.source || 'Website',
+          counselor: leadToEdit.counselor || '',
+          status: leadToEdit.status || 'New',
+          priority: leadToEdit.priority || 'Warm',
+          nextFollowUpDate: leadToEdit.nextFollowUpDate || '',
+          notes: leadToEdit.notes || ''
+        });
+      } else {
+        // Default next follow-up date to tomorrow 11:00 AM
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(11, 0, 0, 0);
+        const isoDateTime = tomorrow.toISOString().slice(0, 16);
 
-    setFormData({
-      ...initialForm,
-      course: courses?.[0]?.name || 'Full Stack Web Development (MERN)',
-      nextFollowUpDate: isoDateTime
-    });
-  }
-  setError(null);
-}, [leadToEdit, isOpen, courses]);
+        setFormData({
+          ...initialForm,
+          course: courses?.[0]?.name || '',
+          nextFollowUpDate: isoDateTime
+        });
+      }
+      setError(null);
+    }, [leadToEdit, isOpen, courses]);
 
 // Normalize phone for comparison (removes all non-digit characters)
 const normalizePhone = (p) => (p || '').replace(/[^0-9]/g, '');
@@ -129,9 +146,28 @@ if (!isOpen) return null;
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  if (!formData.name.trim() || !formData.phone.trim()) {
-    setError('Full Name and Phone Number are required.');
+  if (!formData.name.trim()) {
+    setError('Full Name is required.');
     return;
+  }
+
+  const cleanPhone = (formData.phone || '').replace(/\D/g, '');
+  if (!cleanPhone) {
+    setError('Phone Number is required.');
+    return;
+  }
+  if (cleanPhone.length !== 10) {
+    setError('Phone Number must be exactly 10 digits (digits only, no letters allowed).');
+    return;
+  }
+
+  const cleanEmail = (formData.email || '').trim().toLowerCase();
+  if (cleanEmail) {
+    const emailPattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+    if (!emailPattern.test(cleanEmail)) {
+      setError('Please enter a valid lowercase email address (e.g. name@gmail.com). Must contain @ and a valid domain.');
+      return;
+    }
   }
 
   setLoading(true);
@@ -139,7 +175,11 @@ const handleSubmit = async (e) => {
 
   const payload = {
     ...formData,
-      createdAt: isEditMode && leadToEdit?.createdAt ? leadToEdit.createdAt : new Date().toISOString().split('T')[0]
+    phone: cleanPhone,
+    email: cleanEmail,
+    course: formData.course.trim() || 'General Inquiry',
+    counselor: formData.counselor.trim() || 'Unassigned',
+    createdAt: isEditMode && leadToEdit?.createdAt ? leadToEdit.createdAt : new Date().toISOString().split('T')[0]
   };
 
   try {
@@ -171,35 +211,40 @@ const handleSubmit = async (e) => {
     }
   };
 
-  return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl my-6 overflow-hidden flex flex-col max-h-[92vh]">
-            {/* Header */}
-              <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2.5">
-                  {isEditMode ? (
-                    <Edit3 className="w-5 h-5 text-amber-400" />
-                  ) : (
-                    <UserPlus className="w-5 h-5 text-indigo-400" />
-                  )}
-                  <div>
-                    <h3 className="font-bold text-sm text-white">
-                      {isEditMode ? `Edit Lead Details: ${leadToEdit.name}` : 'Add Prospective Lead'}
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      {isEditMode
-                        ? 'Update prospective student profile and follow-up timeline'
-                        : 'Capture complete lead details for admissions counseling'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl my-auto overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Header - Clean, modern, light header */}
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+              isEditMode ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+            }`}>
+              {isEditMode ? (
+                <Edit3 className="w-5 h-5" />
+              ) : (
+                <UserPlus className="w-5 h-5" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-slate-900">
+                {isEditMode ? `Edit Lead Details: ${leadToEdit.name}` : 'Add Prospective Lead'}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {isEditMode
+                  ? 'Update prospective student profile and follow-up timeline'
+                  : 'Capture complete lead details for admissions counseling'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
                 {/* Form Body with scrollable content */}
                 <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs">
@@ -253,34 +298,66 @@ const handleSubmit = async (e) => {
                                 </div>
 
                                 <div>
-                                  <label className="block font-semibold text-slate-700 mb-1">
-                                    Phone Number <span className="text-rose-500">*</span>
-                                  </label>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block font-semibold text-slate-700">
+                                      Phone Number <span className="text-rose-500">*</span>
+                                    </label>
+                                    <span className={`text-[10px] font-mono font-bold ${
+                                      (formData.phone || '').length === 10 ? 'text-emerald-600' : 'text-slate-400'
+                                    }`}>
+                                      {(formData.phone || '').length}/10 digits
+                                    </span>
+                                  </div>
                                   <div className="relative">
                                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                                     <input
                                       type="tel"
                                       required
+                                      maxLength={10}
                                       value={formData.phone}
-                                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                      placeholder="+91 98765 43210"
-                                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                      onChange={(e) => {
+                                        const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setFormData({ ...formData, phone: digitsOnly });
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (
+                                          !/[0-9]/.test(e.key) &&
+                                          !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
+                                        ) {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      placeholder="10-digit number (e.g. 9876543210)"
+                                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-medium"
                                     />
                                   </div>
                                 </div>
 
                                 <div>
-                                  <label className="block font-semibold text-slate-700 mb-1">
-                                    Email Address
-                                  </label>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block font-semibold text-slate-700">
+                                      Email Address
+                                    </label>
+                                    <span className="text-[10px] text-slate-400 font-medium">
+                                      lowercase only (e.g. @gmail.com)
+                                    </span>
+                                  </div>
                                   <div className="relative">
                                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                                     <input
                                       type="email"
                                       value={formData.email}
-                                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                      placeholder="student@example.com"
-                                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                      onChange={(e) => {
+                                        const lower = e.target.value.toLowerCase().replace(/[A-Z\s]/g, '').trim();
+                                        setFormData({ ...formData, email: lower });
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === ' ') {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      placeholder="e.g. arpita@gmail.com"
+                                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 lowercase font-medium"
                                     />
                                   </div>
                                 </div>
@@ -355,17 +432,20 @@ const handleSubmit = async (e) => {
                                         </label>
                                         <div className="relative">
                                           <BookOpen className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                                          <select
+                                          <input
+                                            type="text"
+                                            list="available-courses-list"
                                             value={formData.course}
                                             onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                                            placeholder={courses?.length > 0 ? "Select or enter course name" : "Enter interested course"}
                                             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                                          >
+                                            required
+                                          />
+                                          <datalist id="available-courses-list">
                                             {courses.map((c) => (
-                                              <option key={c.id} value={c.name}>
-                                                {c.name}
-                                              </option>
+                                              <option key={c.id || c.name} value={c.name} />
                                             ))}
-                                          </select>
+                                          </datalist>
                                         </div>
                                       </div>
 
@@ -398,17 +478,23 @@ const handleSubmit = async (e) => {
                                             <label className="block font-semibold text-slate-700 mb-1">
                                               Assigned Counsellor
                                             </label>
-                                            <select
-                                              value={formData.counselor}
-                                              onChange={(e) => setFormData({ ...formData, counselor: e.target.value })}
-                                              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                                            >
-                                              {COUNSELLORS_LIST.map((c) => (
-                                                <option key={c} value={c}>
-                                                  {c}
-                                                </option>
-                                              ))}
-                                            </select>
+                                            <div className="relative">
+                                              <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                                              <input
+                                                type="text"
+                                                list="available-counselors-list"
+                                                value={formData.counselor}
+                                                onChange={(e) => setFormData({ ...formData, counselor: e.target.value })}
+                                                placeholder="Enter counselor or Unassigned"
+                                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                              />
+                                              <datalist id="available-counselors-list">
+                                                <option value="Unassigned" />
+                                                {availableCounselors.map((c) => (
+                                                  <option key={c} value={c} />
+                                                ))}
+                                              </datalist>
+                                            </div>
                                           </div>
 
                                           <div>
@@ -532,5 +618,7 @@ const handleSubmit = async (e) => {
                                           </form>
                                         </div>
                                       </div>
-                                      );
+  );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

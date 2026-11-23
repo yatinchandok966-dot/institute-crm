@@ -9,13 +9,15 @@ import {
   CreditCard,
   ClipboardCheck,
   School,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, data }) {
   const leadsCount = data?.recentLeads?.length || 0;
   const admissionsCount = data?.admissions?.length || 0;
   const batchesCount = data?.batches?.length || 0;
+  const trainersCount = data?.trainers?.length || 0;
   const studentsCount = data?.students?.length || 0;
   const pendingFees = data?.stats?.pendingFees || 0;
 
@@ -33,6 +35,7 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
       items: [
         { id: 'courses', label: 'Courses & Syllabus', icon: BookOpen },
         { id: 'batches', label: 'Batches & Cohorts', icon: CalendarDays, badge: batchesCount > 0 ? `${batchesCount}` : null },
+        { id: 'trainers', label: 'Trainers / Faculty', icon: Users, badge: trainersCount > 0 ? `${trainersCount}` : null },
         { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: studentsCount > 0 ? `${studentsCount}` : null }
       ]
     },

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   UserPlus,
   Search,
@@ -17,28 +18,32 @@ import {
   Trash2,
   Download,
   Upload,
-  FileSpreadsheet,
   Check,
   X,
   SlidersHorizontal,
   AlertTriangle,
   RefreshCw,
-  LayoutGrid,
-  List,
   Building,
   GraduationCap,
   MapPin,
   User,
   ChevronRight,
   PhoneCall,
-  FileText
+  FileText,
+  Sparkles,
+  AlertCircle,
+  ArrowUpRight,
+  CheckCircle2,
+  CalendarClock,
+  Layers,
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 
 import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
-  LEAD_PRIORITIES,
-  COUNSELLORS_LIST
+  LEAD_PRIORITIES
 } from '../data/mockData';
 
 import NewLeadModal from './NewLeadModal';
@@ -48,6 +53,7 @@ import ImportLeadsModal from './ImportLeadsModal';
 export default function LeadsModule({
   leads = [],
   courses = [],
+  trainers = [],
   onOpenShareQR,
   onUpdateLeadStatus,
   onConvertToAdmission,
@@ -60,9 +66,6 @@ export default function LeadsModule({
   onAddLeadNote,
   onLogLeadCall
 }) {
-  // View mode: 'table' | 'kanban'
-  const [viewMode, setViewMode] = useState('table');
-
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState('All');
@@ -100,7 +103,45 @@ export default function LeadsModule({
     if (cleanDate === todayStr) {
       return { type: 'today', label: 'Due Today', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 font-bold' };
     }
-    return { type: 'upcoming', label: 'Upcoming', badgeClass: 'bg-slate-50 text-slate-700 border-slate-200' };
+    return { type: 'upcoming', label: 'Upcoming', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold' };
+  };
+
+  // Helper to format 10-digit phone number cleanly
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '—';
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+    }
+    return phone;
+  };
+
+  // Helper to format follow-up date and time nicely
+  const formatFollowUpDate = (dateStr) => {
+    if (!dateStr) return { date: 'Unscheduled', time: '' };
+    try {
+      const parts = dateStr.includes('T') ? dateStr.split('T') : dateStr.split(' ');
+      const datePart = parts[0];
+      const timePart = parts[1] || '';
+
+      const [year, month, day] = datePart.split('-');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = months[parseInt(month, 10) - 1] || month;
+      const formattedDate = `${day} ${monthName} ${year}`;
+
+      let formattedTime = '';
+      if (timePart) {
+        const [hourStr, minStr] = timePart.split(':');
+        let hour = parseInt(hourStr, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12 || 12;
+        formattedTime = `${String(hour).padStart(2, '0')}:${minStr || '00'} ${ampm}`;
+      }
+
+      return { date: formattedDate, time: formattedTime };
+    } catch {
+      return { date: dateStr.replace('T', ' '), time: '' };
+    }
   };
 
   // Follow-up reminder statistics
@@ -119,14 +160,27 @@ export default function LeadsModule({
     return { overdue, today, upcoming };
   }, [leads, todayStr]);
 
-  // Stage counts for recommended pipeline
-  const pipelineCounts = useMemo(() => {
-    const counts = {};
-    LEAD_PIPELINE_STAGES.forEach((stage) => {
-      counts[stage] = leads.filter((l) => l.status === stage).length;
+  // Dynamic unique courses from real courses and real leads (no fake defaults)
+  const uniqueCourses = useMemo(() => {
+    const set = new Set();
+    (courses || []).forEach(c => c.name && set.add(c.name));
+    leads.forEach(l => l.course && set.add(l.course));
+    return Array.from(set).sort();
+  }, [courses, leads]);
+
+  // Dynamic unique counsellors from trainers/employees and actual leads
+  const uniqueCounselors = useMemo(() => {
+    const set = new Set();
+    (trainers || []).forEach(t => {
+      if (t.name) set.add(t.name);
     });
-    return counts;
-  }, [leads]);
+    leads.forEach(l => {
+      if (l.counselor && l.counselor !== 'Unassigned') {
+        set.add(l.counselor);
+      }
+    });
+    return Array.from(set).sort();
+  }, [leads, trainers]);
 
   // Filtered Leads
   const filteredLeads = useMemo(() => {
@@ -292,758 +346,717 @@ export default function LeadsModule({
   };
 
   return (
-      <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-        {/* 1. Header Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* 1. Header Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Leads & Inquiries
+            </h1>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+              {leads.length} Total Leads
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage prospective inquiries, counselor allocations, duplicate checks, follow-ups, and admissions conversion.
+          </p>
+        </div>
+
+        {/* Action Buttons (Table View Only - Pipeline View Removed) */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Import CSV */}
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-2xs transition-all hover:border-slate-400"
+            title="Bulk import leads from CSV"
+          >
+            <Upload className="w-3.5 h-3.5 text-slate-600" />
+            <span className="hidden sm:inline">Import CSV</span>
+          </button>
+
+          {/* Export CSV */}
+          <button
+            onClick={() => handleExportCSV(false)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-2xs transition-all hover:border-slate-400"
+            title="Export all leads to CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
+          {/* Share QR Form */}
+          {onOpenShareQR && (
+            <button
+              onClick={onOpenShareQR}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-2xs transition-all hover:border-slate-400"
+            >
+              <QrCode className="w-3.5 h-3.5 text-indigo-600" />
+              <span>QR Form</span>
+            </button>
+          )}
+
+          {/* Add Lead */}
+          <button
+            onClick={() => {
+              setEditingLead(null);
+              setIsAddEditModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add Lead</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Elevated Follow-Up Reminder Cards (Increased Height & Presence) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+        {/* Card 1: Overdue Follow-ups */}
+        <div
+          onClick={() => setFollowUpFilter(followUpFilter === 'overdue' ? 'All' : 'overdue')}
+          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${
+            followUpFilter === 'overdue'
+              ? 'border-rose-400 ring-2 ring-rose-300 shadow-md bg-rose-50/40'
+              : 'border-slate-200/90 hover:border-rose-300 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="relative w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+              <Clock className="w-6 h-6 text-rose-600" />
+              {followUpStats.overdue > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600 border border-white"></span>
+                </span>
+              )}
+            </div>
+
+            <div className="text-right">
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${
+                followUpStats.overdue > 0 ? 'text-rose-600' : 'text-slate-400'
+              }`}>
+                {followUpStats.overdue}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Overdue Follow-ups
+            </h3>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Scheduled prior to today
+            </p>
+          </div>
+
+          <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            {followUpFilter === 'overdue' ? (
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                <span>Active Filter</span>
+                <span className="text-rose-500 font-normal">✕</span>
+              </span>
+            ) : (
+              <span className="text-[11px] text-slate-400 font-medium group-hover:text-rose-600 transition-colors">
+                Action required immediately
+              </span>
+            )}
+            <span className="text-xs font-bold text-rose-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              {followUpFilter === 'overdue' ? 'Showing filtered' : 'Filter leads →'}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Follow-ups Due Today */}
+        <div
+          onClick={() => setFollowUpFilter(followUpFilter === 'today' ? 'All' : 'today')}
+          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${
+            followUpFilter === 'today'
+              ? 'border-amber-400 ring-2 ring-amber-300 shadow-md bg-amber-50/40'
+              : 'border-slate-200/90 hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="relative w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+              <Calendar className="w-6 h-6 text-amber-600" />
+              {followUpStats.today > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500 border border-white"></span>
+                </span>
+              )}
+            </div>
+
+            <div className="text-right">
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${
+                followUpStats.today > 0 ? 'text-amber-600' : 'text-slate-400'
+              }`}>
+                {followUpStats.today}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Follow-ups Due Today
+            </h3>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Action required today
+            </p>
+          </div>
+
+          <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            {followUpFilter === 'today' ? (
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                <span>Active Filter</span>
+                <span className="text-amber-600 font-normal">✕</span>
+              </span>
+            ) : (
+              <span className="text-[11px] text-slate-400 font-medium group-hover:text-amber-600 transition-colors">
+                Today's counseling queue
+              </span>
+            )}
+            <span className="text-xs font-bold text-amber-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              {followUpFilter === 'today' ? 'Showing filtered' : 'Filter leads →'}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Upcoming Follow-ups */}
+        <div
+          onClick={() => setFollowUpFilter(followUpFilter === 'upcoming' ? 'All' : 'upcoming')}
+          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${
+            followUpFilter === 'upcoming'
+              ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-md bg-indigo-50/40'
+              : 'border-slate-200/90 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="relative w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200/80 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+              <PhoneCall className="w-6 h-6 text-indigo-600" />
+            </div>
+
+            <div className="text-right">
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${
+                followUpStats.upcoming > 0 ? 'text-indigo-600' : 'text-slate-400'
+              }`}>
+                {followUpStats.upcoming}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Upcoming Follow-ups
+            </h3>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Scheduled future calls
+            </p>
+          </div>
+
+          <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            {followUpFilter === 'upcoming' ? (
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                <span>Active Filter</span>
+                <span className="text-indigo-600 font-normal">✕</span>
+              </span>
+            ) : (
+              <span className="text-[11px] text-slate-400 font-medium group-hover:text-indigo-600 transition-colors">
+                Future calendar pipeline
+              </span>
+            )}
+            <span className="text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              {followUpFilter === 'upcoming' ? 'Showing filtered' : 'Filter leads →'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Filter Toolbar */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 text-xs">
+        {/* Top search & quick clear */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search leads by name, phone, email, city, qualification, college..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+            />
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-1 self-start sm:self-auto transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Reset All Filters</span>
+            </button>
+          )}
+        </div>
+
+        {/* Dropdown Filters: Source, Status, Course, Counsellor, Priority */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 pt-2 border-t border-slate-100">
+          {/* Source Filter */}
           <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  Leads & Inquiries
-                </h1>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    {leads.length} Total Leads
-                  </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Manage prospective inquiries, counselor allocations, duplicate checks, follow-ups, and admissions conversion.
-              </p>
-            </div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Lead Source
+            </label>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="All">All Sources ({leads.length})</option>
+              {LEAD_SOURCES.map((src) => (
+                <option key={src} value={src}>{src}</option>
+              ))}
+            </select>
+          </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* View Mode Toggle */}
-                <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white shadow-2xs">
-                  <button
-                    onClick={() => setViewMode('table')}
-                    className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all ${viewMode === 'table'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    title="Table View"
-                  >
-                    <List className="w-4 h-4" />
-                    <span className="hidden md:inline">Table</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('kanban')}
-                    className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all ${viewMode === 'kanban'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    title="Pipeline Kanban View"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                    <span className="hidden md:inline">Pipeline</span>
-                  </button>
-                </div>
+          {/* Status Filter */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Pipeline Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="All">All Stages</option>
+              {LEAD_PIPELINE_STAGES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
 
-                {/* Import / Export */}
-                <button
-                  onClick={() => setIsImportModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-2xs transition-all hover:border-slate-400"
-                  title="Bulk import leads from CSV"
-                >
-                  <Upload className="w-3.5 h-3.5 text-slate-600" />
-                  <span className="hidden sm:inline">Import CSV</span>
-                </button>
+          {/* Course Filter */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Interested Course
+            </label>
+            <select
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="All">All Courses {uniqueCourses.length > 0 ? `(${uniqueCourses.length})` : ''}</option>
+              {uniqueCourses.map((cName) => (
+                <option key={cName} value={cName}>{cName}</option>
+              ))}
+            </select>
+          </div>
 
-                <button
-                  onClick={() => handleExportCSV(false)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-2xs transition-all hover:border-slate-400"
-                  title="Export all leads to CSV"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-600" />
-                  <span className="hidden sm:inline">Export CSV</span>
-                </button>
+          {/* Counselor Filter */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Assigned Counsellor
+            </label>
+            <select
+              value={counselorFilter}
+              onChange={(e) => setCounselorFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="All">All Counsellors {uniqueCounselors.length > 0 ? `(${uniqueCounselors.length})` : ''}</option>
+              {uniqueCounselors.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
 
-                {/* Share QR Form */}
-                {onOpenShareQR && (
-                  <button
-                    onClick={onOpenShareQR}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-2xs transition-all hover:border-slate-400"
-                  >
-                    <QrCode className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>QR Form</span>
-                  </button>
-                )}
+          {/* Priority Filter */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Lead Priority
+            </label>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="All">All Priorities</option>
+              {LEAD_PRIORITIES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
 
-                {/* Add Lead */}
-                <button
-                  onClick={() => {
-                    setEditingLead(null);
-                    setIsAddEditModalOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Add Lead</span>
-                </button>
-              </div>
-            </div>
-
-                {/* 2. Follow-Up Reminders Alert Banner */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Overdue */}
-                  <button
-                    onClick={() => setFollowUpFilter(followUpFilter === 'overdue' ? 'All' : 'overdue')}
-                    className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${followUpFilter === 'overdue'
-                        ? 'bg-rose-50 border-rose-400 ring-2 ring-rose-300'
-                        : 'bg-white border-rose-200 hover:bg-rose-50/50'
-                      }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
-                        <Clock className="w-5 h-5 text-rose-600" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-rose-800 font-bold uppercase tracking-wider">
-                          Overdue Follow-ups
+      {/* 5. Professional Leads Table View */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 select-none">
+              <tr>
+                <th className="px-5 py-3.5 text-left whitespace-nowrap">Lead Information</th>
+                <th className="px-4 py-3.5 text-left whitespace-nowrap">Contact & Actions</th>
+                <th className="px-4 py-3.5 text-left whitespace-nowrap">Interested Course</th>
+                <th className="px-4 py-3.5 text-left whitespace-nowrap">Source</th>
+                <th className="px-4 py-3.5 text-left whitespace-nowrap">Assigned Counsellor</th>
+                <th className="px-3 py-3.5 text-center whitespace-nowrap">Priority</th>
+                <th className="px-4 py-3.5 text-left whitespace-nowrap">Next Follow-Up</th>
+                <th className="px-4 py-3.5 text-left whitespace-nowrap">Lead Status</th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filteredLeads.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="py-12 text-center text-slate-400">
+                    {leads.length === 0 ? (
+                      <div className="max-w-md mx-auto space-y-3 py-4">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto shadow-2xs">
+                          <UserPlus className="w-6 h-6" />
                         </div>
-                        <div className="text-xs text-slate-500">Scheduled before today</div>
-                      </div>
-                    </div>
-                    <span className="text-xl font-extrabold text-rose-700 font-mono">
-                      {followUpStats.overdue}
-                    </span>
-                  </button>
-
-                  {/* Due Today */}
-                  <button
-                    onClick={() => setFollowUpFilter(followUpFilter === 'today' ? 'All' : 'today')}
-                    className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${followUpFilter === 'today'
-                        ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-300'
-                        : 'bg-white border-amber-200 hover:bg-amber-50/50'
-                      }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-                        <Calendar className="w-5 h-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-amber-800 font-bold uppercase tracking-wider">
-                          Follow-ups Due Today
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm">No Leads Recorded Yet</h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Start building your inquiry pipeline by recording prospective students or importing records.
+                          </p>
                         </div>
-                        <div className="text-xs text-slate-500">Action required today</div>
-                      </div>
-                    </div>
-                    <span className="text-xl font-extrabold text-amber-700 font-mono">
-                      {followUpStats.today}
-                    </span>
-                  </button>
-
-                  {/* Upcoming */}
-                  <button
-                    onClick={() => setFollowUpFilter(followUpFilter === 'upcoming' ? 'All' : 'upcoming')}
-                    className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${followUpFilter === 'upcoming'
-                        ? 'bg-indigo-50 border-indigo-400 ring-2 ring-indigo-300'
-                        : 'bg-white border-slate-200 hover:bg-slate-50'
-                      }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                        <PhoneCall className="w-5 h-5 text-indigo-600" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-indigo-900 font-bold uppercase tracking-wider">
-                          Upcoming Follow-ups
+                        <div className="flex items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingLead(null);
+                              setIsAddEditModalOpen(true);
+                            }}
+                            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs shadow-xs transition-colors inline-flex items-center gap-1.5"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            <span>Add First Lead</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg font-bold text-xs shadow-2xs transition-colors inline-flex items-center gap-1.5"
+                          >
+                            <Upload className="w-4 h-4 text-slate-500" />
+                            <span>Import CSV</span>
+                          </button>
                         </div>
-                        <div className="text-xs text-slate-500">Scheduled future calls</div>
                       </div>
-                    </div>
-                    <span className="text-xl font-extrabold text-indigo-700 font-mono">
-                      {followUpStats.upcoming}
-                    </span>
-                  </button>
-                </div>
-
-                {/* 3. Recommended Lead Pipeline Stages Funnel */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3 overflow-x-auto">
-                  <div className="flex items-center justify-between mb-2 px-1">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      Recommended Lead Pipeline
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      Click any stage to filter leads instantly
-                    </span>
-                  </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 min-w-[620px]">
-                        {LEAD_PIPELINE_STAGES.map((stage, idx) => {
-                          const isSelected = statusFilter === stage;
-                          const count = pipelineCounts[stage] || 0;
-                          return (
-                            <button
-                              key={stage}
-                              onClick={() => setStatusFilter(isSelected ? 'All' : stage)}
-                              className={`p-2.5 rounded-lg border text-left transition-all ${isSelected
-                                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
-                                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
-                                }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-indigo-200' : 'text-slate-400'
-                                  }`}>
-                                  {idx + 1}. Stage
-                                </span>
-                                <span className={`text-xs font-extrabold px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-indigo-700 text-white' : 'bg-slate-200 text-slate-800'
-                                  }`}>
-                                  {count}
-                                </span>
-                              </div>
-                              <div className="text-xs font-bold mt-1 truncate" title={stage}>
-                                {stage}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* 4. Comprehensive Filter Toolbar */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 text-xs">
-                      {/* Top search & quick clear */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        <div className="relative flex-1 max-w-md">
-                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                          <input
-                            type="text"
-                            placeholder="Search leads by name, phone, email, city, qualification, college..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                          />
-                        </div>
-
+                    ) : (
+                      <div className="max-w-xs mx-auto space-y-2">
+                        <User className="w-8 h-8 text-slate-300 mx-auto" />
+                        <p className="font-semibold text-slate-600">No matching leads found</p>
+                        <p className="text-[11px] text-slate-400">Try adjusting your filters or search query.</p>
                         {hasActiveFilters && (
                           <button
+                            type="button"
                             onClick={handleResetFilters}
-                            className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-1 self-start sm:self-auto transition-colors"
+                            className="mt-2 text-indigo-600 font-bold hover:underline"
                           >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Reset All Filters</span>
+                            Reset filters
                           </button>
                         )}
                       </div>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                filteredLeads.map((lead) => {
+                  const fuStatus = getFollowUpStatus(lead.nextFollowUpDate);
+                  const notesCount = (lead.notesList?.length) || (lead.notes ? 1 : 0);
+                  const callsCount = lead.callHistory?.length || 0;
+                  const fuFormatted = formatFollowUpDate(lead.nextFollowUpDate);
 
-                      {/* Dropdown Filters: Source, Status, Course, Counsellor, Priority */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 pt-2 border-t border-slate-100">
-                        {/* Source Filter */}
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                            Lead Source
-                          </label>
-                          <select
-                            value={sourceFilter}
-                            onChange={(e) => setSourceFilter(e.target.value)}
-                            className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          >
-              <option value="All">All Sources ({leads.length})</option>
-              {
-                                LEAD_SOURCES.map((src) => (
-                                  <option key={src} value={src}>{src}</option>
-                                ))
-                              }
-            </select>
-                        </div>
-
-                          {/* Status Filter */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Pipeline Status
-                            </label>
-                            <select
-                              value={statusFilter}
-                              onChange={(e) => setStatusFilter(e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            >
-                              <option value="All">All Stages</option>
-                                {
-                                  LEAD_PIPELINE_STAGES.map((s) => (
-                                    <option key={s} value={s}>{s}</option>
-                                  ))
-                                }
-            </select>
+                  return (
+                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                      {/* 1. Lead Information */}
+                      <td className="px-5 py-4 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0 shadow-2xs">
+                            {(lead.name || 'L').charAt(0).toUpperCase()}
                           </div>
-
-                          {/* Course Filter */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Interested Course
-                            </label>
-                            <select
-                              value={courseFilter}
-                              onChange={(e) => setCourseFilter(e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium truncate focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            >
-                              <option value="All">All Courses</option>
-                              {courses.map((c) => (
-                                <option key={c.id} value={c.name}>{c.name}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Counselor Filter */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Assigned Counsellor
-                            </label>
-                            <select
-                              value={counselorFilter}
-                              onChange={(e) => setCounselorFilter(e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            >
-                              <option value="All">All Counsellors</option>
-                              {COUNSELLORS_LIST.map((c) => (
-                                <option key={c} value={c}>{c}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Priority Filter */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Lead Priority
-                            </label>
-                            <select
-                              value={priorityFilter}
-                              onChange={(e) => setPriorityFilter(e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            >
-                              <option value="All">All Priorities</option>
-                              {LEAD_PRIORITIES.map((p) => (
-                                <option key={p} value={p}>{p}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                                {/* 5. Main View: Table View OR Kanban View */ }
-      {viewMode === 'table' ? (
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-                                  <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs">
-                                      <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-                                        <tr>
-                                          <th className="px-5 py-3.5">Lead Information</th>
-                                          <th className="px-4 py-3.5">Contact & Actions</th>
-                                          <th className="px-4 py-3.5">Interested Course</th>
-                                          <th className="px-4 py-3.5">Source</th>
-                                          <th className="px-4 py-3.5">Assigned Counsellor</th>
-                                          <th className="px-3 py-3.5 text-center">Priority</th>
-                                          <th className="px-4 py-3.5">Next Follow-up</th>
-                                          <th className="px-4 py-3.5">Lead Status</th>
-                                          <th className="px-5 py-3.5 text-right">Actions</th>
-                                        </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100 font-medium">
-                                              {filteredLeads.length === 0 ? (
-                                                <tr>
-                                                  <td colSpan="9" className="py-12 text-center text-slate-400">
-                                                    <div className="max-w-xs mx-auto space-y-2">
-                                                      <User className="w-8 h-8 text-slate-300 mx-auto" />
-                                                      <p className="font-semibold text-slate-600">No matching leads found</p>
-                                                      <p className="text-[11px] text-slate-400">Try adjusting your filters or search query.</p>
-                                                      {hasActiveFilters && (
-                                                        <button
-                                                          onClick={handleResetFilters}
-                                                          className="mt-2 text-indigo-600 font-bold hover:underline"
-                                                        >
-                                                          Reset filters
-                                                        </button>
-                                                      )}
-                                                    </div>
-                                                  </td>
-                                                </tr>
-                                          ) : (
-                  filteredLeads.map((lead) => {
-                    const fuStatus = getFollowUpStatus(lead.nextFollowUpDate);
-                                          const notesCount = (lead.notesList?.length) || (lead.notes ? 1 : 0);
-                                          const callsCount = lead.callHistory?.length || 0;
-
-                                          return (
-                                          <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
-                                            {/* 1. Lead Information */}
-                                            <td className="px-5 py-3.5">
-                                              <div className="font-bold text-slate-900 text-sm">{lead.name}</div>
-                                              {lead.email && (
-                                                <div className="text-[11px] text-slate-500 truncate max-w-[180px]">
-                                                  {lead.email}
-                                                </div>
-                                              )}
-                                              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[10px] text-slate-500">
-                                                {lead.city && (
-                                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-600">
-                                                    <MapPin className="w-3 h-3 text-slate-400" />
-                                                    {lead.city}
-                                                  </span>
-                                                )}
-                                                {lead.qualification && (
-                                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-600">
-                                                    <GraduationCap className="w-3 h-3 text-slate-400" />
-                                                    {lead.qualification}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {lead.college && (
-                                                <div className="text-[10px] text-slate-400 italic truncate max-w-[200px] mt-0.5">
-                                                  {lead.college}
-                                                </div>
-                                              )}
-                                            </td>
-
-                                            {/* 2. Phone & Quick Connect */}
-                                            <td className="px-4 py-3.5">
-                                              <div className="font-mono text-slate-800 font-semibold text-[11px]">
-                                                {lead.phone}
-                                              </div>
-                                              <div className="flex items-center gap-1.5 mt-1.5">
-                                                <button
-                                                  onClick={() => openWhatsApp(lead)}
-                                                  className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors"
-                                                  title="Message on WhatsApp"
-                                                >
-                                                  <MessageSquare className="w-3.5 h-3.5" />
-                                                </button>
-                                                <a
-                                                  href={`tel:${lead.phone}`}
-                                                  className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors"
-                                                  title="Call Phone Number"
-                                                >
-                                                  <Phone className="w-3.5 h-3.5" />
-                                                </a>
-                                                <button
-                                                  onClick={() => handleOpenNotes(lead)}
-                                                  className="px-1.5 py-0.5 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold transition-colors flex items-center gap-1"
-                                                  title="Notes & Call History"
-                                                >
-                                                  <FileText className="w-3 h-3" />
-                                                  <span>{notesCount + callsCount}</span>
-                                                </button>
-                                              </div>
-                                            </td>
-
-                                            {/* 3. Interested Course */}
-                                            <td className="px-4 py-3.5 text-slate-800 font-semibold max-w-[190px]">
-                                              <div className="truncate" title={lead.course}>{lead.course}</div>
-                                            </td>
-
-                                            {/* 4. Lead Source */}
-                                            <td className="px-4 py-3.5">
-                                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                                                {lead.source || 'Website'}
-                                              </span>
-                                            </td>
-
-                                            {/* 5. Assigned Counsellor with quick reassignment */}
-                                            <td className="px-4 py-3.5">
-                                              <select
-                                                value={lead.counselor || 'Pooja Verma'}
-                                                onChange={(e) => {
-                                                  if (onAssignCounsellor) {
-                                                    onAssignCounsellor(lead.id, e.target.value);
-                                                  } else if (onLeadUpdated) {
-                                                    onLeadUpdated({ ...lead, counselor: e.target.value });
-                                                  }
-                                                }}
-                                                className="text-[11px] font-medium bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-slate-800 focus:outline-none"
-                                                title="Reassign lead to employee"
-                                              >
-                                                {COUNSELLORS_LIST.map((c) => (
-                                                  <option key={c} value={c}>{c}</option>
-                                                ))}
-                                              </select>
-                                            </td>
-
-                                            {/* 6. Lead Priority */}
-                                            <td className="px-3 py-3.5 text-center">
-                                              <select
-                                                value={lead.priority || 'Warm'}
-                                                onChange={(e) => {
-                                                  if (onUpdateLeadPriority) {
-                                                    onUpdateLeadPriority(lead.id, e.target.value);
-                                                  } else if (onLeadUpdated) {
-                                                    onLeadUpdated({ ...lead, priority: e.target.value });
-                                                  }
-                                                }}
-                                                className={`text-[10px] font-bold rounded-full px-2 py-0.5 border cursor-pointer focus:outline-none ${lead.priority === 'Hot'
-                                                    ? 'bg-rose-50 text-rose-700 border-rose-300'
-                                                    : lead.priority === 'Warm'
-                                                      ? 'bg-amber-50 text-amber-700 border-amber-300'
-                                                      : 'bg-slate-100 text-slate-700 border-slate-300'
-                                                  }`}
-                                              >
-                                                {LEAD_PRIORITIES.map((p) => (
-                                                  <option key={p} value={p}>{p}</option>
-                                                ))}
-                                              </select>
-                                            </td>
-
-                                            {/* 7. Next Follow-up Date */}
-                                            <td className="px-4 py-3.5">
-                                              {lead.nextFollowUpDate ? (
-                                                <div className="space-y-0.5">
-                                                  <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${fuStatus.badgeClass}`}>
-                                                    <Clock className="w-3 h-3" />
-                                                    <span>{fuStatus.label}</span>
-                                                  </span>
-                                                  <div className="text-[10px] text-slate-500 font-mono">
-                                                    {lead.nextFollowUpDate.replace('T', ' ')}
-                                                  </div>
-                                                </div>
-                                              ) : (
-                                                <span className="text-[10px] text-slate-400 italic">Unscheduled</span>
-                                              )}
-                                            </td>
-
-                                            {/* 8. Lead Status (Pipeline) */}
-                                            <td className="px-4 py-3.5">
-                                              <select
-                                                value={lead.status}
-                                                onChange={(e) => onUpdateLeadStatus(lead.id, e.target.value)}
-                                                className="text-[11px] font-bold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-slate-800 focus:outline-none"
-                                              >
-                                                {LEAD_PIPELINE_STAGES.map((s) => (
-                                                  <option key={s} value={s}>{s}</option>
-                                                ))}
-                                              </select>
-                                            </td>
-
-                                            {/* 9. Actions: Convert to Admission, Edit, Delete */}
-                                            <td className="px-5 py-3.5 text-right">
-                                              <div className="inline-flex items-center gap-1.5">
-                                                {/* Convert to Admission */}
-                                                <button
-                                                  onClick={() => onConvertToAdmission(lead)}
-                                                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition-colors border border-indigo-200 inline-flex items-center gap-1"
-                                                  title="Convert directly to formal student admission"
-                                                >
-                                                  <UserCheck className="w-3.5 h-3.5" />
-                                                  <span className="hidden xl:inline">Convert →</span>
-                                                </button>
-
-                                                {/* Edit */}
-                                                <button
-                                                  onClick={() => handleOpenEdit(lead)}
-                                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                                  title="Edit Lead"
-                                                >
-                                                  <Edit3 className="w-3.5 h-3.5" />
-                                                </button>
-
-                                                {/* Delete */}
-                                                <button
-                                                  onClick={() => setDeleteConfirmationLead(lead)}
-                                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                                  title="Delete Lead"
-                                                >
-                                                  <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                          );
-                  })
-                )}
-                                        </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                            ) : (
-                            /* Kanban Pipeline View */
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
-                              {LEAD_PIPELINE_STAGES.map((stage) => {
-                                const stageLeads = filteredLeads.filter((l) => l.status === stage);
-                                return (
-                                  <div
-                                    key={stage}
-                                    className="bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col max-h-[750px]"
-                                  >
-                                    {/* Column Header */}
-                                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200">
-                                      <h3 className="font-bold text-xs text-slate-800 truncate" title={stage}>
-                                        {stage}
-                                      </h3>
-                                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200">
-                                        {stageLeads.length}
-                                      </span>
-                                    </div>
-
-                                    {/* Cards Container */}
-                                    <div className="overflow-y-auto space-y-2.5 flex-1 pr-1">
-                                      {stageLeads.length === 0 ? (
-                                        <div className="text-center py-8 text-slate-400 text-xs italic">
-                                          No leads
-                                        </div>
-                                      ) : (
-                                        stageLeads.map((lead) => {
-                                          const fuStatus = getFollowUpStatus(lead.nextFollowUpDate);
-                                          return (
-                                            <div
-                                              key={lead.id}
-                                              className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs space-y-2 hover:border-slate-300 transition-all text-xs"
-                                            >
-                                              <div className="flex items-start justify-between gap-1.5">
-                                                <div>
-                                                  <div className="font-bold text-slate-900 text-xs">{lead.name}</div>
-                                                  <div className="text-[10px] font-mono text-slate-500">{lead.phone}</div>
-                                                </div>
-                                                <span
-                                                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${lead.priority === 'Hot'
-                                                      ? 'bg-rose-50 text-rose-700 border-rose-300'
-                                                      : lead.priority === 'Warm'
-                                                        ? 'bg-amber-50 text-amber-700 border-amber-300'
-                                                        : 'bg-slate-100 text-slate-700 border-slate-300'
-                                                    }`}
-                                                >
-                                                  {lead.priority || 'Warm'}
-                                                </span>
-                                              </div>
-
-                                              <div className="text-[11px] text-slate-700 font-semibold truncate" title={lead.course}>
-                                                {lead.course}
-                                              </div>
-
-                                              {lead.nextFollowUpDate && (
-                                                <div className="flex items-center gap-1 text-[10px]">
-                                                  <span className={`px-1.5 py-0.2 rounded-full border font-bold ${fuStatus.badgeClass}`}>
-                                                    {fuStatus.label}
-                                                  </span>
-                                                  <span className="text-slate-400 font-mono text-[9px]">
-                                                    {lead.nextFollowUpDate.slice(5, 16)}
-                                                  </span>
-                                                </div>
-                                              )}
-
-                                              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
-                                                <span>{lead.counselor}</span>
-                                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
-                                                  {lead.source}
-                                                </span>
-                                              </div>
-
-                                              {/* Quick stage transition dropdown */}
-                                              <div className="flex items-center justify-between gap-1 pt-1">
-                                                <select
-                                                  value={lead.status}
-                                                  onChange={(e) => onUpdateLeadStatus(lead.id, e.target.value)}
-                                                  className="text-[10px] font-semibold bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-700 w-full focus:outline-none"
-                                                >
-                                                  {LEAD_PIPELINE_STAGES.map((s) => (
-                                                    <option key={s} value={s}>{s}</option>
-                                                  ))}
-                                                </select>
-
-                                                <button
-                                                  onClick={() => handleOpenNotes(lead)}
-                                                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700"
-                                                  title="Notes & Call History"
-                                                >
-                                                  <FileText className="w-3.5 h-3.5" />
-                                                </button>
-                                                <button
-                                                  onClick={() => onConvertToAdmission(lead)}
-                                                  className="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
-                                                  title="Convert to Admission"
-                                                >
-                                                  <UserCheck className="w-3.5 h-3.5" />
-                                                </button>
-                                              </div>
-                                            </div>
-                                          );
-                                        })
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                          <div className="min-w-0">
+                            <div className="font-bold text-slate-900 text-sm leading-snug truncate">
+                              {lead.name}
                             </div>
-      )}
-
-                            {/* 6. Add / Edit Lead Modal */}
-                            <NewLeadModal
-                              isOpen={isAddEditModalOpen}
-                              onClose={() => {
-                                setIsAddEditModalOpen(false);
-                                setEditingLead(null);
-                              }}
-                              leadToEdit={editingLead}
-                              courses={courses}
-                              existingLeads={leads}
-                              onLeadCreated={onLeadCreated}
-                              onLeadUpdated={onLeadUpdated}
-                            />
-
-                            {/* 7. Lead Notes & Call History Modal */}
-                            <LeadNotesModal
-                              isOpen={isNotesModalOpen}
-                              onClose={() => {
-                                setIsNotesModalOpen(false);
-                                setSelectedLeadForNotes(null);
-                              }}
-                              lead={selectedLeadForNotes}
-                              onAddNote={(leadId, note) => {
-                                if (onAddLeadNote) onAddLeadNote(leadId, note);
-                                // Also update selected lead preview
-                                setSelectedLeadForNotes((prev) =>
-                                  prev ? { ...prev, notesList: [note, ...(prev.notesList || [])] } : null
-                                );
-                              }}
-                              onLogCall={(leadId, call, nextFollowUp) => {
-                                if (onLogLeadCall) onLogLeadCall(leadId, call, nextFollowUp);
-                                setSelectedLeadForNotes((prev) =>
-                                  prev
-                                    ? {
-                                      ...prev,
-                                      callHistory: [call, ...(prev.callHistory || [])],
-                                      ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
-                                    }
-                                    : null
-                                );
-                              }}
-                            />
-
-                            {/* 8. CSV Bulk Import Modal */}
-                            <ImportLeadsModal
-                              isOpen={isImportModalOpen}
-                              onClose={() => setIsImportModalOpen(false)}
-                              existingLeads={leads}
-                              courses={courses}
-                              onImportLeads={(newLeads) => {
-                                if (onBatchLeadsImported) onBatchLeadsImported(newLeads);
-                              }}
-                            />
-
-                            {/* 9. Delete Confirmation Dialog */}
-                            {deleteConfirmationLead && (
-                              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-                                <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-sm w-full p-5 space-y-4 text-xs">
-                                  <div className="flex items-center gap-2.5 text-rose-600 font-bold text-sm">
-                                    <AlertTriangle className="w-5 h-5" />
-                                    <span>Confirm Delete Lead</span>
-                                  </div>
-                                  <p className="text-slate-600">
-                                    Are you sure you want to permanently delete prospective lead{' '}
-                                    <strong className="text-slate-900">{deleteConfirmationLead.name}</strong> (
-                                    {deleteConfirmationLead.phone})? This action cannot be undone.
-                                  </p>
-                                  <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                                    <button
-                                      onClick={() => setDeleteConfirmationLead(null)}
-                                      className="px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      onClick={handleConfirmDelete}
-                                      className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors shadow-xs"
-                                    >
-                                      Delete Lead
-                                    </button>
-                                  </div>
-                                </div>
+                            {lead.email && (
+                              <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                                {lead.email}
                               </div>
                             )}
+                            {(lead.city || lead.qualification || lead.college) && (
+                              <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                                {lead.city && (
+                                  <span className="inline-flex items-center gap-1 font-medium text-slate-600 shrink-0">
+                                    <MapPin className="w-3 h-3 text-slate-400" />
+                                    <span>{lead.city}</span>
+                                  </span>
+                                )}
+                                {(lead.qualification || lead.college) && (
+                                  <span className="inline-flex items-center gap-1 font-medium text-slate-500 truncate max-w-[200px]">
+                                    <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    <span className="truncate">
+                                      {[lead.qualification, lead.college].filter(Boolean).join(' • ')}
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        );
+                      </td>
+
+                      {/* 2. Phone & Quick Connect */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <div className="font-mono text-slate-800 font-bold text-xs tracking-tight">
+                          {formatPhoneNumber(lead.phone)}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openWhatsApp(lead)}
+                            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-colors shadow-2xs"
+                            title="Message on WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                          <a
+                            href={`tel:${lead.phone}`}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                            title="Call Phone Number"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenNotes(lead)}
+                            className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 text-[10px] font-bold transition-colors flex items-center gap-1 shadow-2xs"
+                            title="Notes & Call History"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>{notesCount + callsCount}</span>
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* 3. Interested Course */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50/80 text-indigo-900 border border-indigo-100 max-w-[210px] truncate shadow-2xs">
+                          <BookOpen className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span className="truncate" title={lead.course}>{lead.course}</span>
+                        </span>
+                      </td>
+
+                      {/* 4. Lead Source */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          <span>{lead.source || 'Website'}</span>
+                        </span>
+                      </td>
+
+                      {/* 5. Assigned Counsellor */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${
+                          lead.counselor && lead.counselor !== 'Unassigned'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-50 text-slate-500 border-slate-200'
+                        }`}>
+                          <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>{lead.counselor || 'Unassigned'}</span>
+                        </span>
+                      </td>
+
+                      {/* 6. Lead Priority */}
+                      <td className="px-3 py-4 align-middle text-center whitespace-nowrap">
+                        <select
+                          value={lead.priority || 'Warm'}
+                          onChange={(e) => {
+                            if (onUpdateLeadPriority) {
+                              onUpdateLeadPriority(lead.id, e.target.value);
+                            } else if (onLeadUpdated) {
+                              onLeadUpdated({ ...lead, priority: e.target.value });
+                            }
+                          }}
+                          className={`text-[11px] font-bold rounded-full px-3 py-1 border cursor-pointer focus:outline-none transition-colors shadow-2xs ${
+                            lead.priority === 'Hot'
+                              ? 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
+                              : lead.priority === 'Warm'
+                              ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                              : 'bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100'
+                          }`}
+                        >
+                          {LEAD_PRIORITIES.map((p) => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* 7. Next Follow-up Date */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        {lead.nextFollowUpDate ? (
+                          <div className="space-y-1">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${fuStatus.badgeClass}`}>
+                              <Clock className="w-3 h-3 shrink-0" />
+                              <span>{fuStatus.label}</span>
+                            </span>
+                            <div className="text-[11px] text-slate-700 font-medium">
+                              <span>{fuFormatted.date}</span>
+                              {fuFormatted.time && (
+                                <span className="text-slate-400 font-mono text-[10px] ml-1.5">
+                                  {fuFormatted.time}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">Unscheduled</span>
+                        )}
+                      </td>
+
+                      {/* 8. Lead Status (Pipeline) */}
+                      <td className="px-3 py-3 align-middle whitespace-nowrap">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => onUpdateLeadStatus(lead.id, e.target.value)}
+                          className="text-[11px] font-semibold bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800 shadow-2xs hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer max-w-[125px]"
+                        >
+                          {LEAD_PIPELINE_STAGES.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* 9. Actions: Convert to Admission, Edit, Delete */}
+                      <td className="px-4 py-3 align-middle text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          {/* Convert to Admission */}
+                          <button
+                            type="button"
+                            onClick={() => onConvertToAdmission && onConvertToAdmission(lead)}
+                            className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300 transition-all duration-150 inline-flex items-center gap-1 shadow-2xs group whitespace-nowrap shrink-0"
+                            title="Convert directly to formal student admission"
+                          >
+                            <UserCheck className="w-3 h-3 text-emerald-600 group-hover:text-white transition-colors" />
+                            <span>Convert</span>
+                            <ArrowRight className="w-2.5 h-2.5 text-emerald-500 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
+                          </button>
+
+                          {/* Edit */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(lead)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                            title="Edit Lead"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmationLead(lead)}
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors shadow-2xs"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 6. Add / Edit Lead Modal */}
+      <NewLeadModal
+        isOpen={isAddEditModalOpen}
+        onClose={() => {
+          setIsAddEditModalOpen(false);
+          setEditingLead(null);
+        }}
+        leadToEdit={editingLead}
+        courses={courses}
+        trainers={trainers}
+        existingLeads={leads}
+        onLeadCreated={onLeadCreated}
+        onLeadUpdated={onLeadUpdated}
+      />
+
+      {/* 7. Lead Notes & Call History Modal */}
+      <LeadNotesModal
+        isOpen={isNotesModalOpen}
+        onClose={() => {
+          setIsNotesModalOpen(false);
+          setSelectedLeadForNotes(null);
+        }}
+        lead={selectedLeadForNotes}
+        onAddNote={(leadId, note) => {
+          if (onAddLeadNote) onAddLeadNote(leadId, note);
+          setSelectedLeadForNotes((prev) =>
+            prev ? { ...prev, notesList: [note, ...(prev.notesList || [])] } : null
+          );
+        }}
+        onLogCall={(leadId, call, nextFollowUp) => {
+          if (onLogLeadCall) onLogLeadCall(leadId, call, nextFollowUp);
+          setSelectedLeadForNotes((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  callHistory: [call, ...(prev.callHistory || [])],
+                  ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
+                }
+              : null
+          );
+        }}
+      />
+
+      {/* 8. CSV Bulk Import Modal */}
+      <ImportLeadsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        existingLeads={leads}
+        courses={courses}
+        onImportLeads={(newLeads) => {
+          if (onBatchLeadsImported) onBatchLeadsImported(newLeads);
+        }}
+      />
+
+      {/* 9. Delete Confirmation Dialog */}
+      {deleteConfirmationLead && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-sm w-full p-5 space-y-4 text-xs">
+            <div className="flex items-center gap-2.5 text-rose-600 font-bold text-sm">
+              <AlertTriangle className="w-5 h-5" />
+              <span>Confirm Delete Lead</span>
+            </div>
+            <p className="text-slate-600">
+              Are you sure you want to permanently delete prospective lead{' '}
+              <strong className="text-slate-900">{deleteConfirmationLead.name}</strong> (
+              {deleteConfirmationLead.phone})? This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmationLead(null)}
+                className="px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors shadow-xs"
+              >
+                Delete Lead
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 }

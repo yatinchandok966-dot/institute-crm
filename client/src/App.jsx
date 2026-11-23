@@ -9,6 +9,7 @@ import BatchesModule from './components/BatchesModule';
 import StudentsModule from './components/StudentsModule';
 import FeesModule from './components/FeesModule';
 import AttendanceModule from './components/AttendanceModule';
+import TrainersModule from './components/TrainersModule';
 
 // Modals
 import NewLeadModal from './components/NewLeadModal';
@@ -24,12 +25,68 @@ import PublicInquiryForm from './components/PublicInquiryForm';
 
 import { initialInstituteData } from './data/mockData';
 
+const STORAGE_KEY = 'edupulse_institute_crm_v1';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [instituteData, setInstituteData] = useState(initialInstituteData);
+
+  // Persistent institute state initialized from localStorage
+  const [instituteData, setInstituteData] = useState(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return {
+            ...initialInstituteData,
+            ...parsed,
+            recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
+            trainers: (Array.isArray(parsed.trainers) ? parsed.trainers : []).map(t => {
+              if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
+                return {
+                  ...t,
+                  role: 'Technical Trainer',
+                  department: 'Academic Faculty',
+                  assignedCourses: ['Full Stack Web Development (MERN)'],
+                  assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
+                  schedule: [
+                    { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
+                    { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
+                  ]
+                };
+              }
+              return t;
+            }),
+            admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
+            students: Array.isArray(parsed.students) ? parsed.students : [],
+            courses: Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses,
+            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
+            feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
+            revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
+            stats: parsed.stats || initialInstituteData.stats
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Could not read from localStorage:', err);
+    }
+    return initialInstituteData;
+  });
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dbStatus, setDbStatus] = useState({ connected: false, engine: 'PostgreSQL' });
   const [currentHash, setCurrentHash] = useState(typeof window !== 'undefined' ? window.location.hash : '');
+
+  // Automatically sync state to localStorage whenever it updates
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(instituteData));
+      }
+    } catch (err) {
+      console.warn('Could not persist to localStorage:', err);
+    }
+  }, [instituteData]);
 
   // Modal states
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
@@ -71,17 +128,66 @@ export default function App() {
       if (statsRes && statsRes.ok) {
         const result = await statsRes.json();
         if (result.success) {
-          setInstituteData(prev => ({
-            ...prev,
-            stats: result.stats || prev.stats,
-            courses: result.courses || prev.courses,
-            batches: result.batches || prev.batches,
-            recentLeads: result.recentLeads || prev.recentLeads,
-            admissions: result.admissions || prev.admissions,
-            students: result.students || prev.students,
-            feeTransactions: result.feeTransactions || prev.feeTransactions,
-            revenueTimeline: result.revenueTimeline || prev.revenueTimeline,
-          }));
+          setInstituteData(prev => {
+            // Smart merge for leads: never wipe existing local leads with empty array
+            const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
+            const localLeads = Array.isArray(prev.recentLeads) ? prev.recentLeads : [];
+
+            let mergedLeads = localLeads;
+            if (serverLeads.length > 0 && localLeads.length === 0) {
+              mergedLeads = serverLeads;
+            } else if (serverLeads.length > 0 && localLeads.length > 0) {
+              const map = new Map();
+              localLeads.forEach(l => map.set(l.id || l.phone, l));
+              serverLeads.forEach(l => map.set(l.id || l.phone, l));
+              mergedLeads = Array.from(map.values());
+            } else if (localLeads.length > 0 && serverLeads.length === 0) {
+              // Sync local leads up to server so server also has them
+              localLeads.forEach(l => {
+                fetch('/api/leads', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(l)
+                }).catch(() => null);
+              });
+              mergedLeads = localLeads;
+            }
+
+            // Smart merge for trainers
+            const serverTrainers = Array.isArray(result.trainers) ? result.trainers : [];
+            const localTrainers = Array.isArray(prev.trainers) ? prev.trainers : [];
+            let mergedTrainers = localTrainers;
+            if (serverTrainers.length > 0 && localTrainers.length === 0) {
+              mergedTrainers = serverTrainers;
+            } else if (serverTrainers.length > 0 && localTrainers.length > 0) {
+              const tMap = new Map();
+              localTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              serverTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              mergedTrainers = Array.from(tMap.values());
+            } else if (localTrainers.length > 0 && serverTrainers.length === 0) {
+              localTrainers.forEach(t => {
+                fetch('/api/trainers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(t)
+                }).catch(() => null);
+              });
+              mergedTrainers = localTrainers;
+            }
+
+            return {
+              ...prev,
+              stats: result.stats || prev.stats,
+              courses: (result.courses && result.courses.length > 0) ? result.courses : prev.courses,
+              batches: (result.batches && result.batches.length > 0) ? result.batches : prev.batches,
+              recentLeads: mergedLeads,
+              trainers: mergedTrainers,
+              admissions: (result.admissions && result.admissions.length > 0) ? result.admissions : prev.admissions,
+              students: (result.students && result.students.length > 0) ? result.students : prev.students,
+              feeTransactions: (result.feeTransactions && result.feeTransactions.length > 0) ? result.feeTransactions : prev.feeTransactions,
+              revenueTimeline: result.revenueTimeline || prev.revenueTimeline,
+            };
+          });
         }
       }
     } catch (err) {
@@ -108,6 +214,60 @@ export default function App() {
         }
       };
     });
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLead)
+    }).catch(() => null);
+  };
+
+  const handleLeadUpdated = (updatedLead) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === updatedLead.id ? updatedLead : l))
+    }));
+    fetch(`/api/leads/${updatedLead.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedLead)
+    }).catch(() => null);
+  };
+
+  const handleLeadDeleted = (leadId) => {
+    setInstituteData(prev => {
+      const updatedLeads = prev.recentLeads.filter(l => l.id !== leadId);
+      return {
+        ...prev,
+        recentLeads: updatedLeads,
+        stats: {
+          ...prev.stats,
+          newLeadsThisMonth: updatedLeads.length
+        }
+      };
+    });
+    fetch(`/api/leads/${leadId}`, {
+      method: 'DELETE'
+    }).catch(() => null);
+  };
+
+  const handleBatchLeadsImported = (newLeads) => {
+    if (!newLeads || newLeads.length === 0) return;
+    setInstituteData(prev => {
+      const updatedLeads = [...newLeads, ...prev.recentLeads];
+      return {
+        ...prev,
+        recentLeads: updatedLeads,
+        stats: {
+          ...prev.stats,
+          newLeadsThisMonth: updatedLeads.length
+        }
+      };
+    });
+    fetch('/api/leads/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leads: newLeads })
+    }).catch(() => null);
   };
 
   const handleUpdateLeadStatus = (leadId, newStatus) => {
@@ -119,6 +279,70 @@ export default function App() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
+    }).catch(() => null);
+  };
+
+  const handleAssignCounsellor = (leadId, counselor) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, counselor } : l))
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ counselor })
+    }).catch(() => null);
+  };
+
+  const handleUpdateLeadPriority = (leadId, priority) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => (l.id === leadId ? { ...l, priority } : l))
+    }));
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority })
+    }).catch(() => null);
+  };
+
+  const handleAddLeadNote = (leadId, note) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => {
+        if (l.id === leadId) {
+          const notesList = [note, ...(l.notesList || [])];
+          return { ...l, notesList, notes: note.text };
+        }
+        return l;
+      })
+    }));
+    fetch(`/api/leads/${leadId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(note)
+    }).catch(() => null);
+  };
+
+  const handleLogLeadCall = (leadId, call, nextFollowUp) => {
+    setInstituteData(prev => ({
+      ...prev,
+      recentLeads: prev.recentLeads.map(l => {
+        if (l.id === leadId) {
+          const callHistory = [call, ...(l.callHistory || [])];
+          return {
+            ...l,
+            callHistory,
+            ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
+          };
+        }
+        return l;
+      })
+    }));
+    fetch(`/api/leads/${leadId}/calls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...call, nextFollowUpDate: nextFollowUp })
     }).catch(() => null);
   };
 
@@ -262,6 +486,41 @@ export default function App() {
     });
   };
 
+  // Handlers for Trainers / Employees
+  const handleTrainerCreated = (newTrainer) => {
+    setInstituteData(prev => ({
+      ...prev,
+      trainers: [newTrainer, ...(prev.trainers || [])]
+    }));
+    fetch('/api/trainers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTrainer)
+    }).catch(() => null);
+  };
+
+  const handleTrainerUpdated = (updatedTrainer) => {
+    setInstituteData(prev => ({
+      ...prev,
+      trainers: (prev.trainers || []).map(t => (t.id === updatedTrainer.id ? updatedTrainer : t))
+    }));
+    fetch(`/api/trainers/${updatedTrainer.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedTrainer)
+    }).catch(() => null);
+  };
+
+  const handleTrainerDeleted = (trainerId) => {
+    setInstituteData(prev => ({
+      ...prev,
+      trainers: (prev.trainers || []).filter(t => t.id !== trainerId)
+    }));
+    fetch(`/api/trainers/${trainerId}`, {
+      method: 'DELETE'
+    }).catch(() => null);
+  };
+
   // Render Module Content
   const renderContent = () => {
     switch (activeTab) {
@@ -282,10 +541,17 @@ export default function App() {
           <LeadsModule
             leads={instituteData.recentLeads}
             courses={instituteData.courses}
-            onOpenNewLead={() => setIsLeadModalOpen(true)}
             onOpenShareQR={() => setIsShareQROpen(true)}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onConvertToAdmission={handleConvertToAdmission}
+            onLeadCreated={handleLeadCreated}
+            onLeadUpdated={handleLeadUpdated}
+            onLeadDeleted={handleLeadDeleted}
+            onBatchLeadsImported={handleBatchLeadsImported}
+            onAssignCounsellor={handleAssignCounsellor}
+            onUpdateLeadPriority={handleUpdateLeadPriority}
+            onAddLeadNote={handleAddLeadNote}
+            onLogLeadCall={handleLogLeadCall}
           />
         );
       case 'admissions':
@@ -312,6 +578,17 @@ export default function App() {
             batches={instituteData.batches}
             courses={instituteData.courses}
             onOpenNewBatch={() => setIsBatchModalOpen(true)}
+          />
+        );
+      case 'trainers':
+        return (
+          <TrainersModule
+            trainers={instituteData.trainers || []}
+            courses={instituteData.courses}
+            batches={instituteData.batches}
+            onTrainerCreated={handleTrainerCreated}
+            onTrainerUpdated={handleTrainerUpdated}
+            onTrainerDeleted={handleTrainerDeleted}
           />
         );
       case 'students':
@@ -402,6 +679,7 @@ export default function App() {
         onClose={() => setIsLeadModalOpen(false)}
         onLeadCreated={handleLeadCreated}
         courses={instituteData.courses}
+        existingLeads={instituteData.recentLeads}
       />
 
       {/* Admissions Conversion & New Admission Modal */}
