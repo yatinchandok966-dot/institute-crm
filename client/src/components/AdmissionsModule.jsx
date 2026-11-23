@@ -136,10 +136,10 @@ export default function AdmissionsModule({
                   <th className="px-4 py-3">Admission #</th>
                   <th className="px-4 py-3">Student Name</th>
                   <th className="px-4 py-3">Course Program</th>
-                  <th className="px-4 py-3">Allotted Batch</th>
+                  {/* <th className="px-4 py-3">Allotted Batch</th> */}
                   <th className="px-4 py-3">Total Fee</th>
-                  <th className="px-4 py-3">Paid Fee</th>
-                  <th className="px-4 py-3">Balance Due</th>
+                  <th className="px-4 py-3">Registration Fee</th>
+                  {/* <th className="px-4 py-3">Balance Due</th> */}
                   <th className="px-4 py-3">Stage Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -166,23 +166,23 @@ export default function AdmissionsModule({
                       <td className="px-4 py-3 text-slate-800">
                         {adm.course}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      {/* <td className="px-4 py-3 text-slate-600">
                         <div>{adm.batch}</div>
                         {adm.trainer && adm.trainer !== 'Unassigned' && (
                           <span className="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold border border-indigo-200 inline-block mt-0.5">
                             Trainer: {adm.trainer}
                           </span>
                         )}
-                      </td>
+                      </td> */}
                       <td className="px-4 py-3 font-semibold text-slate-900">
                         ₹{Number(adm.totalCourseFee).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 font-bold text-emerald-700">
                         ₹{Number(adm.admissionFeePaid).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 font-bold text-slate-800">
+                      {/* <td className="px-4 py-3 font-bold text-slate-800">
                         ₹{Number(adm.feeDue).toLocaleString()}
-                      </td>
+                      </td> */}
                       <td className="px-4 py-3">
                         <select
                           value={adm.status}

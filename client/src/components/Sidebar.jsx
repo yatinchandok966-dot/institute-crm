@@ -24,7 +24,7 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'leads', label: 'Leads & Inquiries', icon: UserPlus, badge: leadsCount > 0 ? `${leadsCount}` : null },
-        { id: 'admissions', label: 'Admissions Pipeline', icon: UserCheck, badge: admissionsCount > 0 ? `${admissionsCount} Confirmed` : null, badgeColor: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
+        { id: 'admissions', label: 'Admissions', icon: UserCheck, badge: admissionsCount > 0 ? `${admissionsCount}` : null, badgeColor: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
       ]
     },
     {
