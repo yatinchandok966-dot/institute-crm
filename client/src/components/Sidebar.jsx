@@ -11,34 +11,28 @@ import {
   Users
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, setActiveTab, data }) {
-  const leadsCount = data?.recentLeads?.length || 0;
-  const admissionsCount = data?.admissions?.length || 0;
-  const trainersCount = data?.trainers?.length || 0;
-  const studentsCount = data?.students?.length || 0;
-  const pendingFees = data?.stats?.pendingFees || 0;
-
+export default function Sidebar({ activeTab, setActiveTab }) {
   const sections = [
     {
       title: 'RECRUITMENT & ADMISSIONS',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'leads', label: 'Leads & Inquiries', icon: UserPlus, badge: leadsCount > 0 ? `${leadsCount}` : null },
-        { id: 'admissions', label: 'Admissions Pipeline', icon: UserCheck, badge: admissionsCount > 0 ? `${admissionsCount} Confirmed` : null, badgeColor: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
+        { id: 'leads', label: 'Leads & Inquiries', icon: UserPlus },
+        { id: 'admissions', label: 'Admissions Pipeline', icon: UserCheck }
       ]
     },
     {
       title: 'ACADEMIC OPERATIONS',
       items: [
         { id: 'courses', label: 'Courses & Syllabus', icon: BookOpen },
-        { id: 'trainers', label: 'Trainers / Faculty', icon: Users, badge: trainersCount > 0 ? `${trainersCount}` : null },
-        { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: studentsCount > 0 ? `${studentsCount}` : null }
+        { id: 'trainers', label: 'Trainers / Faculty', icon: Users },
+        { id: 'students', label: 'Students Directory', icon: GraduationCap }
       ]
     },
     {
       title: 'FINANCE & BILLING',
       items: [
-        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard, badge: pendingFees > 0 ? 'Due' : null, badgeColor: 'bg-amber-50 text-amber-700 border border-amber-200' }
+        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard }
       ]
     }
   ];
@@ -61,16 +55,14 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
         </div>
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation Links (All counts removed) */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         {sections.map((section, idx) => (
-
           <div key={idx}>
             <div className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               {section.title}
             </div>
             <nav className="space-y-1">
-
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -78,7 +70,7 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`w-full flex items-center px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${
                       isActive
                         ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-2xs'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -88,18 +80,9 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
                       <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
                       <span>{item.label}</span>
                     </div>
-                    {item.badge && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        item.badgeColor || (isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600 border border-slate-200')
-                      }`}>
-                        {item.badge}
-                      </span>
-                    )}
                   </button>
                 );
               })}
-
-              
             </nav>
           </div>
         ))}
