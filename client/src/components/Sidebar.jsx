@@ -5,6 +5,7 @@ import {
   UserCheck,
   BookOpen,
   GraduationCap,
+  CreditCard,
   School,
   ShieldCheck,
   Users
@@ -15,6 +16,7 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
   const admissionsCount = data?.admissions?.length || 0;
   const trainersCount = data?.trainers?.length || 0;
   const studentsCount = data?.students?.length || 0;
+  const pendingFees = data?.stats?.pendingFees || 0;
 
   const sections = [
     {
@@ -31,6 +33,12 @@ export default function Sidebar({ activeTab, setActiveTab, data }) {
         { id: 'courses', label: 'Courses & Syllabus', icon: BookOpen },
         { id: 'trainers', label: 'Trainers / Faculty', icon: Users, badge: trainersCount > 0 ? `${trainersCount}` : null },
         { id: 'students', label: 'Students Directory', icon: GraduationCap, badge: studentsCount > 0 ? `${studentsCount}` : null }
+      ]
+    },
+    {
+      title: 'FINANCE & BILLING',
+      items: [
+        { id: 'fees', label: 'Fees & Invoicing', icon: CreditCard, badge: pendingFees > 0 ? 'Due' : null, badgeColor: 'bg-amber-50 text-amber-700 border border-amber-200' }
       ]
     }
   ];
