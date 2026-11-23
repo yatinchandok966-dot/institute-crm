@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Users,
   UserPlus,
@@ -564,76 +565,32 @@ export default function TrainersModule({
                   )}
                 </div>
 
-                    {/* For Counselors: clean counselor summary */}
-                    {trainer.role === 'Admission Counsellor' ? (
-                      <div className="space-y-2 pt-1">
-                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
-                          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
-                            Admissions & Career Counseling
+                    {/* Compact Role Overview Badge (Full skills, courses, & schedule details are shown on clicking the Eye button) */}
+                    <div className="pt-1">
+                      {trainer.role === 'Admission Counsellor' ? (
+                        <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="font-semibold text-emerald-900 text-xs">Admissions & Career Counseling</span>
+                          </div>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-white px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+                            Desk Staff
                           </span>
-                          <p className="text-[11px] text-slate-600 line-clamp-3">
-                            {trainer.bio || 'Admissions Counselor advising prospective students on IT & engineering programs.'}
-                          </p>
                         </div>
-                      </div>
-                  ) : (
-                  <>
-                    {/* Skills & Expertise */}
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        Skills & Expertise ({trainer.skills?.length || 0})
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {trainer.skills && trainer.skills.length > 0 ? (
-                          trainer.skills.map((skill) => (
-                            <span
-                              key={skill}
-                              className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-semibold border border-slate-200 shadow-2xs"
-                            >
-                              {skill}
+                      ) : (
+                        <div className="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                            <span className="font-semibold text-indigo-900 text-xs truncate max-w-[180px]" title={trainer.assignedCourses?.[0] || 'Technical Faculty'}>
+                              {trainer.assignedCourses?.[0] || 'Technical Faculty'}
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-[11px] text-slate-400 italic">No skills listed</span>
-                        )}
-                      </div>
-                    </div>
-
-                      {/* Assigned Courses & Batches */}
-                      <div className="space-y-1.5 pt-1">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                          <span>Assigned Curriculum</span>
-                          <span className="text-slate-500 font-mono">
-                            {(trainer.assignedCourses?.length || 0)} courses • {(trainer.assignedBatches?.length || 0)} batches
+                          </div>
+                          <span className="text-[10px] text-indigo-700 font-bold bg-white px-2 py-0.5 rounded border border-indigo-200 shrink-0 font-mono ml-2">
+                            {(trainer.assignedBatches?.length || 0)} Batches
                           </span>
                         </div>
-
-                          <div className="flex flex-wrap gap-1">
-                            {(trainer.assignedCourses || []).map((c) => (
-                              <span
-                                key={c}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded-md text-[10px] font-semibold border border-indigo-100 truncate max-w-[200px]"
-                                title={c}
-                              >
-                                <BookOpen className="w-3 h-3 text-indigo-500 shrink-0" />
-                                <span className="truncate">{c}</span>
-                              </span>
-                            ))}
-
-                        {(trainer.assignedBatches || []).map((b) => (
-                          <span
-                            key={b}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[10px] font-medium border border-slate-200 truncate max-w-[200px]"
-                            title={b}
-                          >
-                            <CalendarDays className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate">{b}</span>
-                          </span>
-                        ))}
-                      </div>
+                      )}
                     </div>
-                  </>
-                  )}
                 </div>
 
                 {/* Card Footer: Schedule Button & Actions */}
@@ -880,47 +837,48 @@ export default function TrainersModule({
         onUpdateTrainerSchedule={handleUpdateSchedule}
       />
 
-      {/* 7. Staff / Trainer Details Modal (Triggered by Eye Icon) */}
-      {selectedTrainerForDetails && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      {/* 7. Staff / Trainer Details Modal (Triggered by Eye Icon, portaled to document.body with z-[150]) */}
+      {selectedTrainerForDetails && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden max-h-[90vh]">
-            {/* Header */}
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            {/* Header: Pure Light Theme */}
+            <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 ${
                   (selectedTrainerForDetails.role || '').toLowerCase().includes('counsel')
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                    : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs'
+                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs'
                 }`}>
                   {(selectedTrainerForDetails.name || 'T').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-base leading-tight text-white">
+                    <h3 className="font-bold text-base leading-tight text-slate-900">
                       {selectedTrainerForDetails.name}
                     </h3>
-                    <span className="font-mono text-[10px] font-bold bg-white/10 text-indigo-200 px-2 py-0.5 rounded border border-white/15">
+                    <span className="font-mono text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
                       {selectedTrainerForDetails.employeeId}
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       (selectedTrainerForDetails.role || '').toLowerCase().includes('counsel')
-                        ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
-                        : 'bg-indigo-500/20 text-indigo-200 border-indigo-400/30'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-indigo-50 text-indigo-800 border-indigo-200'
                     }`}>
                       {selectedTrainerForDetails.role}
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                       {selectedTrainerForDetails.status || 'Full Time'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {selectedTrainerForDetails.department || 'Academic Faculty'}
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedTrainerForDetails(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1127,13 +1085,14 @@ export default function TrainersModule({
               <button
                 type="button"
                 onClick={() => setSelectedTrainerForDetails(null)}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
               >
                 Close
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 8. Delete Confirmation Modal */}

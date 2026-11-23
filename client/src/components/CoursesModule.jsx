@@ -1,11 +1,10 @@
 // CoursesModule.jsx
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Search,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Edit,
   Trash2,
   User,
@@ -15,8 +14,7 @@ import {
   CreditCard,
   GraduationCap,
   X,
-  Layers,
-  Award
+  Layers
 } from 'lucide-react';
 
 export default function CoursesModule({
@@ -27,7 +25,6 @@ export default function CoursesModule({
 }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCourseId, setExpandedCourseId] = useState(null);
   const [selectedCourseForDetails, setSelectedCourseForDetails] = useState(null);
 
   const categories = ['All', 'Software Development', 'Data & AI', 'Design', 'Marketing', 'Cyber Security'];
@@ -113,7 +110,6 @@ export default function CoursesModule({
         /* Courses Cards Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map(course => {
-            const isExpanded = expandedCourseId === course.id;
             return (
               <div
                 key={course.id}
@@ -163,25 +159,9 @@ export default function CoursesModule({
                       <p className="font-bold text-indigo-700 mt-0.5">{course.activeStudents || 0}</p>
                     </div>
                   </div>
-
-                  {/* Inline Expanded Syllabus (optional) */}
-                  {isExpanded && course.modules && course.modules.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100 space-y-1.5 text-xs animate-in fade-in duration-150">
-                      <h4 className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1">
-                        <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>Curriculum Syllabus</span>
-                      </h4>
-                      {course.modules.map((mod, i) => (
-                        <div key={i} className="flex items-start gap-2 text-slate-600 text-[11px]">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                          <span>{mod}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                {/* Card Footer: Fee & Action Buttons */}
+                {/* Card Footer: Fee & Action Buttons (Dropdown Chevron Removed as requested) */}
                 <div className="p-5 pt-0">
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
@@ -193,6 +173,7 @@ export default function CoursesModule({
 
                     <div className="flex items-center gap-1.5">
                       <button
+                        type="button"
                         onClick={() => onEditCourse(course)}
                         className="p-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg shadow-2xs transition-colors"
                         title="Edit Course"
@@ -200,18 +181,12 @@ export default function CoursesModule({
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => onDeleteCourse(course.id)}
                         className="p-1.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg shadow-2xs transition-colors"
                         title="Delete Course"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
-                        className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors border border-slate-200"
-                        title={isExpanded ? 'Collapse' : 'Expand Quick Syllabus'}
-                      >
-                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
@@ -222,33 +197,34 @@ export default function CoursesModule({
         </div>
       )}
 
-      {/* Course Full Details View Modal (Triggered by Eye Icon) */}
-      {selectedCourseForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      {/* Course Full Details View Modal (Portaled to document.body with z-[150] to fix UI from the top) */}
+      {selectedCourseForDetails && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            {/* Modal Header: Crisp Pure Light Theme */}
+            <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-2xs">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base leading-tight">
+                    <h3 className="font-bold text-slate-900 text-base leading-tight">
                       {selectedCourseForDetails.name}
                     </h3>
-                    <span className="text-[11px] font-mono font-bold bg-indigo-900/80 text-indigo-200 px-2 py-0.5 rounded border border-indigo-700">
+                    <span className="text-[11px] font-mono font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
                       {selectedCourseForDetails.code}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {selectedCourseForDetails.category} • Complete Academic Program Details
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedCourseForDetails(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -368,13 +344,14 @@ export default function CoursesModule({
               <button
                 type="button"
                 onClick={() => setSelectedCourseForDetails(null)}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
               >
                 Close
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
