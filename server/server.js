@@ -806,6 +806,10 @@ app.delete('/api/trainers/:id', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Institute CRM Backend Server running at http://localhost:${PORT} (100% PostgreSQL Database Connected)`);
-});
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Institute CRM Backend Server running at http://localhost:${PORT} (100% PostgreSQL Database Connected)`);
+  });
+}
+
+export default app;
