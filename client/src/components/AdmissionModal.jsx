@@ -189,75 +189,93 @@ export default function AdmissionModal({
 
   // Selected trainer object
   const selectedTrainerObj = useMemo(() => {
+    if (!formData.trainer) return null;
     return effectiveTrainers.find(
       t => t && (t.name === formData.trainer || t.employeeId === formData.trainer)
-    ) || effectiveTrainers[0];
+    ) || null;
   }, [effectiveTrainers, formData.trainer]);
 
   // Dynamic available batches for selected trainer (shows all batch availability of that trainer)
   const trainerAvailableBatches = useMemo(() => {
     const safeBatches = Array.isArray(batches) ? batches : [];
-    if (safeBatches.length === 0) return [];
 
-    // If no trainer selected, return batches filtered by course or all institute batches
-    if (!selectedTrainerObj) {
-      if (formData.course) {
-        const filtered = safeBatches.filter(b => b && b.course === formData.course);
-        if (filtered.length > 0) return filtered;
+    // If trainer is selected, extract all batch availability strictly belonging to this trainer:
+    if (selectedTrainerObj) {
+      const result = [];
+      const seenNames = new Set();
+
+      // 1. Class timetable schedule slots configured on this trainer
+      if (Array.isArray(selectedTrainerObj.schedule) && selectedTrainerObj.schedule.length > 0) {
+        selectedTrainerObj.schedule.forEach((slot, idx) => {
+          if (slot && slot.batch && !seenNames.has(slot.batch)) {
+            seenNames.add(slot.batch);
+            const existingBatch = safeBatches.find(b => b && b.name === slot.batch);
+            result.push({
+              id: existingBatch?.id || slot.id || `sched-${idx}`,
+              name: slot.batch,
+              course: slot.course || existingBatch?.course || selectedTrainerObj.assignedCourses?.[0] || formData.course || '',
+              timing: `${slot.day || 'Mon-Fri'} ${slot.time || ''}`.trim(),
+              room: slot.room || existingBatch?.room || '',
+              mode: slot.mode || existingBatch?.mode || 'Classroom',
+              instructor: selectedTrainerObj.name
+            });
+          }
+        });
       }
-      return safeBatches;
+
+      // 2. Assigned batches array on this trainer
+      if (Array.isArray(selectedTrainerObj.assignedBatches) && selectedTrainerObj.assignedBatches.length > 0) {
+        selectedTrainerObj.assignedBatches.forEach((bName, idx) => {
+          if (bName && !seenNames.has(bName)) {
+            seenNames.add(bName);
+            const existingBatch = safeBatches.find(b => b && b.name === bName);
+            result.push({
+              id: existingBatch?.id || `assigned-${idx}`,
+              name: bName,
+              course: existingBatch?.course || selectedTrainerObj.assignedCourses?.[0] || formData.course || '',
+              timing: existingBatch?.timing || 'Mon-Fri 09:00 AM - 11:30 AM',
+              room: existingBatch?.room || '',
+              mode: existingBatch?.mode || 'Classroom',
+              instructor: selectedTrainerObj.name
+            });
+          }
+        });
+      }
+
+      if (result.length > 0) {
+        if (formData.course) {
+          const courseMatches = result.filter(b => b.course === formData.course);
+          if (courseMatches.length > 0) return courseMatches;
+        }
+        return result;
+      }
+
+      // 3. Fallback: check batches in safeBatches for trainer's assigned courses
+      const assignedCourses = Array.isArray(selectedTrainerObj.assignedCourses) ? selectedTrainerObj.assignedCourses : [];
+      if (assignedCourses.length > 0) {
+        const courseBatches = safeBatches.filter(b => b && assignedCourses.includes(b.course));
+        if (courseBatches.length > 0) return courseBatches;
+      }
+
+      // 4. By instructor name match in safeBatches
+      const instructorBatches = safeBatches.filter(b =>
+        b && b.instructor && (
+          b.instructor.toLowerCase() === (selectedTrainerObj.name || '').toLowerCase() ||
+          b.instructor.toLowerCase() === (selectedTrainerObj.role || '').toLowerCase()
+        )
+      );
+      if (instructorBatches.length > 0) return instructorBatches;
+
+      return [];
     }
 
-    // 1. Check explicit assignedBatches
-    const assignedBatchNames = Array.isArray(selectedTrainerObj.assignedBatches)
-      ? selectedTrainerObj.assignedBatches
-      : [];
-
-    // 2. Check schedule batch items
-    const scheduleBatchNames = Array.isArray(selectedTrainerObj.schedule)
-      ? selectedTrainerObj.schedule.map(s => s && s.batch).filter(Boolean)
-      : [];
-
-    // 3. Check assigned courses
-    const assignedCourses = Array.isArray(selectedTrainerObj.assignedCourses)
-      ? selectedTrainerObj.assignedCourses
-      : [];
-
-    // Directly assigned or scheduled
-    let matched = safeBatches.filter(b =>
-      b && (assignedBatchNames.includes(b.name) || scheduleBatchNames.includes(b.name))
-    );
-
-    // If none directly matched, check by trainer's assigned courses: ONLY return batches of courses this trainer teaches!
-    if (matched.length === 0 && assignedCourses.length > 0) {
-      matched = safeBatches.filter(b => b && assignedCourses.includes(b.course));
+    // If no trainer selected:
+    if (formData.course && safeBatches.length > 0) {
+      const filtered = safeBatches.filter(b => b && b.course === formData.course);
+      if (filtered.length > 0) return filtered;
     }
 
-    // Filter by selected course if specified
-    if (formData.course && matched.length > 0) {
-      const courseFiltered = matched.filter(b => b && b.course === formData.course);
-      if (courseFiltered.length > 0) return courseFiltered;
-    }
-
-    if (matched.length > 0) return matched;
-
-    // By instructor name or role match
-    const instructorBatches = safeBatches.filter(b =>
-      b && b.instructor && (
-        b.instructor.toLowerCase() === (selectedTrainerObj.name || '').toLowerCase() ||
-        b.instructor.toLowerCase() === (selectedTrainerObj.role || '').toLowerCase()
-      )
-    );
-    if (instructorBatches.length > 0) {
-      return instructorBatches;
-    }
-
-    // Fallback: strictly batches for current course
-    if (formData.course) {
-      const courseBatches = safeBatches.filter(b => b && b.course === formData.course);
-      if (courseBatches.length > 0) return courseBatches;
-    }
-    return [];
+    return safeBatches;
   }, [selectedTrainerObj, formData.course, batches]);
 
   // Dynamic counselors list
@@ -275,40 +293,29 @@ export default function AdmissionModal({
   const handleTrainerChange = (e) => {
     const trainerName = e.target.value;
     const safeTrainers = effectiveTrainers;
-    const selectedTrainerObj = safeTrainers.find(t => t && t.name === trainerName);
+    const selectedTrainer = safeTrainers.find(t => t && t.name === trainerName);
     const safeBatches = Array.isArray(batches) ? batches : [];
     const safeCourses = Array.isArray(courses) ? courses : [];
 
     let newBatch = '';
     let newCourse = formData.course;
 
-    if (selectedTrainerObj) {
+    if (selectedTrainer) {
       // Find batches available for this trainer
-      const assignedBatches = Array.isArray(selectedTrainerObj.assignedBatches) ? selectedTrainerObj.assignedBatches : [];
-      const assignedCourses = Array.isArray(selectedTrainerObj.assignedCourses) ? selectedTrainerObj.assignedCourses : [];
-
-      if (assignedBatches.length > 0) {
-        newBatch = assignedBatches[0];
+      if (Array.isArray(selectedTrainer.schedule) && selectedTrainer.schedule.length > 0) {
+        const firstSlot = selectedTrainer.schedule[0];
+        if (firstSlot && firstSlot.batch) {
+          newBatch = firstSlot.batch;
+          if (firstSlot.course) newCourse = firstSlot.course;
+        }
+      } else if (Array.isArray(selectedTrainer.assignedBatches) && selectedTrainer.assignedBatches.length > 0) {
+        newBatch = selectedTrainer.assignedBatches[0];
         const bObj = safeBatches.find(b => b.name === newBatch);
         if (bObj && bObj.course) newCourse = bObj.course;
-      } else if (Array.isArray(selectedTrainerObj.schedule) && selectedTrainerObj.schedule.length > 0) {
-        const schedBatch = selectedTrainerObj.schedule.find(s => s && s.batch)?.batch;
-        if (schedBatch) {
-          newBatch = schedBatch;
-          const bObj = safeBatches.find(b => b.name === newBatch);
-          if (bObj && bObj.course) newCourse = bObj.course;
-        }
-      } else if (assignedCourses.length > 0) {
-        newCourse = assignedCourses[0];
-        const courseBatches = safeBatches.filter(b => b.course === newCourse);
-        if (courseBatches.length > 0) newBatch = courseBatches[0].name;
-      } else {
-        // Fallback to first available batch
-        const firstBatch = safeBatches[0];
-        if (firstBatch) {
-          newBatch = firstBatch.name;
-          if (firstBatch.course) newCourse = firstBatch.course;
-        }
+      }
+
+      if (!newCourse && Array.isArray(selectedTrainer.assignedCourses) && selectedTrainer.assignedCourses.length > 0) {
+        newCourse = selectedTrainer.assignedCourses[0];
       }
     }
 
@@ -331,7 +338,7 @@ export default function AdmissionModal({
   const handleBatchChange = (e) => {
     const batchName = e.target.value;
     const safeBatches = Array.isArray(batches) ? batches : [];
-    const selectedBatch = safeBatches.find(b => b.name === batchName);
+    const selectedBatch = trainerAvailableBatches.find(b => b.name === batchName) || safeBatches.find(b => b.name === batchName);
 
     if (selectedBatch && selectedBatch.course) {
       const courseName = selectedBatch.course;
