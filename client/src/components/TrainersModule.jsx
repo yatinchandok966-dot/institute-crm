@@ -328,8 +328,8 @@ export default function TrainersModule({
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid'
-                  ? 'bg-white text-indigo-700 shadow-2xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-white text-indigo-700 shadow-2xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
                   }`}
                 title="Profile Cards Grid View"
               >
@@ -338,8 +338,8 @@ export default function TrainersModule({
               <button
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-md transition-colors ${viewMode === 'table'
-                  ? 'bg-white text-indigo-700 shadow-2xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-white text-indigo-700 shadow-2xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
                   }`}
                 title="Tabular List View"
               >
@@ -468,8 +468,8 @@ export default function TrainersModule({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-12 h-12 rounded-2xl border text-base font-black flex items-center justify-center shrink-0 shadow-2xs ${isCounselor
-                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-700'
-                        : 'bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 text-indigo-700'
+                          ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-700'
+                          : 'bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 text-indigo-700'
                         }`}>
                         {(trainer.name || 'T').charAt(0).toUpperCase()}
                       </div>
@@ -482,8 +482,8 @@ export default function TrainersModule({
                             {trainer.employeeId}
                           </span>
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${isCounselor
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-slate-50 text-slate-600 border-slate-200'
                             }`}>
                             {trainer.role}
                           </span>
@@ -492,410 +492,406 @@ export default function TrainersModule({
                     </div>
 
                     {/* Status Pill */}
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${trainer.status === 'Part Time'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      }`}>
-                  {trainer.status === 'Part Time' ? 'Part Time' : 'Full Time'}
-                </span>
-              </div>
-
-                {/* Qualification & Experience */ }
-            <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium pt-1 border-t border-slate-100">
-              {trainer.qualification && (
-                <span className="inline-flex items-center gap-1 truncate">
-                  <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">{trainer.qualification}</span>
-                </span>
-              )}
-              {trainer.experience && (
-                <span className="inline-flex items-center gap-1 text-slate-500 shrink-0">
-                  <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>{trainer.experience}</span>
-                </span>
-              )}
-            </div>
-
-            {/* Contact Info with Quick Connect */ }
-            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-slate-800 font-mono font-semibold text-[11px]">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{formatPhoneNumber(trainer.phone)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => openWhatsApp(trainer)}
-                    className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors shadow-2xs"
-                    title="Message on WhatsApp"
-                  >
-                    <MessageSquare className="w-3 h-3" />
-                  </button>
-                  <a
-                    href={`tel:${trainer.phone}`}
-                    className="p-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
-                    title="Call"
-                  >
-                    <Phone className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-
-              {trainer.email && (
-                <div className="flex items-center gap-1.5 text-slate-500 text-[11px] truncate">
-                  <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <a href={`mailto:${trainer.email}`} className="truncate hover:text-indigo-600">
-                    {trainer.email}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* For Counselors: clean counselor summary */ }
-            {
-              trainer.role === 'Admission Counsellor' ? (
-                <div className="space-y-2 pt-1">
-                  <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
-                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
-                      Admissions & Career Counseling
-                    </span>
-                    <p className="text-[11px] text-slate-600 line-clamp-3">
-                      {trainer.bio || 'Admissions Counselor advising prospective students on IT & engineering programs.'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-              <>
-                {/* Skills & Expertise */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Skills & Expertise ({trainer.skills?.length || 0})
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${trainer.status === 'Part Time'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                    {trainer.status === 'Part Time' ? 'Part Time' : 'Full Time'}
                   </span>
-                  <div className="flex flex-wrap gap-1">
-                    {trainer.skills && trainer.skills.length > 0 ? (
-                      trainer.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-semibold border border-slate-200 shadow-2xs"
-                        >
-                          {skill}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-[11px] text-slate-400 italic">No skills listed</span>
-                    )}
-                  </div>
                 </div>
 
-                {/* Assigned Courses & Batches */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Assigned Curriculum</span>
-                    <span className="text-slate-500 font-mono">
-                      {(trainer.assignedCourses?.length || 0)} courses • {(trainer.assignedBatches?.length || 0)} batches
+                {/* Qualification & Experience */}
+                <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium pt-1 border-t border-slate-100">
+                  {trainer.qualification && (
+                    <span className="inline-flex items-center gap-1 truncate">
+                      <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="truncate">{trainer.qualification}</span>
                     </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {(trainer.assignedCourses || []).map((c) => (
-                      <span
-                        key={c}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded-md text-[10px] font-semibold border border-indigo-100 truncate max-w-[200px]"
-                        title={c}
-                      >
-                        <BookOpen className="w-3 h-3 text-indigo-500 shrink-0" />
-                        <span className="truncate">{c}</span>
-                      </span>
-                    ))}
-
-                    {(trainer.assignedBatches || []).map((b) => (
-                      <span
-                        key={b}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[10px] font-medium border border-slate-200 truncate max-w-[200px]"
-                        title={b}
-                      >
-                        <CalendarDays className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="truncate">{b}</span>
-                      </span>
-                    ))}
-                  </div>
+                  )}
+                  {trainer.experience && (
+                    <span className="inline-flex items-center gap-1 text-slate-500 shrink-0">
+                      <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{trainer.experience}</span>
+                    </span>
+                  )}
                 </div>
-              </>
-            )
-            }
+
+                {/* Contact Info with Quick Connect */}
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-slate-800 font-mono font-semibold text-[11px]">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{formatPhoneNumber(trainer.phone)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openWhatsApp(trainer)}
+                        className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors shadow-2xs"
+                        title="Message on WhatsApp"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                      </button>
+                      <a
+                        href={`tel:${trainer.phone}`}
+                        className="p-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                        title="Call"
+                      >
+                        <Phone className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {trainer.email && (
+                    <div className="flex items-center gap-1.5 text-slate-500 text-[11px] truncate">
+                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <a href={`mailto:${trainer.email}`} className="truncate hover:text-indigo-600">
+                        {trainer.email}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                    {/* For Counselors: clean counselor summary */}
+                    {trainer.role === 'Admission Counsellor' ? (
+                      <div className="space-y-2 pt-1">
+                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
+                          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                            Admissions & Career Counseling
+                          </span>
+                          <p className="text-[11px] text-slate-600 line-clamp-3">
+                            {trainer.bio || 'Admissions Counselor advising prospective students on IT & engineering programs.'}
+                          </p>
+                        </div>
+                      </div>
+                  ) : (
+                  <>
+                    {/* Skills & Expertise */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Skills & Expertise ({trainer.skills?.length || 0})
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {trainer.skills && trainer.skills.length > 0 ? (
+                          trainer.skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-semibold border border-slate-200 shadow-2xs"
+                            >
+                              {skill}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">No skills listed</span>
+                        )}
+                      </div>
+                    </div>
+
+                      {/* Assigned Courses & Batches */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                          <span>Assigned Curriculum</span>
+                          <span className="text-slate-500 font-mono">
+                            {(trainer.assignedCourses?.length || 0)} courses • {(trainer.assignedBatches?.length || 0)} batches
+                          </span>
+                        </div>
+
+                          <div className="flex flex-wrap gap-1">
+                            {(trainer.assignedCourses || []).map((c) => (
+                              <span
+                                key={c}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded-md text-[10px] font-semibold border border-indigo-100 truncate max-w-[200px]"
+                                title={c}
+                              >
+                                <BookOpen className="w-3 h-3 text-indigo-500 shrink-0" />
+                                <span className="truncate">{c}</span>
+                              </span>
+                            ))}
+
+                        {(trainer.assignedBatches || []).map((b) => (
+                          <span
+                            key={b}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[10px] font-medium border border-slate-200 truncate max-w-[200px]"
+                            title={b}
+                          >
+                            <CalendarDays className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{b}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                  )}
                 </div>
 
                 {/* Card Footer: Schedule Button & Actions */}
-      <div className="px-5 py-3.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-2">
-        {trainer.role !== 'Admission Counsellor' ? (
-          <button
-            type="button"
-            onClick={() => setSelectedTrainerForSchedule(trainer)}
-            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg shadow-2xs transition-colors inline-flex items-center gap-1.5"
-            title="View & manage class schedule"
-          >
-            <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Schedule ({sessionsCount})</span>
-          </button>
-        ) : (
-          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-            Admissions Desk
-          </span>
-        )}
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleOpenEdit(trainer)}
-            className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
-            title="Edit Profile"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteConfirmationTrainer(trainer)}
-            className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 transition-colors shadow-2xs"
-            title="Delete Profile"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-})}
-        </div >
-      ) : (
-  /* TABLE VIEW: Compact Row-by-Row Layout */
-  <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs border-collapse">
-        <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 select-none">
-          <tr>
-            <th className="px-5 py-3.5 text-left whitespace-nowrap">Trainer / Employee</th>
-            <th className="px-4 py-3.5 text-left whitespace-nowrap">Employee ID</th>
-            <th className="px-4 py-3.5 text-left whitespace-nowrap">Designation & Status</th>
-            <th className="px-4 py-3.5 text-left whitespace-nowrap">Contact</th>
-            <th className="px-4 py-3.5 text-left whitespace-nowrap">Skills & Expertise</th>
-            <th className="px-4 py-3.5 text-left whitespace-nowrap">Assigned Courses & Batches</th>
-            <th className="px-4 py-3.5 text-left whitespace-nowrap">Schedule</th>
-            <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 font-medium">
-          {filteredTrainers.map((trainer) => {
-            const sessionsCount = trainer.schedule?.length || 0;
-            return (
-              <tr key={trainer.id} className="hover:bg-slate-50/80 transition-colors">
-                {/* Name & Avatar */}
-                <td className="px-5 py-4 align-middle">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0 shadow-2xs">
-                      {(trainer.name || 'T').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">{trainer.name}</div>
-                      {trainer.email && (
-                        <div className="text-[11px] text-slate-500 font-medium">{trainer.email}</div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-
-                {/* Employee ID */}
-                <td className="px-4 py-4 align-middle whitespace-nowrap">
-                  <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200 text-xs">
-                    {trainer.employeeId}
-                  </span>
-                </td>
-
-                {/* Role & Status */}
-                <td className="px-4 py-4 align-middle whitespace-nowrap">
-                  {(() => {
-                    const isCounselor = (trainer.role || '').toLowerCase().includes('counsel') || (trainer.department || '').toLowerCase().includes('counsel');
-                    return (
-                      <div>
-                        <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded border ${isCounselor ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'
-                          }`}>
-                          {trainer.role}
-                        </span>
-                        <div>
-                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${trainer.status === 'Active'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : trainer.status === 'On Leave'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-300'
-                            }`}>
-                            {trainer.status}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </td>
-
-                {/* Contact */}
-                <td className="px-4 py-4 align-middle whitespace-nowrap">
-                  <div className="font-mono text-slate-800 font-semibold text-xs">
-                    {formatPhoneNumber(trainer.phone)}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
+                <div className="px-5 py-3.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-2">
+                  {trainer.role !== 'Admission Counsellor' ? (
                     <button
                       type="button"
-                      onClick={() => openWhatsApp(trainer)}
-                      className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-2xs transition-colors"
-                      title="Chat on WhatsApp"
+                      onClick={() => setSelectedTrainerForSchedule(trainer)}
+                      className="px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg shadow-2xs transition-colors inline-flex items-center gap-1.5"
+                      title="View & manage class schedule"
                     >
-                      <MessageSquare className="w-3.5 h-3.5" />
+                      <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Schedule ({sessionsCount})</span>
                     </button>
-                    <a
-                      href={`tel:${trainer.phone}`}
-                      className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs transition-colors"
-                      title="Call"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </td>
+                  ) : (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                      Admissions Desk
+                    </span>
+                  )}
 
-                {/* Skills */}
-                <td className="px-4 py-4 align-middle max-w-xs">
-                  <div className="flex flex-wrap gap-1">
-                    {trainer.skills && trainer.skills.length > 0 ? (
-                      trainer.skills.slice(0, 3).map((s) => (
-                        <span key={s} className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold border border-slate-200">
-                          {s}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-slate-400 italic text-[11px]">—</span>
-                    )}
-                    {trainer.skills && trainer.skills.length > 3 && (
-                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">
-                        +{trainer.skills.length - 3}
-                      </span>
-                    )}
-                  </div>
-                </td>
-
-                {/* Assigned Courses & Batches */}
-                <td className="px-4 py-4 align-middle max-w-[200px]">
-                  <div className="space-y-1">
-                    {(trainer.assignedCourses || []).slice(0, 1).map(c => (
-                      <div key={c} className="text-xs font-semibold text-slate-800 truncate" title={c}>
-                        {c}
-                      </div>
-                    ))}
-                    <div className="text-[10px] text-slate-500 font-medium">
-                      {(trainer.assignedBatches?.length || 0)} active batches
-                    </div>
-                  </div>
-                </td>
-
-                {/* Schedule Button */}
-                <td className="px-4 py-4 align-middle whitespace-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTrainerForSchedule(trainer)}
-                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg shadow-2xs transition-colors inline-flex items-center gap-1"
-                  >
-                    <Calendar className="w-3 h-3 text-indigo-600" />
-                    <span>{sessionsCount} Sessions</span>
-                  </button>
-                </td>
-
-                {/* Actions */}
-                <td className="px-5 py-4 align-middle text-right whitespace-nowrap">
-                  <div className="inline-flex items-center gap-1.5 justify-end">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(trainer)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
-                      title="Edit Trainer"
+                      className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                      title="Edit Profile"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeleteConfirmationTrainer(trainer)}
-                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors shadow-2xs"
-                      title="Delete Trainer"
+                      className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 transition-colors shadow-2xs"
+                      title="Delete Profile"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                </td>
-              </tr>
+                </div>
+              </div>
             );
           })}
-        </tbody>
-      </table>
+        </div>
+      ) : (
+        /* TABLE VIEW: Compact Row-by-Row Layout */
+        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 select-none">
+                <tr>
+                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Trainer / Employee</th>
+                  <th className="px-4 py-3.5 text-left whitespace-nowrap">Employee ID</th>
+                  <th className="px-4 py-3.5 text-left whitespace-nowrap">Designation & Status</th>
+                  <th className="px-4 py-3.5 text-left whitespace-nowrap">Contact</th>
+                  <th className="px-4 py-3.5 text-left whitespace-nowrap">Skills & Expertise</th>
+                  <th className="px-4 py-3.5 text-left whitespace-nowrap">Assigned Courses & Batches</th>
+                  <th className="px-4 py-3.5 text-left whitespace-nowrap">Schedule</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {filteredTrainers.map((trainer) => {
+                  const sessionsCount = trainer.schedule?.length || 0;
+                  return (
+                    <tr key={trainer.id} className="hover:bg-slate-50/80 transition-colors">
+                      {/* Name & Avatar */}
+                      <td className="px-5 py-4 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0 shadow-2xs">
+                            {(trainer.name || 'T').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 text-sm">{trainer.name}</div>
+                            {trainer.email && (
+                              <div className="text-[11px] text-slate-500 font-medium">{trainer.email}</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Employee ID */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200 text-xs">
+                          {trainer.employeeId}
+                        </span>
+                      </td>
+
+                      {/* Role & Status */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        {(() => {
+                          const isCounselor = (trainer.role || '').toLowerCase().includes('counsel') || (trainer.department || '').toLowerCase().includes('counsel');
+                          return (
+                            <div>
+                              <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded border ${isCounselor ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'
+                                }`}>
+                                {trainer.role}
+                              </span>
+                              <div>
+                                <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${trainer.status === 'Active'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : trainer.status === 'On Leave'
+                                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                      : 'bg-slate-100 text-slate-600 border-slate-300'
+                                  }`}>
+                                  {trainer.status}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </td>
+
+                      {/* Contact */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <div className="font-mono text-slate-800 font-semibold text-xs">
+                          {formatPhoneNumber(trainer.phone)}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openWhatsApp(trainer)}
+                            className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-2xs transition-colors"
+                            title="Chat on WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                          <a
+                            href={`tel:${trainer.phone}`}
+                            className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs transition-colors"
+                            title="Call"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </td>
+
+                      {/* Skills */}
+                      <td className="px-4 py-4 align-middle max-w-xs">
+                        <div className="flex flex-wrap gap-1">
+                          {trainer.skills && trainer.skills.length > 0 ? (
+                            trainer.skills.slice(0, 3).map((s) => (
+                              <span key={s} className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold border border-slate-200">
+                                {s}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">—</span>
+                          )}
+                          {trainer.skills && trainer.skills.length > 3 && (
+                            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">
+                              +{trainer.skills.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Assigned Courses & Batches */}
+                      <td className="px-4 py-4 align-middle max-w-[200px]">
+                        <div className="space-y-1">
+                          {(trainer.assignedCourses || []).slice(0, 1).map(c => (
+                            <div key={c} className="text-xs font-semibold text-slate-800 truncate" title={c}>
+                              {c}
+                            </div>
+                          ))}
+                          <div className="text-[10px] text-slate-500 font-medium">
+                            {(trainer.assignedBatches?.length || 0)} active batches
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Schedule Button */}
+                      <td className="px-4 py-4 align-middle whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTrainerForSchedule(trainer)}
+                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg shadow-2xs transition-colors inline-flex items-center gap-1"
+                        >
+                          <Calendar className="w-3 h-3 text-indigo-600" />
+                          <span>{sessionsCount} Sessions</span>
+                        </button>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-5 py-4 align-middle text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(trainer)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                            title="Edit Trainer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmationTrainer(trainer)}
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors shadow-2xs"
+                            title="Delete Trainer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Add / Edit Trainer Modal */}
+      <NewTrainerModal
+        isOpen={isAddEditModalOpen}
+        onClose={() => {
+          setIsAddEditModalOpen(false);
+          setEditingTrainer(null);
+        }}
+        trainerToEdit={editingTrainer}
+        courses={courses}
+        batches={batches}
+        existingTrainers={trainers}
+        defaultRole={modalPresetRole.role}
+        defaultDepartment={modalPresetRole.dept}
+        onTrainerSaved={handleTrainerSaved}
+      />
+
+      {/* 6. Schedule Timetable Modal */}
+      <TrainerScheduleModal
+        isOpen={Boolean(selectedTrainerForSchedule)}
+        onClose={() => setSelectedTrainerForSchedule(null)}
+        trainer={selectedTrainerForSchedule}
+        courses={courses}
+        batches={batches}
+        onUpdateTrainerSchedule={handleUpdateSchedule}
+      />
+
+      {/* 7. Delete Confirmation Modal */}
+      {deleteConfirmationTrainer && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-100">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">Delete Trainer Profile?</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Are you sure you want to delete <strong className="text-slate-800">{deleteConfirmationTrainer.name}</strong> ({deleteConfirmationTrainer.employeeId})? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmationTrainer(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition-colors shadow-2xs"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-)}
-
-{/* 5. Add / Edit Trainer Modal */ }
-<NewTrainerModal
-  isOpen={isAddEditModalOpen}
-  onClose={() => {
-    setIsAddEditModalOpen(false);
-    setEditingTrainer(null);
-  }}
-  trainerToEdit={editingTrainer}
-  courses={courses}
-  batches={batches}
-  existingTrainers={trainers}
-  defaultRole={modalPresetRole.role}
-  defaultDepartment={modalPresetRole.dept}
-  onTrainerSaved={handleTrainerSaved}
-/>
-
-{/* 6. Schedule Timetable Modal */ }
-<TrainerScheduleModal
-  isOpen={Boolean(selectedTrainerForSchedule)}
-  onClose={() => setSelectedTrainerForSchedule(null)}
-  trainer={selectedTrainerForSchedule}
-  courses={courses}
-  batches={batches}
-  onUpdateTrainerSchedule={handleUpdateSchedule}
-/>
-
-{/* 7. Delete Confirmation Modal */ }
-{
-  deleteConfirmationTrainer && (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-100">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-6 text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
-          <Trash2 className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="font-bold text-slate-900 text-base">Delete Trainer Profile?</h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Are you sure you want to delete <strong className="text-slate-800">{deleteConfirmationTrainer.name}</strong> ({deleteConfirmationTrainer.employeeId})? This action cannot be undone.
-          </p>
-        </div>
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <button
-            type="button"
-            onClick={() => setDeleteConfirmationTrainer(null)}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirmDelete}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition-colors shadow-2xs"
-          >
-            Confirm Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-    </div >
   );
 }

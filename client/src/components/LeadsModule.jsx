@@ -44,7 +44,7 @@ import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
   LEAD_PRIORITIES
-} from '../data/mockData';
+} from '../data/constants';
 
 import NewLeadModal from './NewLeadModal';
 import LeadNotesModal from './LeadNotesModal';
