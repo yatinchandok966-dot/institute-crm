@@ -254,6 +254,38 @@ app.post('/api/leads', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and Phone are required' });
     }
 
+    const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+    const existing = await pool.query(
+      `SELECT * FROM leads WHERE RIGHT(REGEXP_REPLACE(phone, '\\D', '', 'g'), 10) = $1 LIMIT 1`,
+      [cleanPhone]
+    );
+
+    if (existing.rows.length > 0) {
+      const r = existing.rows[0];
+      return res.status(200).json({
+        success: true,
+        isExisting: true,
+        message: 'Lead with this phone number already exists',
+        lead: {
+          id: r.id,
+          name: r.full_name,
+          phone: r.phone,
+          email: r.email,
+          city: r.city,
+          qualification: r.qualification,
+          college: r.college_university,
+          course: r.interested_course,
+          source: r.lead_source,
+          status: r.lead_status,
+          priority: r.priority,
+          counselor: r.assigned_counsellor,
+          nextFollowUpDate: r.next_follow_up_date,
+          notes: r.notes,
+          createdAt: r.created_date
+        }
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO leads (full_name, phone, email, city, qualification, college_university, interested_course, lead_source, assigned_counsellor, lead_status, priority, next_follow_up_date, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
