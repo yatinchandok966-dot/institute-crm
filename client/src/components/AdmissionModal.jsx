@@ -21,12 +21,9 @@ export default function AdmissionModal({
           ...t,
           role: 'Technical Trainer',
           department: 'Academic Faculty',
-          assignedCourses: ['Full Stack Web Development (MERN)'],
-          assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
-          schedule: [
-            { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
-            { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
-          ]
+          assignedCourses: Array.isArray(t.assignedCourses) ? t.assignedCourses.filter(c => c !== 'Full Stack Web Development (MERN)') : [],
+          assignedBatches: Array.isArray(t.assignedBatches) ? t.assignedBatches.filter(b => !b.includes('FSWD')) : [],
+          schedule: []
         };
       }
       return t;
@@ -43,13 +40,13 @@ export default function AdmissionModal({
     course: '',
     batch: '',
     trainer: '',
-    duration: '16 Weeks',
+    duration: '',
     admissionDate: new Date().toISOString().split('T')[0],
-    totalCourseFee: 45000,
+    totalCourseFee: '',
     discount: '', // Scholarship/discount: blank by default or when erased (no sticky zero!)
     discountReason: '',
-    admissionFeePaid: 13500,
-    paymentPlan: '2 Installments (50% now, 50% in 30 days)',
+    admissionFeePaid: '',
+    paymentPlan: 'One-Time Full Payment',
     status: 'Admission Confirmed',
     counselor: 'Admissions Desk',
     notes: ''

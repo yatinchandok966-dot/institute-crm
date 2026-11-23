@@ -49,20 +49,17 @@ export default function App() {
                   ...t,
                   role: 'Technical Trainer',
                   department: 'Academic Faculty',
-                  assignedCourses: ['Full Stack Web Development (MERN)'],
-                  assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
-                  schedule: [
-                    { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
-                    { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
-                  ]
+                  assignedCourses: Array.isArray(t.assignedCourses) ? t.assignedCourses.filter(c => c !== 'Full Stack Web Development (MERN)') : [],
+                  assignedBatches: Array.isArray(t.assignedBatches) ? t.assignedBatches.filter(b => !b.includes('FSWD')) : [],
+                  schedule: []
                 };
               }
               return t;
             }),
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses,
-            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
+            courses: (Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses).filter(c => c && c.name !== 'Full Stack Web Development (MERN)'),
+            batches: (Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches).filter(b => b && !b.name?.includes('FSWD')),
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
             stats: parsed.stats || initialInstituteData.stats
@@ -205,9 +202,9 @@ export default function App() {
               mergedTrainers = localTrainers;
             }
 
-            // Smart merge for courses
-            const serverCourses = Array.isArray(result.courses) ? result.courses : [];
-            const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
+            // Smart merge for courses (filtering any legacy dummy course)
+            const serverCourses = (Array.isArray(result.courses) ? result.courses : []).filter(c => c && c.name !== 'Full Stack Web Development (MERN)');
+            const localCourses = (Array.isArray(prev.courses) ? prev.courses : []).filter(c => c && c.name !== 'Full Stack Web Development (MERN)');
             let mergedCourses = localCourses;
             if (serverCourses.length > 0 && localCourses.length === 0) {
               mergedCourses = serverCourses;
@@ -227,9 +224,9 @@ export default function App() {
               mergedCourses = localCourses;
             }
 
-            // Smart merge for batches
-            const serverBatches = Array.isArray(result.batches) ? result.batches : [];
-            const localBatches = Array.isArray(prev.batches) ? prev.batches : [];
+            // Smart merge for batches (filtering any legacy dummy batch)
+            const serverBatches = (Array.isArray(result.batches) ? result.batches : []).filter(b => b && !b.name?.includes('FSWD'));
+            const localBatches = (Array.isArray(prev.batches) ? prev.batches : []).filter(b => b && !b.name?.includes('FSWD'));
             let mergedBatches = localBatches;
             if (serverBatches.length > 0 && localBatches.length === 0) {
               mergedBatches = serverBatches;

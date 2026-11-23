@@ -1,21 +1,27 @@
 {
-  "courses": [
+  "courses": [],
+  "batches": [],
+  "recentLeads": [
     {
-      "id": 1795413901536,
-      "name": "Full Stack Web Development (MERN)",
-      "code": "FSWD-101",
-      "category": "Software Development",
-      "trainerId": "",
-      "trainerName": "Unassigned",
-      "durationWeeks": 16,
-      "fee": 45000,
-      "activeStudents": 0,
-      "description": "",
-      "modules": []
+      "id": 1795416537999,
+      "name": "Rohan",
+      "phone": "8872844781",
+      "email": "rohan@gmail.com",
+      "city": "Amritsar",
+      "qualification": "BCA",
+      "college": "Hindu College",
+      "course": "Full Stack Web Development (MERN)",
+      "source": "Website",
+      "status": "New",
+      "counselor": "Unassigned",
+      "priority": "Warm",
+      "nextFollowUpDate": "2026-11-24T05:30",
+      "notes": "",
+      "notesList": [],
+      "callHistory": [],
+      "createdAt": "2026-11-23"
     }
   ],
-  "batches": [],
-  "recentLeads": [],
   "trainers": [
     {
       "id": 1795363539407,

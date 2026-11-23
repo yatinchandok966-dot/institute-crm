@@ -60,7 +60,7 @@ import {
       city: '',
       qualification: '',
       college: '',
-      course: courses?.[0]?.name || '',
+      course: '',
       source: 'Website',
       counselor: '',
       status: 'New',
@@ -82,7 +82,7 @@ import {
           city: leadToEdit.city || '',
           qualification: leadToEdit.qualification || '',
           college: leadToEdit.college || '',
-          course: leadToEdit.course || courses?.[0]?.name || '',
+          course: leadToEdit.course || '',
           source: leadToEdit.source || 'Website',
           counselor: leadToEdit.counselor || '',
           status: leadToEdit.status || 'New',
@@ -99,12 +99,12 @@ import {
 
         setFormData({
           ...initialForm,
-          course: courses?.[0]?.name || '',
+          course: '',
           nextFollowUpDate: isoDateTime
         });
       }
       setError(null);
-    }, [leadToEdit, isOpen, courses]);
+    }, [leadToEdit, isOpen]);
 
 // Normalize phone for comparison (removes all non-digit characters)
 const normalizePhone = (p) => (p || '').replace(/[^0-9]/g, '');

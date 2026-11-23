@@ -47,28 +47,9 @@ export const OFFICIAL_TRAINERS = [
       'Docker & DevOps',
       'MongoDB'
     ],
-    assignedCourses: ['Full Stack Web Development (MERN)'],
-    assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
-    schedule: [
-      {
-        id: 1,
-        day: 'Monday to Friday',
-        time: '09:00 AM - 11:30 AM',
-        batch: 'FSWD Morning Batch (M26)',
-        course: 'Full Stack Web Development (MERN)',
-        room: 'Lab 1',
-        mode: 'Classroom'
-      },
-      {
-        id: 2,
-        day: 'Monday to Friday',
-        time: '06:00 PM - 08:30 PM',
-        batch: 'FSWD Evening Batch (E12)',
-        course: 'Full Stack Web Development (MERN)',
-        room: 'Lab 2',
-        mode: 'Hybrid'
-      }
-    ],
+    assignedCourses: [],
+    assignedBatches: [],
+    schedule: [],
     joiningDate: '2026-11-22'
   }
 ];
