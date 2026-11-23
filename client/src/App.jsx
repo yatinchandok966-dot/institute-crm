@@ -7,6 +7,7 @@ import AdmissionsModule from './components/AdmissionsModule';
 import CoursesModule from './components/CoursesModule';
 import BatchesModule from './components/BatchesModule';
 import StudentsModule from './components/StudentsModule';
+import StudentProfile from './components/Students/StudentProfile';
 import FeesModule from './components/FeesModule';
 import AttendanceModule from './components/AttendanceModule';
 import TrainersModule from './components/TrainersModule';
@@ -25,7 +26,7 @@ import PublicInquiryForm from './components/PublicInquiryForm';
 
 import { initialInstituteData } from './data/mockData';
 
-const STORAGE_KEY = 'edupulse_institute_crm_v1';
+const STORAGE_KEY = 'edupulse_institute_crm_v2';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -34,13 +35,20 @@ export default function App() {
   const [instituteData, setInstituteData] = useState(() => {
     try {
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('edupulse_institute_crm_v1');
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
+          const cleanCourses = (Array.isArray(parsed.courses) ? parsed.courses : [])
+            .filter(c => !['FSWD-101', 'DSML-201', 'UIUX-301', 'SEC-501', 'CLD-601', 'DM-401'].includes(c.code));
+          const cleanBatches = (Array.isArray(parsed.batches) ? parsed.batches : [])
+            .filter(b => !['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)', 'Data Science Weekend Cohort (DS-14)', 'UI/UX Evening Batch (U4)', 'Cyber Security Sprint Cohort (SEC-09)', 'Cloud DevOps Weekend (CLD-02)'].includes(b.name));
+
           return {
             ...initialInstituteData,
             ...parsed,
             recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
+<<<<<<< HEAD
             trainers: (Array.isArray(parsed.trainers) && parsed.trainers.length > 0 ? parsed.trainers : initialInstituteData.trainers).map(t => {
               if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
                 return {
@@ -57,13 +65,20 @@ export default function App() {
               }
               return t;
             }),
+=======
+            trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
+>>>>>>> 821516974de809080f44b4dc151302f00666c5b9
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses,
-            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
+            courses: cleanCourses,
+            batches: cleanBatches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
-            stats: parsed.stats || initialInstituteData.stats
+            stats: {
+              ...(parsed.stats || initialInstituteData.stats),
+              activeCourses: cleanCourses.length,
+              activeBatches: cleanBatches.length
+            }
           };
         }
       }
@@ -101,6 +116,7 @@ export default function App() {
   const [courseForEdit, setCourseForEdit] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedStudentID, setSelectedStudentID] = useState(null);
+  const [selectedStudentForProfile, setSelectedStudentForProfile] = useState(null);
 
   // Force pure light theme & listen to URL hash for QR public form
   useEffect(() => {
@@ -620,11 +636,21 @@ export default function App() {
           />
         );
       case 'students':
+        if (selectedStudentForProfile) {
+          return (
+            <StudentProfile
+              student={selectedStudentForProfile}
+              onBack={() => setSelectedStudentForProfile(null)}
+              onOpenPayment={() => setIsPaymentModalOpen(true)}
+            />
+          );
+        }
         return (
           <StudentsModule
             students={instituteData.students}
             onOpenStudentID={(student) => setSelectedStudentID(student)}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
+            onOpenStudentProfile={(student) => setSelectedStudentForProfile(student)}
           />
         );
       case 'fees':
@@ -675,12 +701,17 @@ export default function App() {
     );
   }
 
+  const handleTabChange = (tab) => {
+    setSelectedStudentForProfile(null);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         data={instituteData}
       />
 
@@ -694,7 +725,7 @@ export default function App() {
           isRefreshing={isRefreshing}
           dbStatus={dbStatus}
           data={instituteData}
-          onNavigate={(tab) => setActiveTab(tab)}
+          onNavigate={handleTabChange}
         />
 
         <main className="flex-1 overflow-y-auto">

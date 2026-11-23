@@ -85,7 +85,7 @@ export default function AdmissionModal({
 
         const courseName = typeof matchedCourse === 'string'
           ? matchedCourse
-          : (matchedCourse?.name || leadCourseStr || 'Full Stack Web Development (MERN)');
+          : (matchedCourse?.name || leadCourseStr || '');
 
         // 1. Pick trainer first: find trainer assigned to this course or first available trainer
         const matchedTrainerObj = safeTrainers.find(t => {
@@ -155,7 +155,7 @@ export default function AdmissionModal({
           courseName = defaultTrainer.assignedCourses[0];
         } else {
           const defaultCourse = safeCourses[0];
-          courseName = typeof defaultCourse === 'string' ? defaultCourse : (defaultCourse?.name || 'Full Stack Web Development (MERN)');
+          courseName = typeof defaultCourse === 'string' ? defaultCourse : (defaultCourse?.name || '');
         }
 
         let batchName = '';
@@ -930,7 +930,7 @@ export default function AdmissionModal({
                       return <option key={c?.id || cName || i} value={cName}>{cName}</option>;
                     })
                   ) : (
-                    <option value="Full Stack Web Development (MERN)">Full Stack Web Development (MERN)</option>
+                    <option value="">No courses yet (Add Course first)</option>
                   )}
                 </select>
               </div>
