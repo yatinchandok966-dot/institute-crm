@@ -289,46 +289,57 @@ export default function Dashboard({
                   <h3 className="font-bold text-slate-900 text-sm">
                     Monthly Leads vs Confirmed Admissions
                   </h3>
-                  <p className="text-[11px] text-slate-500">Recruitment inquiries converted into enrolled seats</p>
+                  <p className="text-[11px] text-slate-500">Monthly inquiry share & admission conversion rate (%)</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded bg-gradient-to-t from-violet-600 to-fuchsia-500"></span>
-                  <span className="text-slate-700 font-semibold">New Leads</span>
+                  <span className="text-slate-700 font-semibold">Leads Share (%)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded bg-gradient-to-t from-emerald-500 to-cyan-400"></span>
-                  <span className="text-slate-700 font-semibold">Confirmed Admissions</span>
+                  <span className="text-slate-700 font-semibold">Conversion Rate (%)</span>
                 </div>
               </div>
             </div>
 
-            {/* Clean Grouped Vertical Bars without top numbers */}
-            <div className="h-56 w-full flex items-end justify-between gap-4 pt-6 px-2">
+            {/* Clean Grouped Vertical Bars with Percentage Labels */}
+            <div className="h-56 w-full flex items-end justify-between gap-4 pt-8 px-2">
               {enrollmentTrend.map((item, idx) => {
                 const leadsHeight = Math.round((item.leads / maxBarVal) * 100);
                 const admHeight = Math.round((item.admissions / maxBarVal) * 100);
+                const leadsSharePct = Math.round((item.leads / (total6MoLeads || 1)) * 100);
                 const convPct = Math.round((item.admissions / (item.leads || 1)) * 100);
 
                 return (
                   <div
                     key={idx}
                     className="flex-1 flex flex-col items-center h-full justify-end group"
-                    title={`${item.month}: ${item.leads} Leads, ${item.admissions} Admissions (${convPct}% conversion)`}
+                    title={`${item.month}: ${item.leads} Leads (${leadsSharePct}% share), ${item.admissions} Admissions (${convPct}% conversion)`}
                   >
                     <div className="w-full flex items-end justify-center gap-1.5 h-full">
                       {/* New Leads Bar */}
-                      <div
-                        className="w-1/2 bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-500 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
-                        style={{ height: `${Math.max(leadsHeight, 10)}%` }}
-                      ></div>
+                      <div className="w-1/2 flex flex-col items-center justify-end h-full">
+                        <span className="text-[11px] font-extrabold text-violet-700 mb-1">
+                          {leadsSharePct}%
+                        </span>
+                        <div
+                          className="w-full bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-500 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
+                          style={{ height: `${Math.max(leadsHeight, 10)}%` }}
+                        ></div>
+                      </div>
 
                       {/* Confirmed Admissions Bar */}
-                      <div
-                        className="w-1/2 bg-gradient-to-t from-emerald-600 via-emerald-500 to-cyan-400 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
-                        style={{ height: `${Math.max(admHeight, 10)}%` }}
-                      ></div>
+                      <div className="w-1/2 flex flex-col items-center justify-end h-full">
+                        <span className="text-[11px] font-extrabold text-emerald-700 mb-1">
+                          {convPct}%
+                        </span>
+                        <div
+                          className="w-full bg-gradient-to-t from-emerald-600 via-emerald-500 to-cyan-400 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
+                          style={{ height: `${Math.max(admHeight, 10)}%` }}
+                        ></div>
+                      </div>
                     </div>
 
                     <span className="text-xs font-bold text-slate-700 mt-2">
