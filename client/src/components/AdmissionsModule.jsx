@@ -151,15 +151,14 @@ export default function AdmissionsModule({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] text-left text-xs border-collapse table-fixed">
             <colgroup>
-              <col className="w-[12%]" /> {/* 1. Admission # */}
-              <col className="w-[16%]" /> {/* 2. Student Name */}
-              <col className="w-[15%]" /> {/* 3. Course Program */}
-              <col className="w-[14%]" /> {/* 4. Allotted Batch */}
-              <col className="w-[10%]" /> {/* 5. Total Fee */}
-              <col className="w-[10%]" /> {/* 6. Paid Fee */}
-              <col className="w-[10%]" /> {/* 7. Balance Due */}
-              <col className="w-[11%]" /> {/* 8. Stage Status */}
-              <col className="w-[12%]" /> {/* 9. Actions */}
+              <col className="w-[12%]" /> {/* Admission # */}
+              <col className="w-[15%]" /> {/* Student Name */}
+              <col className="w-[15%]" /> {/* Course Program */}
+              <col className="w-[13%]" /> {/* Allotted Batch */}
+              <col className="w-[9%]" />  {/* Total Fee */}
+              <col className="w-[10%]" /> {/* Registration Fee */}
+              <col className="w-[12%]" /> {/* Stage Status */}
+              <col className="w-[14%]" /> {/* Actions */}
             </colgroup>
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
               <tr>
@@ -168,8 +167,9 @@ export default function AdmissionsModule({
                 <th className="px-3.5 py-3 text-left whitespace-nowrap">Course Program</th>
                 <th className="px-3.5 py-3 text-left whitespace-nowrap">Allotted Batch</th>
                 <th className="px-3 py-3 text-left whitespace-nowrap">Total Fee</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Paid Fee</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Balance Due</th>
+                {/* <th className="px-3 py-3 text-left whitespace-nowrap">Paid Fee</th> */}
+                <th className="px-3 py-3 text-left whitespace-nowrap">Registration Fee</th>
+                {/* <th className="px-3 py-3 text-left whitespace-nowrap">Balance Due</th> */}
                 <th className="px-3 py-3 text-left whitespace-nowrap">Stage Status</th>
                 <th className="px-3.5 py-3 text-right whitespace-nowrap">Actions</th>
               </tr>
@@ -253,11 +253,11 @@ export default function AdmissionsModule({
                     </td>
 
                     {/* 7. Balance Due */}
-                    <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden font-bold text-xs">
+                    {/* <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden font-bold text-xs">
                       <span className={Number(adm.feeDue ?? adm.fee_due ?? 0) > 0 ? 'text-amber-700' : 'text-slate-600'}>
                         ₹{Number(adm.feeDue ?? adm.fee_due ?? 0).toLocaleString()}
                       </span>
-                    </td>
+                    </td> */}
 
                     {/* 8. Stage Status */}
                     <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
