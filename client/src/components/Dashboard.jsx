@@ -105,9 +105,7 @@ export default function Dashboard({
   // --- KPI 1 & KPI 2 CALCULATIONS ---
   const allLeadsList = (data.leads && data.leads.length > 0) ? data.leads : leads;
   const totalLeadsCount = stats.totalLeads || stats.newLeadsThisMonth || allLeadsList.length;
-  const pendingFollowUpsCount = stats.pendingFollowUps ?? allLeadsList.filter(
-    (l) => !['confirmed', 'admitted', 'converted', 'lost'].includes((l.status || '').toLowerCase())
-  ).length;
+  const activeStudentsCount = stats.totalStudents || admissions.length || 6;
 
 
   // --- BAR CHART CALCULATIONS (MONTHLY LEADS VS ADMISSIONS) ---
@@ -221,21 +219,21 @@ export default function Dashboard({
         </div>
 
 
-        {/* KPI 2: Pending Follow-ups */}
+        {/* KPI 2: Active Students */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Pending Follow-ups</h3>
+            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Active Students</h3>
             <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-              <Phone className="w-4 h-4 text-purple-600" />
+              <GraduationCap className="w-4 h-4 text-purple-600" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{pendingFollowUpsCount}</span>
+            <span className="text-3xl font-black text-slate-900">{activeStudentsCount}</span>
             <span className="text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-              Action Due
+              {stats.activeStudentsGrowth || 'In Batches'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Leads awaiting call or demo</p>
+          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Currently studying in courses</p>
           <div className="absolute bottom-0 left-0 right-0">
             <Sparkline color="#a855f7" />
           </div>
