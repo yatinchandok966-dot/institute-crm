@@ -911,7 +911,7 @@ app.delete('/api/admissions/:id', async (req, res) => {
       console.warn('PostgreSQL admission delete warning:', dbErr.message);
     }
 
-    if (fs.existsSync(DATA_FILE)) {
+    if (!process.env.VERCEL && fs.existsSync(DATA_FILE)) {
       try {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
         const data = JSON.parse(raw);
@@ -1296,7 +1296,7 @@ app.put('/api/students/:id', async (req, res) => {
     };
 
     // Also sync with data_store.json if it exists
-    if (fs.existsSync(DATA_FILE)) {
+    if (!process.env.VERCEL && fs.existsSync(DATA_FILE)) {
       try {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
         const fileData = JSON.parse(raw);
@@ -1490,6 +1490,11 @@ app.delete('/api/trainers/:id', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Institute CRM Backend Server running at http://localhost:${PORT} (100% PostgreSQL Database Connected)`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Institute CRM Backend Server running at http://localhost:${PORT} (100% PostgreSQL Database Connected)`);
+  });
+}
+
+export default app;
+export { app };
