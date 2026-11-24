@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { School, CheckCircle2, Send, Phone, Mail, BookOpen, Clock, MapPin, Sparkles, ArrowLeft } from 'lucide-react';
+import { School, CheckCircle2, Send, Phone, Mail, BookOpen, Clock, MapPin, Sparkles } from 'lucide-react';
 
 export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCRM }) {
   const [formData, setFormData] = useState({
@@ -7,7 +7,6 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
     phone: '',
     email: '',
     course: '',
-    mode: 'Hybrid (Classroom + Online)',
     timing: 'Morning (09:00 AM - 11:30 AM)',
     qualification: 'College Student (Final Year)',
     notes: ''
@@ -53,7 +52,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
       status: 'New Inquiry',
       counselor: 'Admissions Desk',
       followUp: 'Pending Counselor Call',
-      notes: `Mode: ${formData.mode} | Timing: ${formData.timing} | Background: ${formData.qualification} ${formData.notes ? '| Message: ' + formData.notes : ''}`
+      notes: `Timing: ${formData.timing} | Background: ${formData.qualification} ${formData.notes ? '| Message: ' + formData.notes : ''}`
     };
 
     try {
@@ -112,8 +111,8 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
               <strong className="text-slate-800">{formData.phone}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Class Mode:</span>
-              <span className="font-semibold text-slate-800">{formData.mode}</span>
+              <span className="text-slate-400">Preferred Timing:</span>
+              <span className="font-semibold text-slate-800">{formData.timing}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Assigned Counselor:</span>
@@ -133,7 +132,6 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                   phone: '',
                   email: '',
                   course: '',
-                  mode: 'Hybrid (Classroom + Online)',
                   timing: 'Morning (09:00 AM - 11:30 AM)',
                   qualification: 'College Student (Final Year)',
                   notes: ''
@@ -144,15 +142,6 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             >
               Submit Another Response
             </button>
-
-            {onBackToCRM && (
-              <button
-                onClick={onBackToCRM}
-                className="w-full py-2 text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
-              >
-                ← Return to CRM Dashboard
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -161,22 +150,6 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
 
   return (
     <div className="min-h-screen bg-slate-100 py-8 px-4 font-sans flex flex-col items-center justify-center">
-      {/* Top Bar for Staff / Admin Return */}
-      {onBackToCRM && (
-        <div className="max-w-xl w-full mb-3 flex items-center justify-between text-xs text-slate-500">
-          <button
-            onClick={onBackToCRM}
-            className="flex items-center gap-1 font-semibold text-indigo-700 hover:text-indigo-900"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Staff Portal / Back to CRM</span>
-          </button>
-          <span className="text-[11px] bg-slate-200 px-2 py-0.5 rounded text-slate-700 font-mono">
-            Public Form Mode
-          </span>
-        </div>
-      )}
-
       {/* Main Google-Forms Style Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xl w-full overflow-hidden">
         {/* Top Header Card */}
@@ -308,37 +281,20 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             )}
           </div>
 
-          {/* Mode & Timing */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-800 text-xs">
-                Preferred Mode
-              </label>
-              <select
-                value={formData.mode}
-                onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-              >
-                <option value="Hybrid (Classroom + Online)">Hybrid (Classroom + Online)</option>
-                <option value="Classroom In-Person">Classroom In-Person</option>
-                <option value="Online Live Interactive">Online Live Interactive</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-800 text-xs">
-                Preferred Timing
-              </label>
-              <select
-                value={formData.timing}
-                onChange={(e) => setFormData({ ...formData, timing: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-              >
-                <option value="Morning (09:00 AM - 11:30 AM)">Morning (09:00 AM - 11:30 AM)</option>
-                <option value="Evening (06:30 PM - 08:30 PM)">Evening (06:30 PM - 08:30 PM)</option>
-                <option value="Weekend (Sat-Sun 10:00 AM - 02:00 PM)">Weekend (Sat-Sun 10:00 AM - 02:00 PM)</option>
-              </select>
-            </div>
+          {/* Preferred Timing */}
+          <div className="space-y-1.5">
+            <label className="block font-bold text-slate-800 text-xs">
+              Preferred Timing
+            </label>
+            <select
+              value={formData.timing}
+              onChange={(e) => setFormData({ ...formData, timing: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+            >
+              <option value="Morning (09:00 AM - 11:30 AM)">Morning (09:00 AM - 11:30 AM)</option>
+              <option value="Evening (06:30 PM - 08:30 PM)">Evening (06:30 PM - 08:30 PM)</option>
+              <option value="Weekend (Sat-Sun 10:00 AM - 02:00 PM)">Weekend (Sat-Sun 10:00 AM - 02:00 PM)</option>
+            </select>
           </div>
 
           {/* Current Status */}
