@@ -261,8 +261,8 @@ export default function App() {
               mergedStudents = serverStudents;
             } else if (serverStudents.length > 0 && localStudents.length > 0) {
               const sMap = new Map();
-              localStudents.forEach(s => sMap.set(s.id || s.studentId || s.admissionNo, s));
-              serverStudents.forEach(s => sMap.set(s.id || s.studentId || s.admissionNo, s));
+              localStudents.forEach(s => sMap.set(s.studentId || s.admissionNo || s.id, s));
+              serverStudents.forEach(s => sMap.set(s.studentId || s.admissionNo || s.id, s));
               mergedStudents = Array.from(sMap.values());
             } else if (localStudents.length > 0 && serverStudents.length === 0) {
               mergedStudents = localStudents;
@@ -924,7 +924,8 @@ export default function App() {
             const isMatch =
               (s.id != null && result.student.id != null && String(s.id) === String(result.student.id)) ||
               (s.studentId && result.student.studentId && s.studentId === result.student.studentId) ||
-              (s.admissionNo && result.student.admissionNo && s.admissionNo === result.student.admissionNo);
+              (s.admissionNo && result.student.admissionNo && s.admissionNo === result.student.admissionNo) ||
+              (s.phone && result.student.phone && String(s.phone).replace(/\D/g, '').slice(-10) === String(result.student.phone).replace(/\D/g, '').slice(-10));
             return isMatch ? { ...s, ...result.student } : s;
           });
           return {
@@ -932,6 +933,16 @@ export default function App() {
             students: freshStudents
           };
         });
+        setStudents(prev =>
+          (prev || []).map(s => {
+            const isMatch =
+              (s.id != null && result.student.id != null && String(s.id) === String(result.student.id)) ||
+              (s.studentId && result.student.studentId && s.studentId === result.student.studentId) ||
+              (s.admissionNo && result.student.admissionNo && s.admissionNo === result.student.admissionNo) ||
+              (s.phone && result.student.phone && String(s.phone).replace(/\D/g, '').slice(-10) === String(result.student.phone).replace(/\D/g, '').slice(-10));
+            return isMatch ? { ...s, ...result.student } : s;
+          })
+        );
         setSelectedStudentForProfile(prev => ({ ...(prev || {}), ...result.student }));
         // Refresh dashboard stats so pipeline, counts, and charts stay in perfect sync
         fetchDashboardData();

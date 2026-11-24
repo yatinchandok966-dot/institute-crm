@@ -111,9 +111,16 @@ const syncAdmissionsAndStudents = async () => {
           );
         }
       } else {
+        const nameParts = (adm.student_name || '').trim().split(/\s+/).filter(Boolean);
+        const fName = nameParts[0] || '';
+        const lName = nameParts.slice(1).join(' ') || '';
         await pool.query(
-          'UPDATE students SET admission_no = COALESCE(admission_no, $1) WHERE id = $2',
-          [adm.admission_no, stuCheck.rows[0].id]
+          `UPDATE students
+           SET admission_no = COALESCE(admission_no, $1),
+               first_name = CASE WHEN $3 <> '' THEN $3 ELSE first_name END,
+               last_name = CASE WHEN $3 <> '' THEN $4 ELSE last_name END
+           WHERE id = $2`,
+          [adm.admission_no, stuCheck.rows[0].id, fName, lName]
         );
       }
     }
@@ -1062,9 +1069,9 @@ app.put('/api/students/:id', async (req, res) => {
       }
     }
 
-    const nameParts = effectiveName.split(' ');
-    const firstName = inputFirstName || nameParts[0];
-    const lastName = inputLastName !== undefined ? inputLastName : (nameParts.slice(1).join(' ') || '');
+    const nameParts = effectiveName.split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || effectiveName;
+    const lastName = nameParts.slice(1).join(' ') || '';
     const effectiveGuardian = (guardian || guardianName || '').trim() || null;
     const effectiveAddress = (address || '').trim() || null;
     const effectiveGender = (gender || '').trim() || null;

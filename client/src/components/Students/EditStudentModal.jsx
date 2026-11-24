@@ -249,10 +249,17 @@ export default function EditStudentModal({
 
     setIsSubmitting(true);
     try {
+      const nameTrimmed = formData.name.trim();
+      const nameParts = nameTrimmed.split(/\s+/).filter(Boolean);
+      const newFirstName = nameParts[0] || nameTrimmed;
+      const newLastName = nameParts.slice(1).join(' ') || '';
+
       const updatedStudentData = {
         ...student,
         ...formData,
-        name: formData.name.trim(),
+        name: nameTrimmed,
+        firstName: newFirstName,
+        lastName: newLastName,
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         passingYear: formData.passingYear ? Number(formData.passingYear) : null,
