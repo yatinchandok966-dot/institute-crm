@@ -314,6 +314,7 @@ export default function NewLeadModal({
             </div>
           )}
 
+<<<<<<< HEAD
           {/* Section: Basic Lead Information */}
           <div>
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
@@ -609,6 +610,324 @@ export default function NewLeadModal({
               </div>
             </div>
           </div>
+=======
+                            {/* Section: Basic Lead Information */}
+                            <div>
+                              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                Lead Information
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                <div>
+                                  <div className="flex items-center justify-between h-5 mb-1.5">
+                                    <label className="text-xs font-semibold text-slate-700 truncate">
+                                      Full Name <span className="text-rose-500">*</span>
+                                    </label>
+                                  </div>
+                                  <div className="relative">
+                                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                    <input
+                                      type="text"
+                                      required
+                                      value={formData.name}
+                                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                      placeholder="e.g. Riya Kapoor"
+                                      className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center justify-between h-5 mb-1.5">
+                                    <label className="text-xs font-semibold text-slate-700 truncate">
+                                      Phone Number <span className="text-rose-500">*</span>
+                                    </label>
+                                    <span className={`text-[10px] font-mono font-bold shrink-0 ml-2 ${
+                                      (formData.phone || '').length === 10 ? 'text-emerald-600' : 'text-slate-400'
+                                    }`}>
+                                      {(formData.phone || '').length}/10 digits
+                                    </span>
+                                  </div>
+                                  <div className="relative">
+                                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                    <input
+                                      type="tel"
+                                      required
+                                      maxLength={10}
+                                      value={formData.phone}
+                                      onChange={(e) => {
+                                        const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setFormData({ ...formData, phone: digitsOnly });
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (
+                                          !/[0-9]/.test(e.key) &&
+                                          !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
+                                        ) {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      placeholder="10-digit number (e.g. 9876543210)"
+                                      className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-medium"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center justify-between h-5 mb-1.5">
+                                    <label className="text-xs font-semibold text-slate-700 truncate">
+                                      Email Address
+                                    </label>
+                                    <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-2">
+                                      lowercase only
+                                    </span>
+                                  </div>
+                                  <div className="relative">
+                                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                    <input
+                                      type="email"
+                                      value={formData.email}
+                                      onChange={(e) => {
+                                        const lower = e.target.value.toLowerCase().replace(/[A-Z\s]/g, '').trim();
+                                        setFormData({ ...formData, email: lower });
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === ' ') {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      placeholder="e.g. arpita@gmail.com"
+                                      className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 lowercase font-medium"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center justify-between h-5 mb-1.5">
+                                    <label className="text-xs font-semibold text-slate-700 truncate">
+                                      City / Location
+                                    </label>
+                                  </div>
+                                  <div className="relative">
+                                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                    <input
+                                      type="text"
+                                      value={formData.city}
+                                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                      placeholder="e.g. Pune, Mumbai, Bangalore"
+                                      className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                              {/* Section: Academic Background */}
+                              <div className="pt-2 border-t border-slate-100">
+                                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                  Academic Background
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                  <div>
+                                    <div className="flex items-center justify-between h-5 mb-1.5">
+                                      <label className="text-xs font-semibold text-slate-700 truncate">
+                                        Qualification
+                                      </label>
+                                    </div>
+                                    <div className="relative">
+                                      <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                      <input
+                                        type="text"
+                                        value={formData.qualification}
+                                        onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
+                                        placeholder="e.g. B.Tech CS, BCA, B.Sc, 12th Standard"
+                                        className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="flex items-center justify-between h-5 mb-1.5">
+                                      <label className="text-xs font-semibold text-slate-700 truncate">
+                                        College / University
+                                      </label>
+                                    </div>
+                                    <div className="relative">
+                                      <Building className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                      <input
+                                        type="text"
+                                        value={formData.college}
+                                        onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+                                        placeholder="e.g. Pune University / PICT"
+                                        className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Section: Course & Source */}
+                              <div className="pt-2 border-t border-slate-100">
+                                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                  Course & Channel Details
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                  <div>
+                                    <div className="flex items-center justify-between h-5 mb-1.5">
+                                      <label className="text-xs font-semibold text-slate-700 truncate">
+                                        Interested Course <span className="text-rose-500">*</span>
+                                      </label>
+                                    </div>
+                                    <select
+                                      value={formData.course}
+                                      onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                                      className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                      required
+                                    >
+                                      <option value="">Select or enter course name</option>
+                                      {allCourseList.map((c) => (
+                                        <option key={c.id || c.code || c.name} value={c.name}>
+                                          {c.name}
+                                        </option>
+                                      ))}
+                                      {formData.course && !allCourseList.some(c => c.name === formData.course) && (
+                                        <option value={formData.course}>{formData.course}</option>
+                                      )}
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <div className="flex items-center justify-between h-5 mb-1.5">
+                                      <label className="text-xs font-semibold text-slate-700 truncate">
+                                        Lead Source <span className="text-rose-500">*</span>
+                                      </label>
+                                    </div>
+                                    <select
+                                      value={formData.source}
+                                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                                      className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                    >
+                                      {LEAD_SOURCES.map((src) => (
+                                        <option key={src} value={src}>
+                                          {src}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+
+                                      {/* Section: Counseling & Assignment */}
+                                      <div className="pt-2 border-t border-slate-100">
+                                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                          Assignment & Pipeline Tracking
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                          <div>
+                                            <div className="flex items-center justify-between h-5 mb-1.5">
+                                              <label className="text-xs font-semibold text-slate-700 truncate">
+                                                Assigned Counsellor
+                                              </label>
+                                            </div>
+                                            <div className="relative">
+                                              <User className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                              <select
+                                                value={formData.counselor || 'Unassigned'}
+                                                onChange={(e) => setFormData({ ...formData, counselor: e.target.value })}
+                                                className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                              >
+                                                <option value="Unassigned">Unassigned</option>
+                                                {availableCounselors.map((c) => (
+                                                  <option key={c} value={c}>
+                                                    {c} (Counsellor)
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          </div>
+
+                                          <div>
+                                            <div className="flex items-center justify-between h-5 mb-1.5">
+                                              <label className="text-xs font-semibold text-slate-700 truncate">
+                                                Lead Status (Pipeline)
+                                              </label>
+                                            </div>
+                                            <select
+                                              value={formData.status}
+                                              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                              className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                            >
+                                              {LEAD_PIPELINE_STAGES.map((stg) => (
+                                                <option key={stg} value={stg}>
+                                                  {stg}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+
+                                          <div>
+                                            <div className="flex items-center justify-between h-5 mb-1.5">
+                                              <label className="text-xs font-semibold text-slate-700 truncate">
+                                                Lead Priority
+                                              </label>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-1.5 h-10">
+                                              <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, priority: 'Hot' })}
+                                                className={`h-10 rounded-lg border text-center font-bold text-xs flex items-center justify-center gap-1 transition-all ${formData.priority === 'Hot'
+                                                    ? 'bg-rose-50 border-rose-300 text-rose-700 shadow-xs'
+                                                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                                                  }`}
+                                              >
+                                                <Flame className="w-3.5 h-3.5 text-rose-600" />
+                                                <span>Hot</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, priority: 'Warm' })}
+                                                className={`h-10 rounded-lg border text-center font-bold text-xs flex items-center justify-center gap-1 transition-all ${formData.priority === 'Warm'
+                                                    ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-xs'
+                                                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                                                  }`}
+                                              >
+                                                <Sun className="w-3.5 h-3.5 text-amber-600" />
+                                                <span>Warm</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, priority: 'Cold' })}
+                                                className={`h-10 rounded-lg border text-center font-bold text-xs flex items-center justify-center gap-1 transition-all ${formData.priority === 'Cold'
+                                                    ? 'bg-sky-50 border-sky-300 text-sky-700 shadow-xs'
+                                                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                                                  }`}
+                                              >
+                                                <Snowflake className="w-3.5 h-3.5 text-sky-600" />
+                                                <span>Cold</span>
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="mt-3">
+                                          <div className="flex items-center justify-between h-5 mb-1.5">
+                                            <label className="text-xs font-semibold text-slate-700 truncate">
+                                              Next Follow-up Date & Time
+                                            </label>
+                                          </div>
+                                          <div className="relative max-w-sm">
+                                            <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                                            <input
+                                              type="datetime-local"
+                                              value={formData.nextFollowUpDate}
+                                              onChange={(e) => setFormData({ ...formData, nextFollowUpDate: e.target.value })}
+                                              className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                            />
+                                          </div>
+                                        </div>
+                                        </div>
+>>>>>>> 485d4bee060069dcd4d5f22a26343d4ddddde69c
 
           {/* Section: Notes */}
           <div className="pt-2 border-t border-slate-100">

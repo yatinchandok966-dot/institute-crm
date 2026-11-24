@@ -16,6 +16,7 @@ const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLE
 
 // Resolve Neon hostname if needed (handles ISP DNS resolution issues via DoH fallback)
 async function resolveNeonHost(hostname) {
+  // 1. Try Google DNS over HTTPS
   try {
     const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=A`, { signal: AbortSignal.timeout(3000) });
     const data = await res.json();
@@ -26,8 +27,26 @@ async function resolveNeonHost(hostname) {
       }
     }
   } catch (err) {
-    // fallback if fetch fails
+    // fallback if Google DNS fails
   }
+
+  // 2. Try Cloudflare DNS over HTTPS
+  try {
+    const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`, {
+      headers: { accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(3000)
+    });
+    const data = await res.json();
+    if (data.Answer && data.Answer.length > 0) {
+      const aRecords = data.Answer.filter(ans => ans.type === 1);
+      if (aRecords.length > 0) {
+        return aRecords[0].data;
+      }
+    }
+  } catch (err) {
+    // fallback if Cloudflare DNS fails
+  }
+
   return hostname;
 }
 
