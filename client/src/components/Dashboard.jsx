@@ -160,6 +160,21 @@ export default function Dashboard({
   const pendingStroke = (pendingPct / 100) * circumference;
   const overdueStroke = (overduePct / 100) * circumference;
 
+  const avatarGradients = [
+    'from-emerald-500 to-teal-600',
+    'from-blue-500 to-indigo-600',
+    'from-purple-500 to-fuchsia-600',
+    'from-amber-500 to-orange-600',
+  ];
+
+  const getInitials = (name = '') =>
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('') || 'S';
+
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto bg-slate-50/50 min-h-screen">
@@ -539,20 +554,26 @@ export default function Dashboard({
       </div>
 
 
-      {/* Main Grid: Enrolled Students & Recent Inquiries */}
+      {/* Main Grid: Colourful Enrolled Students & Recent Inquiries */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between overflow-hidden">
+        {/* Card 1: Recent Enrolled Students */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between overflow-hidden">
           <div>
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Recent Enrolled Students
-                </h3>
-                <p className="text-xs text-slate-500">Students who recently completed their admission</p>
+            <div className="p-4 bg-gradient-to-r from-emerald-50/80 via-teal-50/40 to-white border-b border-emerald-100/80 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-sm">
+                  <UserCheck className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    Recent Enrolled Students
+                  </h3>
+                  <p className="text-xs text-slate-500">Students who recently completed their admission</p>
+                </div>
               </div>
               <button
                 onClick={() => onNavigate('admissions')}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                className="text-xs font-bold text-emerald-700 bg-emerald-100/70 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-colors"
               >
                 View All →
               </button>
@@ -560,29 +581,38 @@ export default function Dashboard({
 
 
             <div className="divide-y divide-slate-100 text-xs">
-              {admissions.slice(0, 4).map((adm) => (
-                <div key={adm.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
-                        {adm.admissionNo}
-                      </span>
-                      <strong className="text-slate-900 font-bold">{adm.studentName}</strong>
+              {admissions.slice(0, 4).map((adm, idx) => (
+                <div key={adm.id} className="p-4 hover:bg-emerald-50/30 transition-colors flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5`}>
+                      {getInitials(adm.studentName)}
                     </div>
-                    <p className="text-slate-600 text-[11px] mt-1">{adm.course}</p>
-                    <p className="text-slate-400 text-[10px]">Batch: {adm.batch} • {adm.paymentPlan}</p>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/80">
+                          {adm.admissionNo}
+                        </span>
+                        <strong className="text-slate-900 font-bold text-[13px]">{adm.studentName}</strong>
+                      </div>
+                      <p className="text-slate-700 font-medium text-[11px] mt-1">{adm.course}</p>
+                      <p className="text-slate-400 text-[10px] mt-0.5">Batch: {adm.batch} • {adm.paymentPlan}</p>
+                    </div>
                   </div>
 
 
-                  <div className="text-right">
-                    <p className="font-bold text-emerald-700">₹{Number(adm.admissionFeePaid).toLocaleString()} Paid</p>
-                    <span className="inline-block text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded mt-1">
-                      {adm.status}
-                    </span>
+                  <div className="text-right shrink-0">
+                    <p className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md inline-block">
+                      ₹{Number(adm.admissionFeePaid).toLocaleString()} Paid
+                    </p>
                     <div className="mt-1">
+                      <span className="inline-block text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/70 px-2 py-0.5 rounded-full">
+                        ✓ {adm.status}
+                      </span>
+                    </div>
+                    <div className="mt-1.5">
                       <button
                         onClick={() => onOpenConfirmationLetter(adm)}
-                        className="text-[11px] text-indigo-600 font-semibold hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline inline-flex items-center gap-1"
                       >
                         <FileText className="w-3 h-3" />
                         <span>Letter</span>
@@ -595,10 +625,10 @@ export default function Dashboard({
           </div>
 
 
-          <div className="p-3 bg-slate-50 border-t border-slate-200 text-right">
+          <div className="p-3 bg-gradient-to-r from-slate-50 to-emerald-50/40 border-t border-slate-200/80 text-right">
             <button
               onClick={() => onNavigate('admissions')}
-              className="text-xs text-indigo-600 font-bold hover:underline"
+              className="text-xs text-emerald-700 hover:text-emerald-900 font-bold hover:underline"
             >
               Go to Admissions Desk ({admissions.length}) →
             </button>
@@ -606,18 +636,24 @@ export default function Dashboard({
         </div>
 
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between overflow-hidden">
+        {/* Card 2: Recent Inquiries (Pre-Admission) */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between overflow-hidden">
           <div>
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Recent Inquiries (Pre-Admission)
-                </h3>
-                <p className="text-xs text-slate-500">Leads ready to be converted into admissions</p>
+            <div className="p-4 bg-gradient-to-r from-indigo-50/80 via-purple-50/40 to-white border-b border-indigo-100/80 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center shadow-sm">
+                  <UserPlus className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    Recent Inquiries (Pre-Admission)
+                  </h3>
+                  <p className="text-xs text-slate-500">Leads ready to be converted into admissions</p>
+                </div>
               </div>
               <button
                 onClick={() => onNavigate('leads')}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                className="text-xs font-bold text-indigo-700 bg-indigo-100/70 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors"
               >
                 View Leads →
               </button>
@@ -625,23 +661,34 @@ export default function Dashboard({
 
 
             <div className="divide-y divide-slate-100 text-xs">
-              {leads.slice(0, 4).map((lead) => (
-                <div key={lead.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-3">
-                  <div>
-                    <h4 className="font-bold text-slate-900">{lead.name}</h4>
-                    <p className="text-slate-600 text-[11px] mt-0.5">{lead.course}</p>
-                    <p className="text-slate-400 text-[10px] font-mono">{lead.phone} • {lead.source}</p>
+              {leads.slice(0, 4).map((lead, idx) => (
+                <div key={lead.id} className="p-4 hover:bg-indigo-50/30 transition-colors flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradients[(idx + 1) % avatarGradients.length]} text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5`}>
+                      {getInitials(lead.name)}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-[13px]">{lead.name}</h4>
+                      <p className="text-slate-700 font-medium text-[11px] mt-0.5">{lead.course}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span className="text-slate-500 text-[10px] font-mono">{lead.phone}</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/70 px-1.5 py-0.2 rounded">
+                          {lead.source}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
 
-                  <div className="text-right space-y-1">
-                    <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  <div className="text-right space-y-1.5 shrink-0">
+                    <span className="inline-block text-[10px] font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200/80">
                       {lead.status}
                     </span>
                     <div>
                       <button
                         onClick={() => onConvertToAdmission(lead)}
-                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded text-[10px] transition-colors inline-flex items-center gap-1"
+                        className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-lg text-[10px] shadow-sm transition-all inline-flex items-center gap-1"
                       >
                         <UserCheck className="w-3 h-3" />
                         <span>Convert to Admission</span>
@@ -654,10 +701,10 @@ export default function Dashboard({
           </div>
 
 
-          <div className="p-3 bg-slate-50 border-t border-slate-200 text-right">
+          <div className="p-3 bg-gradient-to-r from-slate-50 to-indigo-50/40 border-t border-slate-200/80 text-right">
             <button
               onClick={() => onNavigate('leads')}
-              className="text-xs text-indigo-600 font-bold hover:underline"
+              className="text-xs text-indigo-700 hover:text-indigo-900 font-bold hover:underline"
             >
               Open Leads Board ({leads.length}) →
             </button>
