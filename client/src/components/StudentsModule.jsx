@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GraduationCap, Search, Phone, Mail, CreditCard, ShieldCheck, QrCode } from 'lucide-react';
+import { GraduationCap, Search, Phone, Mail, CreditCard, ShieldCheck, QrCode, Pencil } from 'lucide-react';
 
 
 export default function StudentsModule({
@@ -7,6 +7,7 @@ export default function StudentsModule({
   onOpenStudentID,
   onOpenPayment,
   onOpenStudentProfile, // Change By Deepak 
+  onEditStudent,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [feeFilter, setFeeFilter] = useState("All");
@@ -184,13 +185,23 @@ export default function StudentsModule({
                       {getFeeBadge(student.feeStatus, student.feeDue)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => onOpenStudentID(student)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-semibold transition-colors"
-                      >
-                        <QrCode className="w-3 h-3 text-slate-600" />
-                        <span>ID Pass</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => onEditStudent ? onEditStudent(student) : (onOpenStudentProfile && onOpenStudentProfile(student))}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition-colors"
+                          title="Edit Student Details"
+                        >
+                          <Pencil className="w-3 h-3 text-indigo-600" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => onOpenStudentID(student)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-[11px] font-semibold transition-colors"
+                        >
+                          <QrCode className="w-3 h-3 text-slate-600" />
+                          <span>ID Pass</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

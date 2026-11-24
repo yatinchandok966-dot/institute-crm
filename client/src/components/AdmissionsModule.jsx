@@ -23,7 +23,8 @@ export default function AdmissionsModule({
   trainers = [],
   onOpenNewAdmission,
   onOpenConfirmationLetter,
-  onUpdateAdmissionStatus
+  onUpdateAdmissionStatus,
+  onOpenStudentProfile
 }) {
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'table'
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,7 +161,14 @@ export default function AdmissionsModule({
                         {adm.admissionNo}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">{adm.studentName}</div>
+                        <button
+                          type="button"
+                          onClick={() => onOpenStudentProfile && onOpenStudentProfile(adm)}
+                          className="font-bold text-slate-900 text-sm hover:text-indigo-600 hover:underline text-left cursor-pointer transition-colors"
+                          title="Open Student Profile"
+                        >
+                          {adm.studentName}
+                        </button>
                         <div className="text-[11px] text-slate-400 font-mono">{adm.phone}</div>
                       </td>
                       <td className="px-4 py-3 text-slate-800">

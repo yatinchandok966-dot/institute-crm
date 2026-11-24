@@ -20,7 +20,8 @@ export default function Dashboard({
   onOpenPayment,
   onOpenConfirmationLetter,
   onNavigate,
-  onConvertToAdmission
+  onConvertToAdmission,
+  onOpenStudentProfile
 }) {
   const stats = data.stats || {};
   const courses = data.courses || [];
@@ -377,7 +378,14 @@ export default function Dashboard({
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">{adm.admissionNo}</span>
-                      <strong className="text-slate-900 text-sm">{adm.studentName}</strong>
+                      <button
+                        type="button"
+                        onClick={() => onOpenStudentProfile && onOpenStudentProfile(adm)}
+                        className="font-bold text-slate-900 text-sm hover:text-indigo-600 hover:underline text-left cursor-pointer transition-colors"
+                        title="Open Student Profile"
+                      >
+                        {adm.studentName}
+                      </button>
                     </div>
                     <p className="text-slate-600 text-xs font-medium">{adm.course}</p>
                     <p className="text-slate-400 text-[10px] mt-1">Batch: {adm.batch} • {adm.paymentPlan}</p>
