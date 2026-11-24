@@ -39,7 +39,6 @@ export default function App() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-
           // Merge loaded courses with OFFICIAL_COURSES so all real courses are present
           const existingCourses = Array.isArray(parsed.courses) ? parsed.courses : [];
           const courseMap = new Map();
@@ -92,11 +91,10 @@ export default function App() {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/students");
+        const response = await fetch("/api/students");
         const result = await response.json();
 
         if (result.success) {
-          console.log(result);
           setStudents(result.data);
         }
       } catch (error) {
@@ -250,27 +248,10 @@ export default function App() {
               mergedBatches = localBatches;
             }
 
-            // Smart merge for admissions
+            // Smart merge for admissions: server is authoritative when admissions exist
             const serverAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
             const localAdmissions = Array.isArray(prev.admissions) ? prev.admissions : [];
-            let mergedAdmissions = localAdmissions;
-            if (serverAdmissions.length > 0 && localAdmissions.length === 0) {
-              mergedAdmissions = serverAdmissions;
-            } else if (serverAdmissions.length > 0 && localAdmissions.length > 0) {
-              const aMap = new Map();
-              localAdmissions.forEach(a => aMap.set(a.id || a.admissionNo, a));
-              serverAdmissions.forEach(a => aMap.set(a.id || a.admissionNo, a));
-              mergedAdmissions = Array.from(aMap.values());
-            } else if (localAdmissions.length > 0 && serverAdmissions.length === 0) {
-              localAdmissions.forEach(a => {
-                fetch('/api/admissions', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(a)
-                }).catch(() => null);
-              });
-              mergedAdmissions = localAdmissions;
-            }
+            let mergedAdmissions = serverAdmissions.length > 0 ? serverAdmissions : localAdmissions;
 
             // Smart merge for students
             const serverStudents = Array.isArray(result.students) ? result.students : [];
@@ -361,23 +342,36 @@ export default function App() {
   }, []);
 
   // Handlers for Leads
-  const handleLeadCreated = (newLead) => {
-    setInstituteData((prev) => {
-      const updatedLeads = [newLead, ...prev.recentLeads];
-      return {
-        ...prev,
-        recentLeads: updatedLeads,
-        stats: {
-          ...prev.stats,
-          newLeadsThisMonth: updatedLeads.length,
-        },
-      };
-    });
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newLead)
-    }).catch(() => null);
+  const handleLeadCreated = async (newLead) => {
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead)
+      });
+      const data = await res.json();
+      const leadToAdd = (data && data.success && data.lead) ? data.lead : newLead;
+
+      setInstituteData((prev) => {
+        const cleanNewPhone = String(leadToAdd.phone || '').replace(/\D/g, '').slice(-10);
+        const filtered = (prev.recentLeads || []).filter(l => {
+          if (l.id === leadToAdd.id) return false;
+          if (cleanNewPhone && String(l.phone || '').replace(/\D/g, '').slice(-10) === cleanNewPhone) return false;
+          return true;
+        });
+        const updatedLeads = [leadToAdd, ...filtered];
+        return {
+          ...prev,
+          recentLeads: updatedLeads,
+          stats: {
+            ...prev.stats,
+            newLeadsThisMonth: updatedLeads.length,
+          },
+        };
+      });
+    } catch (err) {
+      console.error('Error creating lead:', err);
+    }
   };
 
   const handleLeadUpdated = (updatedLead) => {
@@ -637,6 +631,57 @@ export default function App() {
     }).catch(() => null);
   };
 
+  const handleDeleteAdmission = (admissionId) => {
+    if (!admissionId) return;
+
+    setInstituteData((prev) => {
+      const updatedAdmissions = (prev.admissions || []).filter(
+        (a) =>
+          String(a.id) !== String(admissionId) &&
+          String(a.admissionNo) !== String(admissionId) &&
+          String(a.admission_no) !== String(admissionId)
+      );
+
+      const totalRevenue = (prev.feeTransactions || []).reduce(
+        (acc, t) => acc + (Number(t.amount) || 0),
+        0
+      );
+      const totalPending = (prev.students || []).reduce(
+        (acc, s) => acc + (Number(s.feeDue) || 0),
+        0
+      );
+
+      const updatedData = {
+        ...prev,
+        admissions: updatedAdmissions,
+        stats: {
+          ...prev.stats,
+          confirmedAdmissions: updatedAdmissions.length,
+          conversionRate:
+            (prev.recentLeads || []).length > 0
+              ? `${Math.round((updatedAdmissions.length / prev.recentLeads.length) * 100)}%`
+              : "0%",
+          collectionRate:
+            totalRevenue + totalPending > 0
+              ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+              : "100%",
+        },
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData));
+      } catch (err) {
+        console.warn("Could not save to localStorage:", err);
+      }
+
+      return updatedData;
+    });
+
+    fetch(`/api/admissions/${admissionId}`, {
+      method: "DELETE",
+    }).catch((err) => console.warn("Failed to delete admission from server:", err));
+  };
+
   const handlePaymentRecorded = (newReceipt) => {
     setInstituteData((prev) => {
       const updatedStudents = prev.students.map((s) => {
@@ -843,6 +888,7 @@ export default function App() {
             onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onUpdateAdmissionStatus={handleUpdateAdmissionStatus}
+            onDeleteAdmission={handleDeleteAdmission}
           />
         );
       case "courses":

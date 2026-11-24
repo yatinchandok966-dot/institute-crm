@@ -1,9 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool, isConnected } from './db.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_FILE = path.join(__dirname, 'data_store.json');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -778,6 +785,45 @@ app.post('/api/admissions', async (req, res) => {
       admission: fallbackAdm,
       message: 'Admission registered in memory fallback store'
     });
+  }
+});
+
+app.delete('/api/admissions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isNum = !isNaN(Number(id));
+
+    try {
+      if (isNum) {
+        await pool.query('DELETE FROM admissions WHERE id = $1 OR admission_no = $2', [Number(id), String(id)]);
+      } else {
+        await pool.query('DELETE FROM admissions WHERE admission_no = $1', [String(id)]);
+      }
+    } catch (dbErr) {
+      console.warn('PostgreSQL admission delete warning:', dbErr.message);
+    }
+
+    if (fs.existsSync(DATA_FILE)) {
+      try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.admissions)) {
+          data.admissions = data.admissions.filter(a =>
+            String(a.id) !== String(id) &&
+            String(a.admissionNo) !== String(id) &&
+            String(a.admission_no) !== String(id)
+          );
+          fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+        }
+      } catch (fileErr) {
+        console.warn('Could not update data_store.json on admission delete:', fileErr.message);
+      }
+    }
+
+    res.json({ success: true, message: 'Admission deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting admission:', err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
