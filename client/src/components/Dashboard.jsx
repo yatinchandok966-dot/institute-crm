@@ -102,6 +102,14 @@ export default function Dashboard({
   const admissions = (data.admissions && data.admissions.length > 0) ? data.admissions : defaultAdmissions;
 
 
+  // --- KPI 1 & KPI 2 CALCULATIONS ---
+  const allLeadsList = (data.leads && data.leads.length > 0) ? data.leads : leads;
+  const totalLeadsCount = stats.totalLeads || stats.newLeadsThisMonth || allLeadsList.length;
+  const pendingFollowUpsCount = stats.pendingFollowUps ?? allLeadsList.filter(
+    (l) => !['confirmed', 'admitted', 'converted', 'lost'].includes((l.status || '').toLowerCase())
+  ).length;
+
+
   // --- BAR CHART CALCULATIONS (MONTHLY LEADS VS ADMISSIONS) ---
   const maxBarVal = Math.max(...enrollmentTrend.map(d => Math.max(d.leads, d.admissions)), 100);
   const total6MoLeads = enrollmentTrend.reduce((s, d) => s + d.leads, 0);
@@ -110,7 +118,6 @@ export default function Dashboard({
 
 
   // --- LEAD SOURCE PERFORMANCE (4 BARS) ---
-  const allLeadsList = (data.leads && data.leads.length > 0) ? data.leads : leads;
   const targetSources = [
     { label: 'Website', fallbackCount: 34, color: 'from-indigo-500 to-indigo-600' },
     { label: 'WhatsApp', fallbackCount: 24, color: 'from-blue-500 to-indigo-500' },
@@ -193,46 +200,49 @@ export default function Dashboard({
 
       {/* 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* KPI 1: Total Leads */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Enrolled Students</h3>
+            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Total Leads</h3>
             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <GraduationCap className="w-4 h-4 text-blue-600" />
+              <UserPlus className="w-4 h-4 text-blue-600" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{stats.totalStudents || 6}</span>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-              {stats.activeStudentsGrowth || '+6'}
+            <span className="text-3xl font-black text-slate-900">{totalLeadsCount}</span>
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+              {stats.leadConversionRate || '50% conv.'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Active enrolled student count</p>
+          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Total prospective inquiries</p>
           <div className="absolute bottom-0 left-0 right-0">
             <Sparkline color="#3b82f6" />
           </div>
         </div>
 
 
+        {/* KPI 2: Pending Follow-ups */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Inquiries This Month</h3>
+            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Pending Follow-ups</h3>
             <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-              <UserPlus className="w-4 h-4 text-purple-600" />
+              <Phone className="w-4 h-4 text-purple-600" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{stats.newLeadsThisMonth || 86}</span>
+            <span className="text-3xl font-black text-slate-900">{pendingFollowUpsCount}</span>
             <span className="text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-              {stats.leadConversionRate || '0%'} conv.
+              Action Due
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Prospective leads in pipeline</p>
+          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Leads awaiting call or demo</p>
           <div className="absolute bottom-0 left-0 right-0">
             <Sparkline color="#a855f7" />
           </div>
         </div>
 
 
+        {/* KPI 3: Confirmed Admissions (Same) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Confirmed Admissions</h3>
@@ -253,6 +263,7 @@ export default function Dashboard({
         </div>
 
 
+        {/* KPI 4: Tuition Fees Collected (Same) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Tuition Fees Collected</h3>
