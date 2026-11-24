@@ -53,10 +53,9 @@ export default function Dashboard({
   onConvertToAdmission
 }) {
   const stats = data.stats || {};
-  const [hoveredIdx, setHoveredIdx] = useState(null);
 
 
-  // --- FALLBACK DATA FOR LEADS VS ADMISSIONS TREND ---
+  // --- FALLBACK DATA FOR LEADS VS ADMISSIONS BAR CHART ---
   const defaultEnrollmentTrend = [
     { month: 'Jun', leads: 52, admissions: 16 },
     { month: 'Jul', leads: 64, admissions: 21 },
@@ -103,37 +102,8 @@ export default function Dashboard({
   const admissions = (data.admissions && data.admissions.length > 0) ? data.admissions : defaultAdmissions;
 
 
-  // --- SVG CHART CALCULATIONS (MONTHLY LEADS VS ADMISSIONS) ---
-  const maxTrendVal = Math.max(...enrollmentTrend.map(d => Math.max(d.leads, d.admissions)), 100);
-  const svgW = 540;
-  const svgH = 180;
-  const padX = 32;
-  const padY = 24;
-
-  const mapPoints = (key) =>
-    enrollmentTrend.map((item, i) => {
-      const x = padX + (i * (svgW - padX * 2)) / Math.max(enrollmentTrend.length - 1, 1);
-      const y = svgH - padY - (item[key] / maxTrendVal) * (svgH - padY * 2);
-      return { x, y, val: item[key], month: item.month, leads: item.leads, admissions: item.admissions };
-    });
-
-  const leadsPts = mapPoints('leads');
-  const admPts = mapPoints('admissions');
-
-  const buildSmoothPath = (pts) =>
-    pts.reduce((acc, pt, i, arr) => {
-      if (i === 0) return `M ${pt.x} ${pt.y}`;
-      const prev = arr[i - 1];
-      const cx = (prev.x + pt.x) / 2;
-      return `${acc} C ${cx} ${prev.y}, ${cx} ${pt.y}, ${pt.x} ${pt.y}`;
-    }, '');
-
-  const leadsLine = buildSmoothPath(leadsPts);
-  const leadsArea = `${leadsLine} L ${leadsPts[leadsPts.length - 1].x} ${svgH - padY} L ${leadsPts[0].x} ${svgH - padY} Z`;
-
-  const admLine = buildSmoothPath(admPts);
-  const admArea = `${admLine} L ${admPts[admPts.length - 1].x} ${svgH - padY} L ${admPts[0].x} ${svgH - padY} Z`;
-
+  // --- BAR CHART CALCULATIONS (MONTHLY LEADS VS ADMISSIONS) ---
+  const maxBarVal = Math.max(...enrollmentTrend.map(d => Math.max(d.leads, d.admissions)), 100);
   const total6MoLeads = enrollmentTrend.reduce((s, d) => s + d.leads, 0);
   const total6MoAdm = enrollmentTrend.reduce((s, d) => s + d.admissions, 0);
   const avgConvRate = Math.round((total6MoAdm / (total6MoLeads || 1)) * 100);
@@ -306,14 +276,14 @@ export default function Dashboard({
       </div>
 
 
-      {/* GRAPH SECTION 1: MONTHLY LEADS VS CONFIRMED ADMISSIONS (COLOURFUL DUAL WAVE CHART) */}
+      {/* GRAPH SECTION 1: COLOURFUL GROUPED BAR CHART (MONTHLY LEADS VS CONFIRMED ADMISSIONS) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-emerald-500 flex items-center justify-center shadow-sm">
-                  <TrendingUp className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 to-emerald-500 flex items-center justify-center shadow-sm">
+                  <BarChart3 className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">
@@ -324,137 +294,59 @@ export default function Dashboard({
               </div>
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"></span>
+                  <span className="w-3 h-3 rounded bg-gradient-to-t from-violet-600 to-fuchsia-500"></span>
                   <span className="text-slate-700 font-semibold">New Leads</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"></span>
+                  <span className="w-3 h-3 rounded bg-gradient-to-t from-emerald-500 to-cyan-400"></span>
                   <span className="text-slate-700 font-semibold">Confirmed Admissions</span>
                 </div>
               </div>
             </div>
 
-            {/* Colourful Smooth Dual-Area SVG Chart */}
-            <div className="relative pt-4 pb-1">
-              <svg viewBox={`0 0 ${svgW} ${svgH + 22}`} className="w-full h-56 overflow-visible">
-                <defs>
-                  <linearGradient id="leadsGradStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#7c3aed" />
-                    <stop offset="50%" stopColor="#c026d3" />
-                    <stop offset="100%" stopColor="#ec4899" />
-                  </linearGradient>
-                  <linearGradient id="leadsGradFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.24" />
-                    <stop offset="100%" stopColor="#ec4899" stopOpacity="0.02" />
-                  </linearGradient>
+            {/* Clean Grouped Vertical Bars with Permanent Data Labels */}
+            <div className="h-56 w-full flex items-end justify-between gap-4 pt-8 px-2">
+              {enrollmentTrend.map((item, idx) => {
+                const leadsHeight = Math.round((item.leads / maxBarVal) * 100);
+                const admHeight = Math.round((item.admissions / maxBarVal) * 100);
+                const convPct = Math.round((item.admissions / (item.leads || 1)) * 100);
 
-                  <linearGradient id="admGradStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#059669" />
-                    <stop offset="50%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#06b6d4" />
-                  </linearGradient>
-                  <linearGradient id="admGradFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.30" />
-                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.03" />
-                  </linearGradient>
-                </defs>
+                return (
+                  <div
+                    key={idx}
+                    className="flex-1 flex flex-col items-center h-full justify-end group"
+                    title={`${item.month}: ${item.leads} Leads, ${item.admissions} Admissions (${convPct}% conversion)`}
+                  >
+                    <div className="w-full flex items-end justify-center gap-1.5 h-full">
+                      {/* New Leads Bar */}
+                      <div className="w-1/2 flex flex-col items-center justify-end h-full">
+                        <span className="text-[11px] font-extrabold text-violet-700 mb-1">
+                          {item.leads}
+                        </span>
+                        <div
+                          className="w-full bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-500 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
+                          style={{ height: `${Math.max(leadsHeight, 10)}%` }}
+                        ></div>
+                      </div>
 
-                {/* Subtle Horizontal Grid Lines */}
-                {[0, 0.33, 0.66, 1].map((step, i) => {
-                  const yPos = padY + step * (svgH - padY * 2);
-                  return (
-                    <line
-                      key={i}
-                      x1={padX}
-                      y1={yPos}
-                      x2={svgW - padX}
-                      y2={yPos}
-                      stroke="#f1f5f9"
-                      strokeWidth="1.2"
-                    />
-                  );
-                })}
+                      {/* Confirmed Admissions Bar */}
+                      <div className="w-1/2 flex flex-col items-center justify-end h-full">
+                        <span className="text-[11px] font-extrabold text-emerald-700 mb-1">
+                          {item.admissions}
+                        </span>
+                        <div
+                          className="w-full bg-gradient-to-t from-emerald-600 via-emerald-500 to-cyan-400 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
+                          style={{ height: `${Math.max(admHeight, 10)}%` }}
+                        ></div>
+                      </div>
+                    </div>
 
-                {/* Leads Area & Smooth Curve */}
-                <path d={leadsArea} fill="url(#leadsGradFill)" />
-                <path
-                  d={leadsLine}
-                  fill="none"
-                  stroke="url(#leadsGradStroke)"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                />
-
-                {/* Confirmed Admissions Area & Smooth Curve */}
-                <path d={admArea} fill="url(#admGradFill)" />
-                <path
-                  d={admLine}
-                  fill="none"
-                  stroke="url(#admGradStroke)"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                />
-
-                {/* Interactive Points & Labels */}
-                {leadsPts.map((lPt, idx) => {
-                  const aPt = admPts[idx];
-                  const isHovered = hoveredIdx === idx;
-                  return (
-                    <g
-                      key={idx}
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredIdx(idx)}
-                      onMouseLeave={() => setHoveredIdx(null)}
-                    >
-                      {isHovered && (
-                        <line
-                          x1={lPt.x}
-                          y1={padY}
-                          x2={lPt.x}
-                          y2={svgH - padY}
-                          stroke="#cbd5e1"
-                          strokeWidth="1.5"
-                          strokeDasharray="3 3"
-                        />
-                      )}
-
-                      {/* Leads Point (Purple/Pink) */}
-                      <circle cx={lPt.x} cy={lPt.y} r={isHovered ? 8 : 5.5} fill="#c026d3" fillOpacity="0.2" />
-                      <circle cx={lPt.x} cy={lPt.y} r={isHovered ? 4.5 : 3.5} fill="#c026d3" stroke="#fff" strokeWidth="1.8" />
-                      <text x={lPt.x} y={lPt.y - 9} textAnchor="middle" className="text-[10px] font-extrabold fill-fuchsia-700">
-                        {lPt.val}
-                      </text>
-
-                      {/* Admissions Point (Emerald/Cyan) */}
-                      <circle cx={aPt.x} cy={aPt.y} r={isHovered ? 8 : 5.5} fill="#10b981" fillOpacity="0.22" />
-                      <circle cx={aPt.x} cy={aPt.y} r={isHovered ? 4.5 : 3.5} fill="#10b981" stroke="#fff" strokeWidth="1.8" />
-                      <text x={aPt.x} y={aPt.y - 9} textAnchor="middle" className="text-[10px] font-extrabold fill-emerald-700">
-                        {aPt.val}
-                      </text>
-
-                      {/* X-Axis Month */}
-                      <text
-                        x={lPt.x}
-                        y={svgH + 8}
-                        textAnchor="middle"
-                        className={`text-[11px] font-bold ${isHovered ? 'fill-indigo-600' : 'fill-slate-600'}`}
-                      >
-                        {lPt.month}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-
-              {/* Hover Summary Pill */}
-              {hoveredIdx !== null && (
-                <div className="mt-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-[11px] flex items-center justify-between shadow-sm">
-                  <span className="font-bold text-indigo-300">{leadsPts[hoveredIdx].month} Pipeline</span>
-                  <span>
-                    New Leads: <strong className="text-fuchsia-300">{leadsPts[hoveredIdx].leads}</strong> • Admitted: <strong className="text-emerald-400">{leadsPts[hoveredIdx].admissions}</strong> ({Math.round((leadsPts[hoveredIdx].admissions / leadsPts[hoveredIdx].leads) * 100)}% conv.)
-                  </span>
-                </div>
-              )}
+                    <span className="text-xs font-bold text-slate-700 mt-2">
+                      {item.month}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
