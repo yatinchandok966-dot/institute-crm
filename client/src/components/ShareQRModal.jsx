@@ -9,17 +9,14 @@ import {
   Sparkles,
   Smartphone,
   School,
-  ArrowRight,
   Info,
   Share2,
   Download,
-  MessageSquare,
   ImageIcon
 } from 'lucide-react';
 
 export default function ShareQRModal({ isOpen, onClose, courses }) {
   const [copied, setCopied] = useState(false);
-  const [copiedMsg, setCopiedMsg] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -45,6 +42,160 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
     const res = await fetch(qrImageUrl);
     if (!res.ok) throw new Error('Failed to fetch QR image');
     return await res.blob();
+  };
+
+  // Generate a Paytm-style clean branded QR card image
+  const generatePaytmQRCardBlob = async () => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 600;
+          canvas.height = 740;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(null);
+
+          // Card Background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Paytm-style top header band (EduPulse Indigo)
+          ctx.fillStyle = '#4f46e5';
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(20, 20, canvas.width - 40, 84, 16);
+            ctx.fill();
+          } else {
+            ctx.fillRect(20, 20, canvas.width - 40, 84);
+          }
+
+          // Header Text
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('EduPulse Academy', canvas.width / 2, 58);
+
+          ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillStyle = '#c7d2fe';
+          ctx.fillText('STUDENT INQUIRY & ADMISSIONS', canvas.width / 2, 82);
+
+          // Subtitle
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText('Scan to Register & Get Free Demo', canvas.width / 2, 145);
+
+          ctx.fillStyle = '#64748b';
+          ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText('Point phone camera, Google Lens or WhatsApp scanner', canvas.width / 2, 170);
+
+          // QR Code Container Box
+          ctx.fillStyle = '#f8fafc';
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1.5;
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(130, 195, 340, 340, 20);
+            ctx.fill();
+            ctx.stroke();
+          } else {
+            ctx.fillRect(130, 195, 340, 340);
+            ctx.strokeRect(130, 195, 340, 340);
+          }
+
+          // Draw QR Code
+          ctx.drawImage(img, 150, 215, 300, 300);
+
+          // Paytm-style bottom badge
+          ctx.fillStyle = '#eef2ff';
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(160, 560, 280, 34, 17);
+            ctx.fill();
+          } else {
+            ctx.fillRect(160, 560, 280, 34);
+          }
+
+          ctx.fillStyle = '#4338ca';
+          ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText('Works with all Phone Cameras & UPI', canvas.width / 2, 582);
+
+          // Link & Footer
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
+          ctx.fillText(publicInquiryUrl, canvas.width / 2, 630);
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText('EduPulse CRM • Admissions Desk', canvas.width / 2, 665);
+
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png');
+        } catch (e) {
+          console.warn('Canvas card rendering failed:', e);
+          resolve(null);
+        }
+      };
+
+      img.onerror = () => {
+        resolve(null);
+      };
+
+      img.src = qrImageUrl;
+    });
+  };
+
+  // Single Paytm-style share handler
+  const handleShareQRCode = async () => {
+    try {
+      setSharing(true);
+      let cardBlob = await generatePaytmQRCardBlob();
+      if (!cardBlob) {
+        cardBlob = await getQrBlob();
+      }
+
+      const qrFile = new File([cardBlob], 'EduPulse-QR.png', { type: 'image/png' });
+      // Clean short caption like Paytm (no long spam messages)
+      const shortCaption = `Scan QR or register: ${publicInquiryUrl}`;
+
+      if (navigator.canShare && navigator.canShare({ files: [qrFile] })) {
+        await navigator.share({
+          title: 'EduPulse Academy - QR Code',
+          text: shortCaption,
+          files: [qrFile]
+        });
+      } else if (navigator.share) {
+        await navigator.share({
+          title: 'EduPulse Academy - QR Code',
+          text: shortCaption,
+          url: publicInquiryUrl
+        });
+      } else {
+        // Fallback: download Paytm-style QR card image and open WhatsApp with short link
+        const url = URL.createObjectURL(cardBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'EduPulse-QR.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shortCaption)}`;
+        window.open(waUrl, '_blank');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('Share failed, opening WhatsApp fallback:', err);
+        const shortCaption = `Scan QR or register: ${publicInquiryUrl}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shortCaption)}`, '_blank');
+      }
+    } finally {
+      setSharing(false);
+    }
   };
 
   const handleDownloadQR = async () => {
@@ -83,50 +234,6 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       console.warn('Could not copy image to clipboard:', err);
       handleDownloadQR();
     }
-  };
-
-  const shareMessageText = `🎓 *EduPulse Academy - Student Inquiry & Course Registration*\n\n📱 *Scan QR Code or visit the link below to submit your inquiry:*\n🔗 ${publicInquiryUrl}\n\n🖼️ *QR Code Image Preview:*\n${qrImageUrl}\n\n✨ Fill out in 30 seconds for free demo class access & counseling!`;
-
-  const handleShareWhatsApp = () => {
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessageText)}`;
-    window.open(waUrl, '_blank');
-  };
-
-  const handleShareWithFile = async () => {
-    try {
-      setSharing(true);
-      const blob = await getQrBlob();
-      const qrFile = new File([blob], 'EduPulse-Inquiry-QR.png', { type: 'image/png' });
-
-      if (navigator.canShare && navigator.canShare({ files: [qrFile] })) {
-        await navigator.share({
-          title: 'EduPulse Academy - Student Inquiry QR Code',
-          text: `🎓 EduPulse Academy Inquiry & Registration Form:\n${publicInquiryUrl}`,
-          files: [qrFile]
-        });
-      } else if (navigator.share) {
-        await navigator.share({
-          title: 'EduPulse Academy - Student Inquiry QR Code',
-          text: shareMessageText,
-          url: publicInquiryUrl
-        });
-      } else {
-        handleShareWhatsApp();
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.warn('Share API failed, falling back to WhatsApp:', err);
-        handleShareWhatsApp();
-      }
-    } finally {
-      setSharing(false);
-    }
-  };
-
-  const handleCopyFullMessage = () => {
-    navigator.clipboard.writeText(shareMessageText);
-    setCopiedMsg(true);
-    setTimeout(() => setCopiedMsg(false), 2500);
   };
 
   const handleOpenPreview = () => {
@@ -428,7 +535,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
               </div>
 
               {/* URL & Instant Actions */}
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Direct Public Inquiry URL
@@ -442,7 +549,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                     />
                     <button
                       onClick={handleCopyLink}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                      className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                       title="Copy Public Link"
                     >
                       {copied ? (
@@ -460,49 +567,19 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   </div>
                 </div>
 
-                {/* Primary Share Buttons */}
-                <div className="space-y-2 pt-1">
-                  {/* Share QR with Link */}
+                {/* Only ONE Primary Share Button (Paytm-style) */}
+                <div className="pt-1 space-y-2.5">
                   <button
-                    onClick={handleShareWithFile}
+                    onClick={handleShareQRCode}
                     disabled={sharing}
-                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-                    title="Share QR Image and Message Link directly via native share or apps"
+                    className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer"
+                    title="Share Paytm-style QR code card with direct link"
                   >
                     <Share2 className="w-4 h-4" />
-                    <span>{sharing ? 'Preparing Share...' : 'Share QR Image & Message Link'}</span>
+                    <span>{sharing ? 'Sharing QR Code...' : 'Share QR Code'}</span>
                   </button>
 
-                  {/* Share on WhatsApp */}
-                  <button
-                    onClick={handleShareWhatsApp}
-                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-                    title="Open WhatsApp with prefilled message containing direct link and QR code preview"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Share on WhatsApp (QR + Link)</span>
-                  </button>
-
-                  {/* Copy formatted invitation message */}
-                  <button
-                    onClick={handleCopyFullMessage}
-                    className="w-full py-2 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-2xs cursor-pointer"
-                    title="Copy full invitation text with registration link and QR preview"
-                  >
-                    {copiedMsg ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-700 font-bold">Message Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Copy Invitation Message with Link</span>
-                      </>
-                    )}
-                  </button>
-
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={handleOpenPreview}
                       className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
