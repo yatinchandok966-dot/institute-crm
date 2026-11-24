@@ -275,78 +275,88 @@ export default function EditStudentModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4.5 bg-slate-900 text-white flex justify-between items-center rounded-t-2xl shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+        <div className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center rounded-t-2xl shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center shadow-xs shrink-0">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">Edit Student Details</h3>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="font-bold text-base text-slate-900 tracking-tight">Edit Student Details</h3>
+                <span className="font-mono font-bold text-[11px] px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
                   {student.studentId || 'ID: ' + student.id}
                 </span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  formData.status === 'Active'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {formData.status || 'Active'}
+                </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 Update personal, academic, guardian and enrolment information
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             title="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 pt-3 flex gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('personal')}
-            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'personal'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>Personal Info</span>
-            {(errors.name || errors.phone || errors.email || errors.dob) && (
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            )}
-          </button>
+        {/* Navigation Tabs (Modern Segmented Style) */}
+        <div className="bg-slate-50/80 border-b border-slate-200/80 px-6 py-2.5 shrink-0">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-200/60 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setActiveTab('personal')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'personal'
+                  ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Personal Info</span>
+              {(errors.name || errors.phone || errors.email || errors.dob) && (
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('academic')}
-            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'academic'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span>Academic & Guardian</span>
-            {(errors.guardianPhone || errors.passingYear) && (
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('academic')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'academic'
+                  ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Academic & Guardian</span>
+              {(errors.guardianPhone || errors.passingYear) && (
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('enrolment')}
-            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'enrolment'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Enrolment & Status</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('enrolment')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'enrolment'
+                  ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Enrolment & Status</span>
+            </button>
+          </div>
         </div>
 
         {/* Global Error Banner */}
