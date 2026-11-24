@@ -238,33 +238,41 @@ const handleSubmit = async (e) => {
           )}
 
           <div>
-  <label className="block font-semibold mb-1">
-    Amount Received (INR) *
-  </label>
+            <div className="flex items-center justify-between h-5 mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 truncate">
+                Amount Received (INR) <span className="text-rose-500">*</span>
+              </label>
+              {selectedStudent && (
+                <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-2">
+                  Max: ₹{Number(selectedStudent.feeDue || 0).toLocaleString('en-IN')}
+                </span>
+              )}
+            </div>
 
-  <input
-    type="number"
-    required
-    min="1"
-    max={Number(selectedStudent?.feeDue || 0)}
-    step="1"
-    value={amount}
-    onChange={(e) => setAmount(e.target.value)}
-    disabled={!selectedStudent || Number(selectedStudent.feeDue || 0) <= 0}
-    className="w-full px-3 py-2 border rounded-lg font-bold text-sm disabled:bg-slate-100"
-  />
-
-  {selectedStudent && (
-    <p className="text-[10px] text-slate-500 mt-1">
-      Maximum payable amount: ₹
-      {Number(selectedStudent.feeDue || 0).toLocaleString('en-IN')}
-    </p>
-  )}
-</div>
+            <input
+              type="number"
+              required
+              min="1"
+              max={Number(selectedStudent?.feeDue || 0)}
+              step="1"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              disabled={!selectedStudent || Number(selectedStudent.feeDue || 0) <= 0}
+              className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-bold text-xs disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
 
           <div>
-            <label className="block font-semibold mb-1">Payment Method *</label>
-            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+            <div className="flex items-center justify-between h-5 mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 truncate">
+                Payment Method <span className="text-rose-500">*</span>
+              </label>
+            </div>
+            <select
+              value={paymentMode}
+              onChange={(e) => setPaymentMode(e.target.value)}
+              className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
               <option value="UPI (Google Pay / PhonePe)">UPI (GPay/PhonePe)</option>
               <option value="Netbanking (NEFT / IMPS)">Netbanking</option>
               <option value="Credit / Debit Card">Card</option>
@@ -273,8 +281,18 @@ const handleSubmit = async (e) => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Transaction ID / UTR </label>
-            <input type="text" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="Enter UTR or TXN ID" className="w-full px-3 py-2 border rounded-lg" />
+            <div className="flex items-center justify-between h-5 mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 truncate">
+                Transaction ID / UTR
+              </label>
+            </div>
+            <input
+              type="text"
+              value={transactionId}
+              onChange={(e) => setTransactionId(e.target.value)}
+              placeholder="Enter UTR or TXN ID"
+              className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
 
           <div className="pt-3 border-t flex justify-end gap-3">
