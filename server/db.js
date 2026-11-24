@@ -12,7 +12,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED;
+// Fallback to shared cloud Neon PostgreSQL connection string so Vercel Serverless Function connects seamlessly
+const NEON_PRODUCTION_URL = 'postgresql://neondb_owner:npg_nNboq9f8cVHp@ep-damp-rice-ben2r6ew-pooler.c-9.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED || NEON_PRODUCTION_URL;
 
 // Resolve Neon hostname if needed (handles ISP DNS resolution issues via DoH fallback)
 async function resolveNeonHost(hostname) {
