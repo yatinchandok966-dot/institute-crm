@@ -733,27 +733,27 @@ export default function LeadsModule({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] text-left text-xs border-collapse table-fixed">
             <colgroup>
-              <col className="w-[18%]" /> {/* 1. Lead Information */}
-              <col className="w-[13%]" /> {/* 2. Contact & Actions */}
-              <col className="w-[11%]" /> {/* 3. Interested Course */}
-              <col className="w-[10%]" /> {/* 4. Source */}
-              <col className="w-[11%]" /> {/* 5. Assigned Counsellor */}
-              <col className="w-[8%]" />  {/* 6. Priority */}
-              <col className="w-[11%]" /> {/* 7. Next Follow-Up */}
-              <col className="w-[8%]" />  {/* 8. Lead Status */}
-              <col className="w-[10%]" /> {/* 9. Actions */}
+              <col style={{ width: '18%' }} className="w-[18%]" /> {/* 1. Lead Information */}
+              <col style={{ width: '13%' }} className="w-[13%]" /> {/* 2. Contact & Actions */}
+              <col style={{ width: '11%' }} className="w-[11%]" /> {/* 3. Interested Course */}
+              <col style={{ width: '10%' }} className="w-[10%]" /> {/* 4. Source */}
+              <col style={{ width: '11%' }} className="w-[11%]" /> {/* 5. Assigned Counsellor */}
+              <col style={{ width: '8%' }} className="w-[8%]" />  {/* 6. Priority */}
+              <col style={{ width: '11%' }} className="w-[11%]" /> {/* 7. Next Follow-Up */}
+              <col style={{ width: '8%' }} className="w-[8%]" />  {/* 8. Lead Status */}
+              <col style={{ width: '10%' }} className="w-[10%]" /> {/* 9. Actions */}
             </colgroup>
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
               <tr>
-                <th className="px-3.5 py-3 text-left whitespace-nowrap">Lead Information</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Contact & Actions</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Interested Course</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Source</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Assigned Counsellor</th>
-                <th className="px-2 py-3 text-center whitespace-nowrap">Priority</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Next Follow-Up</th>
-                <th className="px-3 py-3 text-left whitespace-nowrap">Lead Status</th>
-                <th className="px-3.5 py-3 text-right whitespace-nowrap">Actions</th>
+                <th style={{ width: '18%' }} className="px-3.5 py-3 text-left whitespace-nowrap">Lead Information</th>
+                <th style={{ width: '13%' }} className="px-3 py-3 text-left whitespace-nowrap">Contact & Actions</th>
+                <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Interested Course</th>
+                <th style={{ width: '10%' }} className="px-3 py-3 text-left whitespace-nowrap">Source</th>
+                <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Assigned Counsellor</th>
+                <th style={{ width: '8%' }} className="px-3 py-3 text-left whitespace-nowrap">Priority</th>
+                <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Next Follow-Up</th>
+                <th style={{ width: '8%' }} className="px-3 py-3 text-left whitespace-nowrap">Lead Status</th>
+                <th style={{ width: '10%' }} className="px-3 py-3 text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -901,9 +901,9 @@ export default function LeadsModule({
                       {/* 4. Lead Source */}
                       <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
                         {lead.source?.toLowerCase().includes('qr') ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs max-w-full truncate" title={lead.source}>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs max-w-full" title={lead.source}>
                             <QrCode className="w-3 h-3 text-indigo-600 shrink-0" />
-                            <span className="truncate">{lead.source}</span>
+                            <span>QR Code</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 max-w-full truncate" title={lead.source || 'Website'}>
@@ -926,7 +926,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 6. Lead Priority */}
-                      <td className="px-2 py-3 align-middle text-center whitespace-nowrap overflow-hidden">
+                      <td className="px-3 py-3 align-middle text-left whitespace-nowrap overflow-hidden">
                         <select
                           value={lead.priority || 'Warm'}
                           onChange={(e) => {
@@ -977,7 +977,7 @@ export default function LeadsModule({
                         <select
                           value={lead.status}
                           onChange={(e) => onUpdateLeadStatus(lead.id, e.target.value)}
-                          className="text-[10px] font-semibold bg-white border border-slate-300 rounded-md px-1.5 py-0.5 text-slate-800 shadow-2xs hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer w-full max-w-[100px] truncate"
+                          className="text-[10px] font-semibold bg-white border border-slate-300 rounded-md px-1.5 py-0.5 text-slate-800 shadow-2xs hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer w-full max-w-[95px] truncate"
                         >
                           {LEAD_PIPELINE_STAGES.map((s) => (
                             <option key={s} value={s}>{s}</option>
@@ -986,8 +986,8 @@ export default function LeadsModule({
                       </td>
 
                       {/* 9. Actions: Convert to Admission, Edit, Delete */}
-                      <td className="px-3.5 py-3 align-middle text-right whitespace-nowrap overflow-hidden">
-                        <div className="inline-flex items-center gap-1 justify-end">
+                      <td className="px-3 py-3 align-middle text-center whitespace-nowrap overflow-hidden">
+                        <div className="inline-flex items-center gap-1 justify-center w-full">
                           {/* Convert to Admission */}
                           <button
                             type="button"
