@@ -10,8 +10,7 @@ import {
   Filter
 } from 'lucide-react';
 
-
-// Sparkline Component with crisp angular trendline
+// Crisp angular sparkline component
 const Sparkline = ({ color = "#3b82f6" }) => {
   const gradId = `grad-${color.replace('#', '')}`;
   return (
@@ -38,45 +37,74 @@ const Sparkline = ({ color = "#3b82f6" }) => {
   );
 };
 
-
 export default function Dashboard({
   data = {},
   onOpenNewAdmission,
   onOpenPayment,
   onOpenConfirmationLetter,
   onNavigate,
-  onConvertToAdmission
+  onConvertToAdmission,
+  onOpenStudentProfile
 }) {
-  const stats = data.stats || {};
+  const safeData = data || {};
+  const stats = safeData.stats || {};
 
-  // --- REAL DATA ARRAYS FROM PARENT (App.jsx) ---
-  const allLeadsList = Array.isArray(data.leads) && data.leads.length > 0
-    ? data.leads
-    : (Array.isArray(data.recentLeads) ? data.recentLeads : []);
+  // 1. REAL-TIME ARRAYS FROM App.jsx (supports both camelCase & snake_case DB fields)
+  const leadsList = Array.isArray(safeData.recentLeads)
+    ? safeData.recentLeads
+    : (Array.isArray(safeData.leads) ? safeData.leads : []);
 
-  const recentLeads = Array.isArray(data.recentLeads) && data.recentLeads.length > 0
-    ? data.recentLeads
-    : allLeadsList;
+  const admissionsList = Array.isArray(safeData.admissions) ? safeData.admissions : [];
+  const studentsList = Array.isArray(safeData.students) ? safeData.students : [];
+  const coursesList = Array.isArray(safeData.courses) ? safeData.courses : [];
+  const feeTransactions = Array.isArray(safeData.feeTransactions) ? safeData.feeTransactions : [];
 
-  const admissions = Array.isArray(data.admissions) ? data.admissions : [];
-  const courses = Array.isArray(data.courses) ? data.courses : [];
+  // 2. REAL-TIME KPI CALCULATIONS
+  const totalLeadsCount = leadsList.length > 0
+    ? leadsList.length
+    : Number(stats.newLeadsThisMonth || stats.totalLeads || 0);
 
+  const activeStudentsCount = studentsList.length > 0
+    ? studentsList.filter(s => (s.status || 'Active').toLowerCase() !== 'dropped').length
+    : Number(stats.totalStudents || admissionsList.length || 0);
 
-  // --- KPI 1 & KPI 2 REAL COUNTS ---
-  const totalLeadsCount = stats.totalLeads ?? stats.newLeadsThisMonth ?? allLeadsList.length;
-  const activeStudentsCount = stats.totalStudents ?? admissions.length;
-  const confirmedAdmissionsCount = stats.confirmedAdmissions ?? admissions.length;
-  const dynamicConvRate = totalLeadsCount > 0
+  const confirmedAdmissionsCount = admissionsList.length > 0
+    ? admissionsList.length
+    : Number(stats.confirmedAdmissions || 0);
+
+  const conversionPct = totalLeadsCount > 0
     ? `${Math.round((confirmedAdmissionsCount / totalLeadsCount) * 100)}% conv.`
     : '0% conv.';
 
+  // Real-time Fee Calculations from transactions & students
+  const liveCollected = feeTransactions.length > 0
+    ? feeTransactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0)
+    : Number(stats.monthlyRevenue || 0);
 
-  // --- REAL MONTHLY LEADS VS CONFIRMED ADMISSIONS (LAST 6 MONTHS) ---
+  const livePending = studentsList.length > 0
+    ? studentsList.reduce((sum, st) => sum + Number(st.feeDue ?? st.fee_due ?? 0), 0)
+    : Number(stats.pendingFees || 0);
+
+  const liveOverdue = studentsList.length > 0
+    ? studentsList
+        .filter(st => (st.feeStatus || st.fee_status || '').toLowerCase() === 'overdue')
+        .reduce((sum, st) => sum + Number(st.feeDue ?? st.fee_due ?? 0), 0)
+    : Number(stats.overdueFees || 0);
+
+  const upcomingPending = Math.max(0, livePending - liveOverdue);
+  const totalFeeVolume = liveCollected + upcomingPending + liveOverdue;
+
+  const collectedPct = totalFeeVolume > 0 ? Math.round((liveCollected / totalFeeVolume) * 100) : 0;
+  const pendingPct = totalFeeVolume > 0 ? Math.round((upcomingPending / totalFeeVolume) * 100) : 0;
+  const overduePct = totalFeeVolume > 0 ? Math.max(0, 100 - collectedPct - pendingPct) : 0;
+
+  const circumference = 2 * Math.PI * 36;
+  const collectedStroke = (collectedPct / 100) * circumference;
+  const pendingStroke = (pendingPct / 100) * circumference;
+  const overdueStroke = (overduePct / 100) * circumference;
+
+  // 3. REAL-TIME MONTHLY LEADS VS CONFIRMED ADMISSIONS (LAST 6 MONTHS)
   const buildLast6MonthsTrend = () => {
-    if (Array.isArray(data.enrollmentTrend) && data.enrollmentTrend.length > 0) {
-      return data.enrollmentTrend;
-    }
-
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const now = new Date();
     const months = [];
@@ -92,19 +120,19 @@ export default function Dashboard({
       });
     }
 
-    allLeadsList.forEach((lead) => {
-      const rawDate = lead.createdAt || lead.date || lead.inquiryDate;
+    leadsList.forEach((lead) => {
+      const rawDate = lead.createdAt || lead.created_at || lead.date || lead.inquiryDate;
       const dt = rawDate ? new Date(rawDate) : now;
-      if (!isNaN(dt)) {
+      if (!isNaN(dt.getTime())) {
         const slot = months.find(m => m.year === dt.getFullYear() && m.monthIdx === dt.getMonth());
         if (slot) slot.leads += 1;
       }
     });
 
-    admissions.forEach((adm) => {
-      const rawDate = adm.admissionDate || adm.createdAt || adm.date;
+    admissionsList.forEach((adm) => {
+      const rawDate = adm.admissionDate || adm.admission_date || adm.createdAt || adm.created_at;
       const dt = rawDate ? new Date(rawDate) : now;
-      if (!isNaN(dt)) {
+      if (!isNaN(dt.getTime())) {
         const slot = months.find(m => m.year === dt.getFullYear() && m.monthIdx === dt.getMonth());
         if (slot) slot.admissions += 1;
       }
@@ -119,8 +147,23 @@ export default function Dashboard({
   const total6MoAdm = enrollmentTrend.reduce((s, d) => s + d.admissions, 0);
   const avgConvRate = total6MoLeads > 0 ? Math.round((total6MoAdm / total6MoLeads) * 100) : 0;
 
+  // 4. REAL-TIME ENROLLED STUDENTS BY PROGRAM
+  const programCounts = coursesList.map((course, index) => {
+    const cName = course.name || course.title || `Course ${index + 1}`;
+    const studentCount = studentsList.length > 0
+      ? studentsList.filter(s => (s.course || '').trim().toLowerCase() === cName.trim().toLowerCase()).length
+      : admissionsList.filter(a => (a.course || '').trim().toLowerCase() === cName.trim().toLowerCase()).length;
 
-  // --- REAL LEAD SOURCE PERFORMANCE (4 BARS) ---
+    return {
+      id: course.id || course._id || cName,
+      name: cName,
+      activeStudents: studentCount,
+    };
+  }).sort((a, b) => b.activeStudents - a.activeStudents);
+
+  const totalEnrolledAcrossPrograms = programCounts.reduce((acc, c) => acc + c.activeStudents, 0);
+
+  // 5. REAL-TIME LEAD SOURCE PERFORMANCE (4 BARS)
   const targetSources = [
     { label: 'Website', color: 'from-indigo-500 to-indigo-600' },
     { label: 'WhatsApp', color: 'from-blue-500 to-indigo-500' },
@@ -129,37 +172,22 @@ export default function Dashboard({
   ];
 
   const rawSourceCounts = targetSources.map((src) => {
-    const liveCount = allLeadsList.filter(
-      (l) => l.source && l.source.trim().toLowerCase() === src.label.toLowerCase()
+    const count = leadsList.filter(
+      (l) => (l.source || '').trim().toLowerCase() === src.label.toLowerCase()
     ).length;
-    return { ...src, count: liveCount };
+    return { ...src, count };
   });
 
-  const totalSourceLeads = rawSourceCounts.reduce((sum, s) => sum + s.count, 0);
+  const totalMatchedSourceLeads = rawSourceCounts.reduce((sum, s) => sum + s.count, 0);
   const leadSourceStages = rawSourceCounts.map((s) => ({
     label: s.label,
     count: s.count,
-    pct: totalSourceLeads > 0 ? Math.round((s.count / totalSourceLeads) * 100) : 0,
+    pct: totalMatchedSourceLeads > 0 ? Math.round((s.count / totalMatchedSourceLeads) * 100) : 0,
     color: s.color,
   }));
   const topSource = [...leadSourceStages].sort((a, b) => b.count - a.count)[0];
 
-
-  // --- REAL TUITION FEE RECOVERY BREAKDOWN ---
-  const collectedAmt = Number(stats.monthlyRevenue ?? stats.collectedFees ?? 0);
-  const pendingAmt = Number(stats.pendingFees ?? 0);
-  const overdueAmt = Number(stats.overdueFees ?? 0);
-  const totalFeeVolume = collectedAmt + pendingAmt + overdueAmt;
-
-  const collectedPct = totalFeeVolume > 0 ? Math.round((collectedAmt / totalFeeVolume) * 100) : 0;
-  const pendingPct = totalFeeVolume > 0 ? Math.round((pendingAmt / totalFeeVolume) * 100) : 0;
-  const overduePct = totalFeeVolume > 0 ? Math.max(0, 100 - collectedPct - pendingPct) : 0;
-
-  const circumference = 2 * Math.PI * 36;
-  const collectedStroke = (collectedPct / 100) * circumference;
-  const pendingStroke = (pendingPct / 100) * circumference;
-  const overdueStroke = (overduePct / 100) * circumference;
-
+  // Avatar helpers
   const avatarGradients = [
     'from-emerald-500 to-teal-600',
     'from-blue-500 to-indigo-600',
@@ -168,27 +196,12 @@ export default function Dashboard({
   ];
 
   const getInitials = (name = '') =>
-    name
+    String(name)
       .trim()
       .split(/\s+/)
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() || '')
       .join('') || 'S';
-
-
-  // --- REAL PROGRAM SHARE CALCULATION ---
-  const coursesWithCounts = courses.map((c) => {
-    const enrolledInCourse = c.activeStudents ?? admissions.filter(
-      (a) => a.course && a.course.toLowerCase() === (c.name || c.title || '').toLowerCase()
-    ).length;
-    return {
-      id: c.id || c._id || c.name,
-      name: c.name || c.title || 'Unnamed Course',
-      activeStudents: enrolledInCourse,
-    };
-  });
-  const totalProgramStudents = coursesWithCounts.reduce((acc, c) => acc + c.activeStudents, 0);
-
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto bg-slate-50/50 min-h-screen">
@@ -203,19 +216,19 @@ export default function Dashboard({
           </p>
         </div>
 
-
         <div className="flex items-center gap-2.5">
           <button
-            onClick={onOpenPayment}
+            type="button"
+            onClick={() => onOpenPayment && onOpenPayment()}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold rounded-lg border border-slate-300 transition-colors shadow-sm"
           >
             <CreditCard className="w-3.5 h-3.5 text-slate-600" />
             <span>Record Payment</span>
           </button>
 
-
           <button
-            onClick={onOpenNewAdmission}
+            type="button"
+            onClick={() => onOpenNewAdmission && onOpenNewAdmission()}
             className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
           >
             <UserCheck className="w-3.5 h-3.5" />
@@ -223,7 +236,6 @@ export default function Dashboard({
           </button>
         </div>
       </div>
-
 
       {/* 4 Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -238,7 +250,7 @@ export default function Dashboard({
           <div className="flex items-baseline gap-2.5 z-10">
             <span className="text-3xl font-black text-slate-900 tracking-tight">{totalLeadsCount}</span>
             <span className="text-[11px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200/70 px-2 py-0.5 rounded-full">
-              {stats.leadConversionRate || dynamicConvRate}
+              {conversionPct}
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
@@ -248,7 +260,6 @@ export default function Dashboard({
             <Sparkline color="#2563eb" />
           </div>
         </div>
-
 
         {/* KPI 2: Active Students */}
         <div className="bg-gradient-to-br from-white via-white to-purple-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(147,51,234,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(147,51,234,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
@@ -261,7 +272,7 @@ export default function Dashboard({
           <div className="flex items-baseline gap-2.5 z-10">
             <span className="text-3xl font-black text-slate-900 tracking-tight">{activeStudentsCount}</span>
             <span className="text-[11px] font-bold text-purple-700 bg-purple-100/80 border border-purple-200/70 px-2 py-0.5 rounded-full">
-              {stats.activeStudentsGrowth || 'In Batches'}
+              In Batches
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
@@ -271,7 +282,6 @@ export default function Dashboard({
             <Sparkline color="#9333ea" />
           </div>
         </div>
-
 
         {/* KPI 3: Confirmed Admissions */}
         <div className="bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(5,150,105,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(5,150,105,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
@@ -295,7 +305,6 @@ export default function Dashboard({
           </div>
         </div>
 
-
         {/* KPI 4: Tuition Fees Collected */}
         <div className="bg-gradient-to-br from-white via-white to-amber-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(217,119,6,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(217,119,6,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
           <div className="flex justify-between items-center mb-2.5 z-10">
@@ -305,14 +314,14 @@ export default function Dashboard({
             </div>
           </div>
           <div className="flex items-baseline gap-2.5 z-10">
-            <span className="text-2xl font-black text-slate-900 tracking-tight">₹{collectedAmt.toLocaleString()}</span>
+            <span className="text-2xl font-black text-slate-900 tracking-tight">₹{liveCollected.toLocaleString()}</span>
             <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/70 px-2 py-0.5 rounded-full">
-              {stats.revenueGrowth || `${collectedPct}%`}
+              {collectedPct}%
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
             <p className="text-[11px] text-slate-500 font-semibold">
-              ₹{pendingAmt.toLocaleString()} pending installments due
+              ₹{livePending.toLocaleString()} pending installments due
             </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 opacity-95">
@@ -321,8 +330,7 @@ export default function Dashboard({
         </div>
       </div>
 
-
-      {/* GRAPH SECTION 1: COLOURFUL GROUPED BAR CHART (MONTHLY LEADS VS CONFIRMED ADMISSIONS) */}
+      {/* GRAPH SECTION 1: Monthly Leads vs Confirmed Admissions & Program Share */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
           <div>
@@ -402,7 +410,6 @@ export default function Dashboard({
           </div>
         </div>
 
-
         {/* Enrolled Students by Program */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
           <div>
@@ -413,12 +420,12 @@ export default function Dashboard({
               <p className="text-xs text-slate-500 mt-0.5">Program share across active batches</p>
             </div>
             <div className="mt-4 space-y-3">
-              {coursesWithCounts.length === 0 ? (
-                <p className="text-xs text-slate-400 py-6 text-center">No active courses found.</p>
+              {programCounts.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">No courses available yet.</p>
               ) : (
-                coursesWithCounts.slice(0, 5).map((course) => {
-                  const pct = totalProgramStudents > 0
-                    ? Math.round((course.activeStudents / totalProgramStudents) * 100)
+                programCounts.slice(0, 5).map((course) => {
+                  const pct = totalEnrolledAcrossPrograms > 0
+                    ? Math.round((course.activeStudents / totalEnrolledAcrossPrograms) * 100)
                     : 0;
                   return (
                     <div key={course.id} className="space-y-1 text-xs">
@@ -428,7 +435,7 @@ export default function Dashboard({
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div
-                          className="bg-indigo-600 h-full rounded-full"
+                          className="bg-indigo-600 h-full rounded-full transition-all duration-300"
                           style={{ width: `${pct}%` }}
                         ></div>
                       </div>
@@ -439,14 +446,14 @@ export default function Dashboard({
             </div>
           </div>
           <button
-            onClick={() => onNavigate('courses')}
+            type="button"
+            onClick={() => onNavigate && onNavigate('courses')}
             className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg transition-colors text-center mt-4"
           >
             View All Courses & Syllabus →
           </button>
         </div>
       </div>
-
 
       {/* GRAPH SECTION 2: Lead Source Performance & Tuition Fee Recovery */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -462,7 +469,6 @@ export default function Dashboard({
               </div>
             </div>
           </div>
-
 
           <div className="my-5 space-y-4">
             {leadSourceStages.map((stage, index) => (
@@ -486,7 +492,6 @@ export default function Dashboard({
             ))}
           </div>
 
-
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
             <span>
               Top Channel:{' '}
@@ -495,14 +500,14 @@ export default function Dashboard({
               </strong>
             </span>
             <button
-              onClick={() => onNavigate('leads')}
+              type="button"
+              onClick={() => onNavigate && onNavigate('leads')}
               className="font-bold text-indigo-600 hover:text-indigo-800"
             >
               Follow-up Pending Leads →
             </button>
           </div>
         </div>
-
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -516,7 +521,6 @@ export default function Dashboard({
               </div>
             </div>
           </div>
-
 
           <div className="my-4 flex flex-col sm:flex-row items-center justify-around gap-6">
             <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
@@ -540,7 +544,6 @@ export default function Dashboard({
               </div>
             </div>
 
-
             <div className="w-full space-y-3 text-xs">
               <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-100">
                 <div className="flex items-center gap-2">
@@ -548,7 +551,7 @@ export default function Dashboard({
                   <span className="font-bold text-slate-700">Collected Fees</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900">₹{collectedAmt.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">₹{liveCollected.toLocaleString()}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 border border-amber-100">
@@ -557,7 +560,7 @@ export default function Dashboard({
                   <span className="font-bold text-slate-700">Upcoming Dues</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900">₹{pendingAmt.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">₹{upcomingPending.toLocaleString()}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-rose-50 border border-rose-100">
@@ -566,22 +569,24 @@ export default function Dashboard({
                   <span className="font-bold text-slate-700">Overdue</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900">₹{overdueAmt.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">₹{liveOverdue.toLocaleString()}</span>
                 </div>
               </div>
             </div>
           </div>
 
-
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
             <span>Auto-reminder enabled for due dates</span>
-            <button onClick={onOpenPayment} className="font-bold text-indigo-600 hover:text-indigo-800">
+            <button
+              type="button"
+              onClick={() => onOpenPayment && onOpenPayment()}
+              className="font-bold text-indigo-600 hover:text-indigo-800"
+            >
               + Record Installment →
             </button>
           </div>
         </div>
       </div>
-
 
       {/* Main Grid: Colourful Enrolled Students & Recent Inquiries */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -601,73 +606,88 @@ export default function Dashboard({
                 </div>
               </div>
               <button
-                onClick={() => onNavigate('admissions')}
+                type="button"
+                onClick={() => onNavigate && onNavigate('admissions')}
                 className="text-xs font-bold text-emerald-700 bg-emerald-100/70 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-colors"
               >
                 View All →
               </button>
             </div>
 
-
             <div className="divide-y divide-slate-100 text-xs">
-              {admissions.length === 0 ? (
+              {admissionsList.length === 0 ? (
                 <p className="p-6 text-center text-slate-400">No admissions recorded yet.</p>
               ) : (
-                admissions.slice(0, 4).map((adm, idx) => (
-                  <div key={adm.id || adm._id || idx} className="p-4 hover:bg-emerald-50/30 transition-colors flex items-center justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5`}>
-                        {getInitials(adm.studentName)}
-                      </div>
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/80">
-                            {adm.admissionNo}
-                          </span>
-                          <strong className="text-slate-900 font-bold text-[13px]">{adm.studentName}</strong>
+                admissionsList.slice(0, 4).map((adm, idx) => {
+                  const studentName = adm.studentName || adm.student_name || adm.name || 'Student';
+                  const admNo = adm.admissionNo || adm.admission_no || `ADM-${idx + 1}`;
+                  const paidAmt = Number(adm.admissionFeePaid ?? adm.admission_fee_paid ?? 0);
+                  const payPlan = adm.paymentPlan || adm.payment_plan || 'Standard Plan';
+
+                  return (
+                    <div
+                      key={adm.id || adm._id || admNo}
+                      className="p-4 hover:bg-emerald-50/30 transition-colors flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5`}>
+                          {getInitials(studentName)}
                         </div>
-                        <p className="text-slate-700 font-medium text-[11px] mt-1">{adm.course}</p>
-                        <p className="text-slate-400 text-[10px] mt-0.5">Batch: {adm.batch} • {adm.paymentPlan}</p>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono font-bold text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/80">
+                              {admNo}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onOpenStudentProfile && onOpenStudentProfile(adm)}
+                              className="text-slate-900 hover:text-indigo-700 font-bold text-[13px] text-left"
+                            >
+                              {studentName}
+                            </button>
+                          </div>
+                          <p className="text-slate-700 font-medium text-[11px] mt-1">{adm.course || 'General Course'}</p>
+                          <p className="text-slate-400 text-[10px] mt-0.5">Batch: {adm.batch || 'General Cohort'} • {payPlan}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <p className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md inline-block">
+                          ₹{paidAmt.toLocaleString()} Paid
+                        </p>
+                        <div className="mt-1">
+                          <span className="inline-block text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/70 px-2 py-0.5 rounded-full">
+                            ✓ {adm.status || 'Confirmed'}
+                          </span>
+                        </div>
+                        <div className="mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onOpenConfirmationLetter && onOpenConfirmationLetter(adm)}
+                            className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline inline-flex items-center gap-1"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>Letter</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-
-                    <div className="text-right shrink-0">
-                      <p className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md inline-block">
-                        ₹{Number(adm.admissionFeePaid || 0).toLocaleString()} Paid
-                      </p>
-                      <div className="mt-1">
-                        <span className="inline-block text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/70 px-2 py-0.5 rounded-full">
-                          ✓ {adm.status}
-                        </span>
-                      </div>
-                      <div className="mt-1.5">
-                        <button
-                          onClick={() => onOpenConfirmationLetter(adm)}
-                          className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline inline-flex items-center gap-1"
-                        >
-                          <FileText className="w-3 h-3" />
-                          <span>Letter</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
 
-
           <div className="p-3 bg-gradient-to-r from-slate-50 to-emerald-50/40 border-t border-slate-200/80 text-right">
             <button
-              onClick={() => onNavigate('admissions')}
+              type="button"
+              onClick={() => onNavigate && onNavigate('admissions')}
               className="text-xs text-emerald-700 hover:text-emerald-900 font-bold hover:underline"
             >
-              Go to Admissions Desk ({admissions.length}) →
+              Go to Admissions Desk ({admissionsList.length}) →
             </button>
           </div>
         </div>
-
 
         {/* Card 2: Recent Inquiries (Pre-Admission) */}
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between overflow-hidden">
@@ -685,45 +705,45 @@ export default function Dashboard({
                 </div>
               </div>
               <button
-                onClick={() => onNavigate('leads')}
+                type="button"
+                onClick={() => onNavigate && onNavigate('leads')}
                 className="text-xs font-bold text-indigo-700 bg-indigo-100/70 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors"
               >
                 View Leads →
               </button>
             </div>
 
-
             <div className="divide-y divide-slate-100 text-xs">
-              {recentLeads.length === 0 ? (
+              {leadsList.length === 0 ? (
                 <p className="p-6 text-center text-slate-400">No leads found.</p>
               ) : (
-                recentLeads.slice(0, 4).map((lead, idx) => (
+                leadsList.slice(0, 4).map((lead, idx) => (
                   <div key={lead.id || lead._id || idx} className="p-4 hover:bg-indigo-50/30 transition-colors flex items-center justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradients[(idx + 1) % avatarGradients.length]} text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5`}>
                         {getInitials(lead.name)}
                       </div>
                       <div>
-                        <h4 className="font-bold text-slate-900 text-[13px]">{lead.name}</h4>
-                        <p className="text-slate-700 font-medium text-[11px] mt-0.5">{lead.course}</p>
+                        <h4 className="font-bold text-slate-900 text-[13px]">{lead.name || 'Unnamed Lead'}</h4>
+                        <p className="text-slate-700 font-medium text-[11px] mt-0.5">{lead.course || 'Course Inquiry'}</p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                          <span className="text-slate-500 text-[10px] font-mono">{lead.phone}</span>
+                          <span className="text-slate-500 text-[10px] font-mono">{lead.phone || 'N/A'}</span>
                           <span className="text-slate-300">•</span>
                           <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/70 px-1.5 py-0.2 rounded">
-                            {lead.source}
+                            {lead.source || 'Direct'}
                           </span>
                         </div>
                       </div>
                     </div>
 
-
                     <div className="text-right space-y-1.5 shrink-0">
                       <span className="inline-block text-[10px] font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200/80">
-                        {lead.status}
+                        {lead.status || 'New'}
                       </span>
                       <div>
                         <button
-                          onClick={() => onConvertToAdmission(lead)}
+                          type="button"
+                          onClick={() => onConvertToAdmission && onConvertToAdmission(lead)}
                           className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-lg text-[10px] shadow-sm transition-all inline-flex items-center gap-1"
                         >
                           <UserCheck className="w-3 h-3" />
@@ -737,13 +757,13 @@ export default function Dashboard({
             </div>
           </div>
 
-
           <div className="p-3 bg-gradient-to-r from-slate-50 to-indigo-50/40 border-t border-slate-200/80 text-right">
             <button
-              onClick={() => onNavigate('leads')}
+              type="button"
+              onClick={() => onNavigate && onNavigate('leads')}
               className="text-xs text-indigo-700 hover:text-indigo-900 font-bold hover:underline"
             >
-              Open Leads Board ({allLeadsList.length}) →
+              Open Leads Board ({leadsList.length}) →
             </button>
           </div>
         </div>

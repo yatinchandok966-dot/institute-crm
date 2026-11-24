@@ -28,9 +28,33 @@ import PublicInquiryForm from "./components/PublicInquiryForm";
 import { initialInstituteData, OFFICIAL_COURSES } from "./data/constants";
 
 const STORAGE_KEY = 'edupulse_institute_crm_v2';
+const TAB_STORAGE_KEY = 'edupulse_crm_active_tab';
+const VALID_TABS = ['dashboard', 'leads', 'admissions', 'courses', 'batches', 'trainers', 'students', 'fees', 'attendance'];
+
+const getInitialTab = () => {
+  if (typeof window === 'undefined') return 'dashboard';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const paramTab = params.get('tab');
+    if (paramTab && VALID_TABS.includes(paramTab)) {
+      return paramTab;
+    }
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash && hash !== 'inquire' && VALID_TABS.includes(hash)) {
+      return hash;
+    }
+    const saved = localStorage.getItem(TAB_STORAGE_KEY);
+    if (saved && VALID_TABS.includes(saved)) {
+      return saved;
+    }
+  } catch (err) {
+    console.warn('Could not read saved tab:', err);
+  }
+  return 'dashboard';
+};
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(getInitialTab);
 
   // Persistent institute state initialized from localStorage
   const [instituteData, setInstituteData] = useState(() => {
@@ -116,6 +140,38 @@ export default function App() {
     }
   }, [instituteData]);
 
+  // Automatically persist active tab to localStorage and sync with URL query
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && VALID_TABS.includes(activeTab)) {
+        localStorage.setItem(TAB_STORAGE_KEY, activeTab);
+        if (window.location.hash !== '#inquire') {
+          const url = new URL(window.location.href);
+          if (url.searchParams.get('tab') !== activeTab) {
+            url.searchParams.set('tab', activeTab);
+            window.history.replaceState({}, '', url);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not persist active tab:', err);
+    }
+  }, [activeTab]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const paramTab = params.get('tab');
+      if (paramTab && VALID_TABS.includes(paramTab) && paramTab !== activeTab) {
+        setSelectedStudentForProfile(null);
+        setActiveTab(paramTab);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeTab]);
+
   // Modal states
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isShareQROpen, setIsShareQROpen] = useState(false);
@@ -199,8 +255,15 @@ export default function App() {
             let mergedTrainers = localTrainers.length > 0 ? localTrainers : (serverTrainers.length > 0 ? serverTrainers : initialInstituteData.trainers);
             if (serverTrainers.length > 0 && localTrainers.length > 0) {
               const tMap = new Map();
-              localTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
-              serverTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              localTrainers.forEach(t => tMap.set(t.employeeId || t.id || t.name, t));
+              serverTrainers.forEach(t => {
+                const key = t.employeeId || t.id || t.name;
+                const existing = tMap.get(key) || {};
+                const assignedCourses = (Array.isArray(t.assignedCourses) && t.assignedCourses.length > 0)
+                  ? t.assignedCourses
+                  : (existing.assignedCourses || []);
+                tMap.set(key, { ...existing, ...t, assignedCourses });
+              });
               mergedTrainers = Array.from(tMap.values());
             } else if (localTrainers.length > 0 && serverTrainers.length === 0) {
               localTrainers.forEach(t => {
@@ -820,15 +883,26 @@ export default function App() {
   };
 
   const handleTrainerUpdated = (updatedTrainer) => {
-    setInstituteData(prev => ({
-      ...prev,
-      trainers: (prev.trainers || []).map(t => (t.id === updatedTrainer.id ? updatedTrainer : t))
-    }));
-    fetch(`/api/trainers/${updatedTrainer.id}`, {
+    setInstituteData(prev => {
+      const updatedTrainers = (prev.trainers || []).map(t => {
+        const isMatch =
+          (t.id != null && updatedTrainer.id != null && String(t.id) === String(updatedTrainer.id)) ||
+          (t.employeeId && updatedTrainer.employeeId && t.employeeId === updatedTrainer.employeeId) ||
+          (t.name && updatedTrainer.name && t.name.toLowerCase() === updatedTrainer.name.toLowerCase());
+        return isMatch ? { ...t, ...updatedTrainer } : t;
+      });
+      return {
+        ...prev,
+        trainers: updatedTrainers
+      };
+    });
+
+    const trainerKey = updatedTrainer.id || updatedTrainer.employeeId;
+    fetch(`/api/trainers/${trainerKey}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedTrainer)
-    }).catch(() => null);
+    }).catch(err => console.warn('Failed to update trainer on server:', err));
   };
 
   const handleTrainerDeleted = (trainerId) => {
@@ -1003,7 +1077,7 @@ export default function App() {
             }}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
-            onNavigate={(tab) => setActiveTab(tab)}
+            onNavigate={handleTabChange}
             onConvertToAdmission={handleConvertToAdmission}
             onOpenStudentProfile={handleOpenStudentProfile}
           />
@@ -1045,6 +1119,9 @@ export default function App() {
         return (
           <CoursesModule
             courses={instituteData.courses}
+            admissions={instituteData.admissions}
+            students={instituteData.students}
+            trainers={instituteData.trainers}
             onOpenNewCourse={() => {
               setCourseForEdit(null);
               setIsCourseModalOpen(true);
@@ -1061,6 +1138,8 @@ export default function App() {
           <BatchesModule
             batches={instituteData.batches}
             courses={instituteData.courses}
+            admissions={instituteData.admissions}
+            students={instituteData.students}
             onOpenNewBatch={() => setIsBatchModalOpen(true)}
           />
         );
@@ -1138,7 +1217,7 @@ export default function App() {
             }}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
-            onNavigate={(tab) => setActiveTab(tab)}
+            onNavigate={handleTabChange}
             onConvertToAdmission={handleConvertToAdmission}
             onOpenStudentProfile={handleOpenStudentProfile}
           />
@@ -1166,6 +1245,7 @@ export default function App() {
   }
 
   const handleTabChange = (tab) => {
+    if (!VALID_TABS.includes(tab)) return;
     setSelectedStudentForProfile(null);
     setActiveTab(tab);
   };
