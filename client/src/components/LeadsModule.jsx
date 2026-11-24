@@ -731,29 +731,29 @@ export default function LeadsModule({
       {/* 5. Professional Leads Table View */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-left text-xs border-collapse table-fixed">
+          <table className="w-full text-left text-xs border-collapse table-fixed">
             <colgroup>
-              <col style={{ width: '18%' }} className="w-[18%]" /> {/* 1. Lead Information */}
-              <col style={{ width: '13%' }} className="w-[13%]" /> {/* 2. Contact & Actions */}
-              <col style={{ width: '11%' }} className="w-[11%]" /> {/* 3. Interested Course */}
-              <col style={{ width: '10%' }} className="w-[10%]" /> {/* 4. Source */}
+              <col style={{ width: '16%' }} className="w-[16%]" /> {/* 1. Lead Information */}
+              <col style={{ width: '12%' }} className="w-[12%]" /> {/* 2. Contact & Actions */}
+              <col style={{ width: '10%' }} className="w-[10%]" /> {/* 3. Interested Course */}
+              <col style={{ width: '9%' }} className="w-[9%]" />   {/* 4. Source */}
               <col style={{ width: '11%' }} className="w-[11%]" /> {/* 5. Assigned Counsellor */}
-              <col style={{ width: '8%' }} className="w-[8%]" />  {/* 6. Priority */}
+              <col style={{ width: '8%' }} className="w-[8%]" />   {/* 6. Priority */}
               <col style={{ width: '11%' }} className="w-[11%]" /> {/* 7. Next Follow-Up */}
-              <col style={{ width: '8%' }} className="w-[8%]" />  {/* 8. Lead Status */}
-              <col style={{ width: '10%' }} className="w-[10%]" /> {/* 9. Actions */}
+              <col style={{ width: '9%' }} className="w-[9%]" />   {/* 8. Lead Status */}
+              <col style={{ width: '14%' }} className="w-[14%]" /> {/* 9. Actions */}
             </colgroup>
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
               <tr>
-                <th style={{ width: '18%' }} className="px-3.5 py-3 text-left whitespace-nowrap">Lead Information</th>
-                <th style={{ width: '13%' }} className="px-3 py-3 text-left whitespace-nowrap">Contact & Actions</th>
-                <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Interested Course</th>
-                <th style={{ width: '10%' }} className="px-3 py-3 text-left whitespace-nowrap">Source</th>
+                <th style={{ width: '16%' }} className="pl-4 pr-3 py-3 text-left whitespace-nowrap">Lead Information</th>
+                <th style={{ width: '12%' }} className="px-3 py-3 text-left whitespace-nowrap">Contact & Actions</th>
+                <th style={{ width: '10%' }} className="px-3 py-3 text-left whitespace-nowrap">Interested Course</th>
+                <th style={{ width: '9%' }} className="px-3 py-3 text-left whitespace-nowrap">Source</th>
                 <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Assigned Counsellor</th>
                 <th style={{ width: '8%' }} className="px-3 py-3 text-left whitespace-nowrap">Priority</th>
                 <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Next Follow-Up</th>
-                <th style={{ width: '8%' }} className="px-3 py-3 text-left whitespace-nowrap">Lead Status</th>
-                <th style={{ width: '10%' }} className="px-3 py-3 text-center whitespace-nowrap">Actions</th>
+                <th style={{ width: '9%' }} className="px-3 py-3 text-left whitespace-nowrap">Lead Status</th>
+                <th style={{ width: '14%' }} className="pl-3 pr-4 py-3 text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -821,7 +821,7 @@ export default function LeadsModule({
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
                       {/* 1. Lead Information */}
-                      <td className="px-3.5 py-3 align-middle overflow-hidden">
+                      <td className="pl-4 pr-3 py-3 align-middle overflow-hidden">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                             {(lead.name || 'L').charAt(0).toUpperCase()}
@@ -986,8 +986,8 @@ export default function LeadsModule({
                       </td>
 
                       {/* 9. Actions: Convert to Admission, Edit, Delete */}
-                      <td className="px-3 py-3 align-middle text-center whitespace-nowrap overflow-hidden">
-                        <div className="inline-flex items-center gap-1 justify-center w-full">
+                      <td className="pl-3 pr-4 py-3 align-middle text-center whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 justify-center w-full">
                           {/* Convert to Admission */}
                           <button
                             type="button"
@@ -1004,7 +1004,7 @@ export default function LeadsModule({
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(lead)}
-                            className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs"
+                            className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs shrink-0"
                             title="Edit Lead"
                           >
                             <Edit3 className="w-3 h-3" />
@@ -1014,7 +1014,7 @@ export default function LeadsModule({
                           <button
                             type="button"
                             onClick={() => setDeleteConfirmationLead(lead)}
-                            className="p-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors shadow-2xs"
+                            className="p-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors shadow-2xs shrink-0"
                             title="Delete Lead"
                           >
                             <Trash2 className="w-3 h-3" />
