@@ -16,28 +16,28 @@ import {
 } from 'lucide-react';
 
 
-// Sparkline Component matching the photo exactly
+// Sparkline Component with crisp angular trendline (not overly smooth)
 const Sparkline = ({ color = "#3b82f6" }) => {
   const gradId = `grad-${color.replace('#', '')}`;
   return (
     <svg viewBox="0 0 100 25" className="w-full h-10 mt-auto" preserveAspectRatio="none">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
-        d="M0,20 C15,20 25,10 45,12 C65,14 75,22 100,20 L100,25 L0,25 Z"
+        d="M0,21 L18,17 L36,19 L54,11 L74,15 L100,8 L100,25 L0,25 Z"
         fill={`url(#${gradId})`}
       />
       <path
-        d="M0,20 C15,20 25,10 45,12 C65,14 75,22 100,20"
+        d="M0,21 L18,17 L36,19 L54,11 L74,15 L100,8"
         fill="none"
         stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeWidth="2.2"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
       />
     </svg>
   );
@@ -196,10 +196,10 @@ export default function Dashboard({
       </div>
 
 
-      {/* 4 Power BI-Style Executive KPI Cards */}
+      {/* 4 Executive KPI Cards (No left side border, color-matched soft shadow) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* KPI 1: Total Leads */}
-        <div className="bg-gradient-to-br from-white via-white to-blue-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-blue-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+        <div className="bg-gradient-to-br from-white via-white to-blue-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(37,99,235,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(37,99,235,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
           <div className="flex justify-between items-center mb-2.5 z-10">
             <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Total Leads</h3>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-sm">
@@ -215,14 +215,14 @@ export default function Dashboard({
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
             <p className="text-[11px] text-slate-500 font-semibold">Total prospective inquiries</p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+          <div className="absolute bottom-0 left-0 right-0 opacity-95">
             <Sparkline color="#2563eb" />
           </div>
         </div>
 
 
         {/* KPI 2: Active Students */}
-        <div className="bg-gradient-to-br from-white via-white to-purple-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-purple-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+        <div className="bg-gradient-to-br from-white via-white to-purple-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(147,51,234,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(147,51,234,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
           <div className="flex justify-between items-center mb-2.5 z-10">
             <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Active Students</h3>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-fuchsia-500 flex items-center justify-center shadow-sm">
@@ -238,14 +238,14 @@ export default function Dashboard({
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
             <p className="text-[11px] text-slate-500 font-semibold">Currently studying in courses</p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+          <div className="absolute bottom-0 left-0 right-0 opacity-95">
             <Sparkline color="#9333ea" />
           </div>
         </div>
 
 
         {/* KPI 3: Confirmed Admissions */}
-        <div className="bg-gradient-to-br from-white via-white to-emerald-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-emerald-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+        <div className="bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(5,150,105,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(5,150,105,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
           <div className="flex justify-between items-center mb-2.5 z-10">
             <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Confirmed Admissions</h3>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-sm">
@@ -261,14 +261,14 @@ export default function Dashboard({
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
             <p className="text-[11px] text-slate-500 font-semibold">Official enrolled admissions</p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+          <div className="absolute bottom-0 left-0 right-0 opacity-95">
             <Sparkline color="#059669" />
           </div>
         </div>
 
 
         {/* KPI 4: Tuition Fees Collected */}
-        <div className="bg-gradient-to-br from-white via-white to-amber-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-amber-500 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+        <div className="bg-gradient-to-br from-white via-white to-amber-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(217,119,6,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(217,119,6,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
           <div className="flex justify-between items-center mb-2.5 z-10">
             <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Tuition Fees Collected</h3>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
@@ -286,7 +286,7 @@ export default function Dashboard({
               ₹{(stats.pendingFees || 162000).toLocaleString()} pending installments due
             </p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+          <div className="absolute bottom-0 left-0 right-0 opacity-95">
             <Sparkline color="#d97706" />
           </div>
         </div>
