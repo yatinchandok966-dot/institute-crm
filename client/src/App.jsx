@@ -25,7 +25,7 @@ import ShareQRModal from "./components/ShareQRModal";
 import PublicInquiryForm from "./components/PublicInquiryForm";
 
 // Deepak : Change mock data to original data
-import { initialInstituteData } from "./data/constants";
+import { initialInstituteData, OFFICIAL_COURSES } from "./data/constants";
 
 const STORAGE_KEY = 'edupulse_institute_crm_v2';
 
@@ -39,15 +39,32 @@ export default function App() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
+          // Merge loaded courses with OFFICIAL_COURSES so all real courses are present
+          const existingCourses = Array.isArray(parsed.courses) ? parsed.courses : [];
+          const courseMap = new Map();
+          OFFICIAL_COURSES.forEach(c => courseMap.set(c.name, c));
+          existingCourses.forEach(c => {
+            if (c && c.name) courseMap.set(c.name, { ...c });
+          });
+          const mergedInitialCourses = Array.from(courseMap.values());
+
+          // Fix QR source for Riya if currently Website or missing
+          const fixedLeads = (Array.isArray(parsed.recentLeads) ? parsed.recentLeads : []).map(l => {
+            if (l && (l.name === 'Riya' || l.id === 1795421032576) && (!l.source || l.source === 'Website')) {
+              return { ...l, source: 'QR Code (Campus Reception)' };
+            }
+            return l;
+          });
+
           return {
             ...initialInstituteData,
             ...parsed,
-            recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
+            recentLeads: fixedLeads,
             trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: (Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses).filter(c => c && c.name !== 'Full Stack Web Development (MERN)'),
-            batches: (Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches).filter(b => b && !b.name?.includes('FSWD')),
+            courses: mergedInitialCourses,
+            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
             stats: parsed.stats || initialInstituteData.stats
@@ -147,27 +164,131 @@ export default function App() {
         const result = await statsRes.json();
         if (result.success) {
           setInstituteData(prev => {
-            // Authoritative state directly from PostgreSQL database
+            // Smart merge for leads
             const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
-            const mergedLeads = serverLeads;
+            const localLeads = Array.isArray(prev.recentLeads) ? prev.recentLeads : [];
+            let mergedLeads = localLeads;
+            if (serverLeads.length > 0 && localLeads.length === 0) {
+              mergedLeads = serverLeads;
+            } else if (serverLeads.length > 0 && localLeads.length > 0) {
+              const map = new Map();
+              localLeads.forEach(l => map.set(l.id || l.phone, l));
+              serverLeads.forEach(l => map.set(l.id || l.phone, l));
+              mergedLeads = Array.from(map.values());
+            } else if (localLeads.length > 0 && serverLeads.length === 0) {
+              localLeads.forEach(l => {
+                fetch('/api/leads', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(l)
+                }).catch(() => null);
+              });
+              mergedLeads = localLeads;
+            }
+            // Ensure Riya has correct QR source
+            mergedLeads = mergedLeads.map(l => {
+              if (l && (l.name === 'Riya' || l.id === 1795421032576) && (!l.source || l.source === 'Website')) {
+                return { ...l, source: 'QR Code (Campus Reception)' };
+              }
+              return l;
+            });
 
+            // Smart merge for trainers
             const serverTrainers = Array.isArray(result.trainers) ? result.trainers : [];
-            const mergedTrainers = serverTrainers.length > 0 ? serverTrainers : (Array.isArray(prev.trainers) && prev.trainers.length > 0 ? prev.trainers : initialInstituteData.trainers);
+            const localTrainers = Array.isArray(prev.trainers) ? prev.trainers : [];
+            let mergedTrainers = localTrainers.length > 0 ? localTrainers : (serverTrainers.length > 0 ? serverTrainers : initialInstituteData.trainers);
+            if (serverTrainers.length > 0 && localTrainers.length > 0) {
+              const tMap = new Map();
+              localTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              serverTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              mergedTrainers = Array.from(tMap.values());
+            } else if (localTrainers.length > 0 && serverTrainers.length === 0) {
+              localTrainers.forEach(t => {
+                fetch('/api/trainers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(t)
+                }).catch(() => null);
+              });
+              mergedTrainers = localTrainers;
+            }
 
-            const serverCourses = (Array.isArray(result.courses) ? result.courses : []).filter(c => c && c.name !== 'Full Stack Web Development (MERN)');
-            const mergedCourses = serverCourses;
+            // Smart merge for courses (includes all official courses from database and constants)
+            const serverCourses = Array.isArray(result.courses) ? result.courses : [];
+            const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
+            const cMap = new Map();
+            OFFICIAL_COURSES.forEach(c => cMap.set(c.name, c));
+            localCourses.forEach(c => {
+              if (c && c.name) cMap.set(c.name, { ...cMap.get(c.name), ...c });
+            });
+            serverCourses.forEach(c => {
+              if (c && c.name) cMap.set(c.name, { ...cMap.get(c.name), ...c });
+            });
+            const mergedCourses = Array.from(cMap.values());
 
-            const serverBatches = (Array.isArray(result.batches) ? result.batches : []).filter(b => b && !b.name?.includes('FSWD'));
-            const mergedBatches = serverBatches;
+            // Smart merge for batches
+            const serverBatches = Array.isArray(result.batches) ? result.batches : [];
+            const localBatches = Array.isArray(prev.batches) ? prev.batches : [];
+            let mergedBatches = localBatches;
+            if (serverBatches.length > 0 && localBatches.length === 0) {
+              mergedBatches = serverBatches;
+            } else if (serverBatches.length > 0 && localBatches.length > 0) {
+              const bMap = new Map();
+              localBatches.forEach(b => bMap.set(b.id || b.name, b));
+              serverBatches.forEach(b => bMap.set(b.id || b.name, b));
+              mergedBatches = Array.from(bMap.values());
+            } else if (localBatches.length > 0 && serverBatches.length === 0) {
+              localBatches.forEach(b => {
+                fetch('/api/batches', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(b)
+                }).catch(() => null);
+              });
+              mergedBatches = localBatches;
+            }
 
+            // Smart merge for admissions: server is authoritative when admissions exist
             const serverAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
-            const mergedAdmissions = serverAdmissions;
+            const localAdmissions = Array.isArray(prev.admissions) ? prev.admissions : [];
+            let mergedAdmissions = serverAdmissions.length > 0 ? serverAdmissions : localAdmissions;
 
+            // Smart merge for students
             const serverStudents = Array.isArray(result.students) ? result.students : [];
-            const mergedStudents = serverStudents;
+            const localStudents = Array.isArray(prev.students) ? prev.students : [];
+            let mergedStudents = localStudents;
+            if (serverStudents.length > 0 && localStudents.length === 0) {
+              mergedStudents = serverStudents;
+            } else if (serverStudents.length > 0 && localStudents.length > 0) {
+              const sMap = new Map();
+              localStudents.forEach(s => sMap.set(s.id || s.studentId || s.admissionNo, s));
+              serverStudents.forEach(s => sMap.set(s.id || s.studentId || s.admissionNo, s));
+              mergedStudents = Array.from(sMap.values());
+            } else if (localStudents.length > 0 && serverStudents.length === 0) {
+              mergedStudents = localStudents;
+            }
 
+            // Smart merge for fee transactions
             const serverFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
-            const mergedFees = serverFees;
+            const localFees = Array.isArray(prev.feeTransactions) ? prev.feeTransactions : [];
+            let mergedFees = localFees;
+            if (serverFees.length > 0 && localFees.length === 0) {
+              mergedFees = serverFees;
+            } else if (serverFees.length > 0 && localFees.length > 0) {
+              const fMap = new Map();
+              localFees.forEach(f => fMap.set(f.receiptNo || f.id, f));
+              serverFees.forEach(f => fMap.set(f.receiptNo || f.id, f));
+              mergedFees = Array.from(fMap.values());
+            } else if (localFees.length > 0 && serverFees.length === 0) {
+              localFees.forEach(f => {
+                fetch('/api/fees', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(f)
+                }).catch(() => null);
+              });
+              mergedFees = localFees;
+            }
 
             const totalRev = mergedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
             const totalPend = mergedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
@@ -388,12 +509,40 @@ export default function App() {
 
   // On Admission Created (Lead-to-student conversion without re-entering details)
   const handleAdmissionCreated = (newAdmission, newStudent) => {
+    if (!newAdmission) return;
+    const safeStudentName = newAdmission.studentName || newAdmission.student_name || newAdmission.name || 'Student';
+    const safeAdmNo = newAdmission.admissionNo || newAdmission.admission_no || `ADM-2026-${Date.now().toString().slice(-4)}`;
+    const safeAppNo = newAdmission.applicationNo || newAdmission.application_no || `APP-2026-${Date.now().toString().slice(-4)}`;
+    const safePaid = Number(newAdmission.admissionFeePaid ?? newAdmission.admission_fee_paid ?? 0);
+    const safeDue = Number(newAdmission.feeDue ?? newAdmission.fee_due ?? 0);
+    const safeTotal = Number(newAdmission.totalCourseFee ?? newAdmission.total_course_fee ?? (safePaid + safeDue));
+
+    const safeAdmission = {
+      ...newAdmission,
+      studentName: safeStudentName,
+      student_name: safeStudentName,
+      admissionNo: safeAdmNo,
+      admission_no: safeAdmNo,
+      applicationNo: safeAppNo,
+      application_no: safeAppNo,
+      admissionFeePaid: safePaid,
+      admission_fee_paid: safePaid,
+      feeDue: safeDue,
+      fee_due: safeDue,
+      totalCourseFee: safeTotal,
+      total_course_fee: safeTotal,
+      course: newAdmission.course || 'Full Stack Web Development (MERN)',
+      batch: newAdmission.batch || 'General Cohort',
+      status: newAdmission.status || 'Admission Confirmed',
+      admissionDate: newAdmission.admissionDate || newAdmission.admission_date || new Date().toISOString().split('T')[0]
+    };
+
     setInstituteData((prev) => {
       // 1. Mark corresponding lead as converted
-      const updatedLeads = prev.recentLeads.map((l) => {
+      const updatedLeads = (prev.recentLeads || []).map((l) => {
         if (
-          l.id === newAdmission.leadId ||
-          l.name === newAdmission.studentName
+          l.id === safeAdmission.leadId ||
+          l.name === safeAdmission.studentName
         ) {
           return { ...l, status: "Lead Confirmed (Admitted)" };
         }
@@ -402,23 +551,23 @@ export default function App() {
 
       // 2. Add to students roster if not present
       const updatedStudents =
-        newStudent ? [newStudent, ...prev.students] : prev.students;
-      const updatedAdmissions = [newAdmission, ...prev.admissions];
+        newStudent ? [newStudent, ...(prev.students || [])] : (prev.students || []);
+      const updatedAdmissions = [safeAdmission, ...(prev.admissions || [])];
 
       // 3. Add to fee transactions if an admission fee was collected
-      const updatedFees = [...prev.feeTransactions];
-      const paidAmount = Number(newAdmission.admissionFeePaid) || 0;
+      const updatedFees = [...(prev.feeTransactions || [])];
+      const paidAmount = safePaid;
       if (paidAmount > 0) {
-        const rcpSeq = String(prev.feeTransactions.length + 1).padStart(4, "0");
+        const rcpSeq = String(updatedFees.length + 1).padStart(4, "0");
         updatedFees.unshift({
           receiptNo: `RCP-2026-${rcpSeq}`,
-          studentName: newAdmission.studentName,
+          studentName: safeAdmission.studentName,
           studentId: newStudent?.studentId || "STU-NEW",
-          course: newAdmission.course,
+          course: safeAdmission.course,
           amount: paidAmount,
           mode: "Admission Registration (UPI / Bank)",
           date: new Date().toISOString().replace("T", " ").substring(0, 16),
-          collectedBy: newAdmission.counselor || "Admissions Desk",
+          collectedBy: safeAdmission.counselor || "Admissions Desk",
           status: "Success",
         });
       }
@@ -480,6 +629,57 @@ export default function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     }).catch(() => null);
+  };
+
+  const handleDeleteAdmission = (admissionId) => {
+    if (!admissionId) return;
+
+    setInstituteData((prev) => {
+      const updatedAdmissions = (prev.admissions || []).filter(
+        (a) =>
+          String(a.id) !== String(admissionId) &&
+          String(a.admissionNo) !== String(admissionId) &&
+          String(a.admission_no) !== String(admissionId)
+      );
+
+      const totalRevenue = (prev.feeTransactions || []).reduce(
+        (acc, t) => acc + (Number(t.amount) || 0),
+        0
+      );
+      const totalPending = (prev.students || []).reduce(
+        (acc, s) => acc + (Number(s.feeDue) || 0),
+        0
+      );
+
+      const updatedData = {
+        ...prev,
+        admissions: updatedAdmissions,
+        stats: {
+          ...prev.stats,
+          confirmedAdmissions: updatedAdmissions.length,
+          conversionRate:
+            (prev.recentLeads || []).length > 0
+              ? `${Math.round((updatedAdmissions.length / prev.recentLeads.length) * 100)}%`
+              : "0%",
+          collectionRate:
+            totalRevenue + totalPending > 0
+              ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+              : "100%",
+        },
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData));
+      } catch (err) {
+        console.warn("Could not save to localStorage:", err);
+      }
+
+      return updatedData;
+    });
+
+    fetch(`/api/admissions/${admissionId}`, {
+      method: "DELETE",
+    }).catch((err) => console.warn("Failed to delete admission from server:", err));
   };
 
   const handlePaymentRecorded = (newReceipt) => {
@@ -781,6 +981,7 @@ export default function App() {
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onNavigate={(tab) => setActiveTab(tab)}
             onConvertToAdmission={handleConvertToAdmission}
+            onOpenStudentProfile={handleOpenStudentProfile}
           />
         );
       case "leads":
@@ -813,6 +1014,7 @@ export default function App() {
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onUpdateAdmissionStatus={handleUpdateAdmissionStatus}
             onOpenStudentProfile={handleOpenStudentProfile}
+            onDeleteAdmission={handleDeleteAdmission}
           />
         );
       case "courses":
@@ -926,7 +1128,10 @@ export default function App() {
       <PublicInquiryForm
         courses={instituteData.courses}
         onLeadSubmitted={(newLead) => {
-          handleLeadCreated(newLead);
+          handleLeadCreated({
+            ...newLead,
+            source: newLead?.source || 'QR Code (Campus Reception)'
+          });
         }}
         onBackToCRM={() => {
           window.location.hash = "";

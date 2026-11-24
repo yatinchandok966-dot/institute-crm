@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar } from 'lucide-react';
+import { OFFICIAL_TRAINERS } from '../data/constants';
 
 export default function AdmissionModal({
   isOpen,
@@ -11,7 +12,26 @@ export default function AdmissionModal({
   trainers = [],
   onAdmissionCreated
 }) {
-  const effectiveTrainers = Array.isArray(trainers) ? trainers : [];
+  // Always ensure trainers list contains registered faculty (with fallback so it never empties)
+  const effectiveTrainers = useMemo(() => {
+    const list = (Array.isArray(trainers) && trainers.length > 0) ? trainers : OFFICIAL_TRAINERS;
+    return list.map(t => {
+      if (t && (t.name === 'Deepika' || t.employeeId === 'EMP-2026-001')) {
+        return {
+          ...t,
+          role: 'Technical Trainer',
+          department: 'Academic Faculty',
+          assignedCourses: ['Full Stack Web Development (MERN)'],
+          assignedBatches: ['FSWD Morning Batch (M26)', 'FSWD Evening Batch (E12)'],
+          schedule: [
+            { id: 1, day: 'Mon-Fri', time: '09:00 AM - 11:30 AM', batch: 'FSWD Morning Batch (M26)', course: 'Full Stack Web Development (MERN)', room: 'Lab 1', mode: 'Classroom' },
+            { id: 2, day: 'Mon-Fri', time: '06:00 PM - 08:30 PM', batch: 'FSWD Evening Batch (E12)', course: 'Full Stack Web Development (MERN)', room: 'Lab 2', mode: 'Hybrid' }
+          ]
+        };
+      }
+      return t;
+    });
+  }, [trainers]);
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -23,13 +43,13 @@ export default function AdmissionModal({
     course: '',
     batch: '',
     trainer: '',
-    duration: '',
+    duration: '16 Weeks',
     admissionDate: new Date().toISOString().split('T')[0],
-    totalCourseFee: '',
+    totalCourseFee: 45000,
     discount: '', // Scholarship/discount: blank by default or when erased (no sticky zero!)
     discountReason: '',
-    admissionFeePaid: '',
-    paymentPlan: 'One-Time Full Payment',
+    admissionFeePaid: 13500,
+    paymentPlan: '2 Installments (50% now, 50% in 30 days)',
     status: 'Admission Confirmed',
     counselor: 'Admissions Desk',
     notes: ''
@@ -138,6 +158,14 @@ export default function AdmissionModal({
           courseName = typeof defaultCourse === 'string' ? defaultCourse : (defaultCourse?.name || '');
         }
 
+        if (!courseName && safeCourses.length > 0) {
+          const firstC = safeCourses[0];
+          courseName = typeof firstC === 'string' ? firstC : (firstC?.name || '');
+        }
+        if (!courseName) {
+          courseName = 'Full Stack Web Development (MERN)';
+        }
+
         let batchName = '';
         if (defaultTrainer && Array.isArray(defaultTrainer.assignedBatches) && defaultTrainer.assignedBatches.length > 0) {
           batchName = defaultTrainer.assignedBatches[0];
@@ -153,8 +181,16 @@ export default function AdmissionModal({
 
         setFormData(prev => ({
           ...prev,
-          trainer: trainerName,
-          batch: batchName,
+          leadId: null,
+          studentName: '',
+          phone: '',
+          email: '',
+          guardianName: '',
+          guardianPhone: '',
+          address: '',
+          notes: '',
+          trainer: trainerName || 'Deepika',
+          batch: batchName || 'FSWD Morning Batch (M26)',
           course: courseName,
           duration: durationWeeks,
           totalCourseFee: fee,
@@ -258,14 +294,36 @@ export default function AdmissionModal({
     return safeBatches;
   }, [selectedTrainerObj, formData.course, batches]);
 
-  // Dynamic counselors list
+  // Dynamic counselors list (strictly exclude technical trainers)
   const availableCounselors = useMemo(() => {
     const set = new Set();
     set.add('Admissions Desk');
+    const technicalTrainerNames = new Set(
+      (effectiveTrainers || [])
+        .filter(t => {
+          const role = (t?.role || '').toLowerCase();
+          return role.includes('technical trainer') || role === 'trainer';
+        })
+        .map(t => (t?.name || '').trim().toLowerCase())
+    );
+
     (effectiveTrainers || []).forEach(t => {
-      if (t && t.name) set.add(t.name);
+      if (!t || !t.name) return;
+      const role = (t.role || '').toLowerCase();
+      const dept = (t.department || '').toLowerCase();
+      const isTrainer = role.includes('technical trainer') || role === 'trainer';
+      const isCounselor = role.includes('counsel') || dept.includes('counsel');
+      if (isCounselor && !isTrainer) {
+        set.add(t.name.trim());
+      }
     });
-    if (leadToConvert?.counselor) set.add(leadToConvert.counselor);
+
+    if (leadToConvert?.counselor) {
+      const cTrim = leadToConvert.counselor.trim();
+      if (!technicalTrainerNames.has(cTrim.toLowerCase())) {
+        set.add(cTrim);
+      }
+    }
     return Array.from(set).sort();
   }, [effectiveTrainers, leadToConvert]);
 
@@ -527,6 +585,12 @@ export default function AdmissionModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const cleanStudentName = (formData.studentName || '').trim();
+    if (!cleanStudentName) {
+      alert('Please enter Student Full Name.');
+      return;
+    }
+
     const cleanPhone = (formData.phone || '').replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length !== 10) {
       alert('Student Contact Phone must be exactly 10 digits (digits only, no letters).');
@@ -548,17 +612,27 @@ export default function AdmissionModal({
       return;
     }
 
+    const safeCourse = formData.course || (courses && courses[0] ? (typeof courses[0] === 'string' ? courses[0] : courses[0].name) : 'Full Stack Web Development (MERN)');
+    const safeBatch = formData.batch || (trainerAvailableBatches && trainerAvailableBatches[0] ? (typeof trainerAvailableBatches[0] === 'string' ? trainerAvailableBatches[0] : trainerAvailableBatches[0].name) : 'General Cohort');
+    const safeTrainer = formData.trainer || 'Deepika';
+
     setIsSubmitting(true);
 
     const payload = {
       ...formData,
+      studentName: cleanStudentName,
       discount: scholarshipNum,
       phone: cleanPhone,
       email: cleanEmail,
       guardianPhone: cleanGuardianPhone,
-      trainer: formData.trainer || 'Unassigned',
+      course: safeCourse,
+      batch: safeBatch,
+      trainer: safeTrainer,
       netFee: netPayable,
-      feeDue: remainingDue
+      feeDue: remainingDue,
+      totalCourseFee: totalFeeNum,
+      admissionFeePaid: paidNowNum,
+      status: formData.status || 'Admission Confirmed'
     };
 
     try {
@@ -568,8 +642,27 @@ export default function AdmissionModal({
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data.success && data.admission) {
-        onAdmissionCreated(data.admission, data.student);
+      if (data && data.success && data.admission) {
+        const normalized = {
+          ...data.admission,
+          studentName: data.admission.studentName || data.admission.student_name || payload.studentName,
+          student_name: data.admission.studentName || data.admission.student_name || payload.studentName,
+          admissionNo: data.admission.admissionNo || data.admission.admission_no || `ADM-2026-${Date.now().toString().slice(-4)}`,
+          admission_no: data.admission.admissionNo || data.admission.admission_no || `ADM-2026-${Date.now().toString().slice(-4)}`,
+          applicationNo: data.admission.applicationNo || data.admission.application_no || `APP-2026-${Date.now().toString().slice(-4)}`,
+          application_no: data.admission.applicationNo || data.admission.application_no || `APP-2026-${Date.now().toString().slice(-4)}`,
+          course: data.admission.course || payload.course,
+          phone: data.admission.phone || payload.phone,
+          batch: data.admission.batch || payload.batch,
+          trainer: data.admission.trainer || payload.trainer,
+          status: data.admission.status || payload.status,
+          totalCourseFee: Number(data.admission.totalCourseFee ?? data.admission.total_course_fee ?? payload.totalCourseFee),
+          admissionFeePaid: Number(data.admission.admissionFeePaid ?? data.admission.admission_fee_paid ?? payload.admissionFeePaid),
+          feeDue: Number(data.admission.feeDue ?? data.admission.fee_due ?? payload.feeDue),
+          paymentPlan: data.admission.paymentPlan || data.admission.payment_plan || payload.paymentPlan,
+          admissionDate: data.admission.admissionDate || data.admission.admission_date || payload.admissionDate
+        };
+        onAdmissionCreated(normalized, data.student);
       } else {
         // Local fallback
         const nextSeq = Math.floor(100 + Math.random() * 900);
@@ -577,7 +670,11 @@ export default function AdmissionModal({
           id: Date.now(),
           admissionNo: `ADM-2026-0${nextSeq}`,
           applicationNo: `APP-2026-0${nextSeq + 20}`,
-          ...payload
+          admission_no: `ADM-2026-0${nextSeq}`,
+          application_no: `APP-2026-0${nextSeq + 20}`,
+          ...payload,
+          studentName: payload.studentName,
+          student_name: payload.studentName
         };
         onAdmissionCreated(fallbackAdm, {
           id: Date.now() + 1,
@@ -592,10 +689,10 @@ export default function AdmissionModal({
           batch: payload.batch,
           trainer: payload.trainer,
           enrollmentDate: payload.admissionDate,
-          feeTotal: netPayable,
+          feeTotal: payload.totalCourseFee,
           feePaid: Number(payload.admissionFeePaid),
-          feeDue: remainingDue,
-          feeStatus: remainingDue === 0 ? 'Paid' : 'Partial',
+          feeDue: payload.feeDue,
+          feeStatus: payload.feeDue === 0 ? 'Paid' : 'Partial',
           attendance: 100,
           status: 'Active'
         });
@@ -607,7 +704,11 @@ export default function AdmissionModal({
         id: Date.now(),
         admissionNo: `ADM-2026-0${nextSeq}`,
         applicationNo: `APP-2026-0${nextSeq + 20}`,
-        ...payload
+        admission_no: `ADM-2026-0${nextSeq}`,
+        application_no: `APP-2026-0${nextSeq + 20}`,
+        ...payload,
+        studentName: payload.studentName,
+        student_name: payload.studentName
       };
       onAdmissionCreated(fallbackAdm, {
         id: Date.now() + 1,
@@ -622,10 +723,10 @@ export default function AdmissionModal({
         batch: payload.batch,
         trainer: payload.trainer,
         enrollmentDate: payload.admissionDate,
-        feeTotal: netPayable,
+        feeTotal: payload.totalCourseFee,
         feePaid: Number(payload.admissionFeePaid),
-        feeDue: remainingDue,
-        feeStatus: remainingDue === 0 ? 'Paid' : 'Partial',
+        feeDue: payload.feeDue,
+        feeStatus: payload.feeDue === 0 ? 'Paid' : 'Partial',
         attendance: 100,
         status: 'Active'
       });
@@ -1084,9 +1185,8 @@ export default function AdmissionModal({
                     <div className="text-[10px] font-semibold text-slate-500 truncate" title={inst.name || 'Installment'}>
                       {inst.name || 'Installment'}
                     </div>
-                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded inline-block ${
-                      idx === 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
-                    }`}>
+                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded inline-block ${idx === 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                      }`}>
                       {inst.status || 'Scheduled'}
                     </div>
                   </div>

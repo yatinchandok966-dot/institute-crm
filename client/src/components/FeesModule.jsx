@@ -1,10 +1,11 @@
 // FeesModule.jsx
 
 import React, { useState } from 'react';
-import { CreditCard, Search, Plus, Printer, AlertCircle } from 'lucide-react';
+import { CreditCard, Search, Plus, Printer, AlertCircle, Eye, X, FileText, CheckCircle2 } from 'lucide-react';
 
 export default function FeesModule({ feeTransactions, stats, students, onOpenPayment, onOpenReceipt }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState(null);
 
   // Overdue Students Logic
   const overdueStudents = students.filter(s => {
@@ -113,64 +114,235 @@ const studentFeeRows = students
               {/* <th className="px-4 py-3 text-right">Action</th> */}
             </tr>
             <tr>
-  <th className="px-4 py-3">Student</th>
-  <th className="px-4 py-3">Total Paid Fees</th>
-  <th className="px-4 py-3">Remaining Amount</th>
-  <th className="px-4 py-3">Total Fees</th>
-  <th className="px-4 py-3 text-right">Action</th>
-</tr>
+              <th className="px-4 py-3">Student</th>
+              <th className="px-4 py-3">Total Paid Fees</th>
+              <th className="px-4 py-3">Remaining Amount</th>
+              <th className="px-4 py-3">Total Fees</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
           </thead>
           <tbody className="divide-y">
-  {studentFeeRows.map(({ student, payments, totalPaid, remaining, totalFees }) => (
-    <tr key={student.studentId || student.id} className="hover:bg-slate-50">
+            {studentFeeRows.map(({ student, payments, totalPaid, remaining, totalFees }) => (
+              <tr key={student.studentId || student.id} className="hover:bg-slate-50 transition-colors">
 
-      {/* Student */}
-      <td className="px-4 py-4 font-bold text-slate-800">
-        {student.name}
-        <div className="text-[10px] text-slate-400 font-medium mt-1">
-          {student.studentId}
-        </div>
-      </td>
+                {/* Student */}
+                <td className="px-4 py-4 font-bold text-slate-800">
+                  {student.name}
+                  <div className="text-[10px] text-slate-400 font-medium mt-1 font-mono">
+                    {student.studentId}
+                  </div>
+                </td>
 
-      {/* Total Paid Fees */}
-      <td className="px-4 py-4 font-bold text-emerald-600">
-        ₹{totalPaid.toLocaleString('en-IN')}
-      </td>
+                {/* Total Paid Fees */}
+                <td className="px-4 py-4 font-bold text-emerald-600 font-mono">
+                  ₹{totalPaid.toLocaleString('en-IN')}
+                </td>
 
-      {/* Remaining Amount */}
-      <td className="px-4 py-4 font-bold text-rose-600">
-        ₹{remaining.toLocaleString('en-IN')}
-      </td>
+                {/* Remaining Amount */}
+                <td className="px-4 py-4 font-bold font-mono">
+                  <span className={remaining > 0 ? 'text-rose-600' : 'text-slate-500'}>
+                    ₹{remaining.toLocaleString('en-IN')}
+                  </span>
+                </td>
 
-      {/* Total Fees */}
-      <td className="px-4 py-4 font-bold text-slate-800">
-        ₹{totalFees.toLocaleString('en-IN')}
-      </td>
+                {/* Total Fees */}
+                <td className="px-4 py-4 font-bold text-slate-800 font-mono">
+                  ₹{totalFees.toLocaleString('en-IN')}
+                </td>
 
-      {/* Action */}
-      <td className="px-4 py-4 text-right">
-        <button
-          onClick={() => onOpenReceipt({ student, transactions: payments })}
-          className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          Print Statement
-        </button>
-      </td>
+                {/* Action */}
+                <td className="px-4 py-4 text-right">
+                  <div className="inline-flex items-center gap-1.5 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStudentForDetails({ student, payments, totalPaid, remaining, totalFees })}
+                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-semibold inline-flex items-center gap-1 shadow-2xs transition-colors"
+                      title="View Complete Fee Breakdown & Payment Details"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>View</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onOpenReceipt({ student, transactions: payments })}
+                      className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors"
+                      title="Print Official Statement / Receipt"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Print Statement</span>
+                    </button>
+                  </div>
+                </td>
 
-    </tr>
-  ))}
+              </tr>
+            ))}
 
-  {studentFeeRows.length === 0 && (
-    <tr>
-      <td colSpan="5" className="text-center py-8 text-slate-400">
-        No fee records found.
-      </td>
-    </tr>
-  )}
-</tbody>
+            {studentFeeRows.length === 0 && (
+              <tr>
+                <td colSpan="5" className="text-center py-8 text-slate-400">
+                  No fee records found.
+                </td>
+              </tr>
+            )}
+          </tbody>
         </table>
       </div>
+
+      {/* Student Fee Details Modal */}
+      {selectedStudentForDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-white border-b border-slate-100 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm shadow-2xs">
+                  {(selectedStudentForDetails.student.name || 'S').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-900 text-base leading-tight">
+                      {selectedStudentForDetails.student.name}
+                    </h3>
+                    <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {selectedStudentForDetails.student.studentId}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {selectedStudentForDetails.student.course || 'Academic Program'} • Batch: {selectedStudentForDetails.student.batch || 'General Cohort'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForDetails(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 overflow-y-auto max-h-[75vh] text-xs">
+              {/* Fee Financial Summary Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Tuition Fee</span>
+                  <span className="text-base font-black text-slate-900 mt-0.5 block font-mono">
+                    ₹{selectedStudentForDetails.totalFees.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200 text-center">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Total Paid Fee</span>
+                  <span className="text-base font-black text-emerald-700 mt-0.5 block font-mono">
+                    ₹{selectedStudentForDetails.totalPaid.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-rose-50/70 rounded-xl border border-rose-200 text-center">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block">Remaining Due</span>
+                  <span className="text-base font-black text-rose-700 mt-0.5 block font-mono">
+                    ₹{selectedStudentForDetails.remaining.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Contact & Student Info */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-3 gap-3 text-[11px]">
+                <div>
+                  <span className="text-slate-400 text-[10px] block">Contact Number</span>
+                  <span className="font-semibold text-slate-800 font-mono">{selectedStudentForDetails.student.phone || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block">Email Address</span>
+                  <span className="font-semibold text-slate-800 truncate block">{selectedStudentForDetails.student.email || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block">Fee Status</span>
+                  <span className={`inline-block px-2 py-0.5 rounded font-bold text-[10px] ${
+                    selectedStudentForDetails.remaining === 0
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {selectedStudentForDetails.remaining === 0 ? 'Fully Paid' : 'Installment Due'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Transactions History */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+                    Payment Transactions ({selectedStudentForDetails.payments.length})
+                  </h4>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="px-3.5 py-2.5">Receipt #</th>
+                        <th className="px-3 py-2.5">Date</th>
+                        <th className="px-3 py-2.5">Mode</th>
+                        <th className="px-3.5 py-2.5 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {selectedStudentForDetails.payments.length === 0 ? (
+                        <tr>
+                          <td colSpan="4" className="py-6 text-center text-slate-400">
+                            No payment transactions recorded for this student.
+                          </td>
+                        </tr>
+                      ) : (
+                        selectedStudentForDetails.payments.map((p, idx) => (
+                          <tr key={p.id || idx} className="hover:bg-slate-50/80">
+                            <td className="px-3.5 py-2.5 font-mono font-bold text-indigo-700">
+                              {p.receiptNo || `RCP-${idx + 1}`}
+                            </td>
+                            <td className="px-3 py-2.5 text-slate-600">
+                              {p.date ? new Date(p.date).toLocaleDateString('en-IN') : '-'}
+                            </td>
+                            <td className="px-3 py-2.5 text-slate-700 font-medium">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px]">
+                                {p.mode || 'UPI / Bank'}
+                              </span>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-right font-black text-emerald-700 font-mono">
+                              ₹{Number(p.amount || 0).toLocaleString('en-IN')}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForDetails(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const details = selectedStudentForDetails;
+                  setSelectedStudentForDetails(null);
+                  onOpenReceipt({ student: details.student, transactions: details.payments });
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm inline-flex items-center gap-1.5 transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Official Statement</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
