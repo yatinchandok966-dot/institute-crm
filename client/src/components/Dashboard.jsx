@@ -87,7 +87,7 @@ export default function Dashboard({
 
   // --- LEADS & ADMISSIONS FALLBACK ---
   const defaultLeads = [
-    { id: 1, name: 'Rahul Sharma', phone: '9876543210', course: 'Full Stack Web Dev', source: 'Instagram', status: 'New' },
+    { id: 1, name: 'Rahul Sharma', phone: '9876543210', course: 'Full Stack Web Dev', source: 'WhatsApp', status: 'New' },
     { id: 2, name: 'Priya Singh', phone: '8765432109', course: 'Data Science', source: 'Website', status: 'Demo Scheduled' },
     { id: 3, name: 'Amit Kumar', phone: '7654321098', course: 'UI/UX Design', source: 'QR Code (Campus Reception)', status: 'Follow-up' },
     { id: 4, name: 'Neha Gupta', phone: '6543210987', course: 'Digital Marketing', source: 'Walk-in', status: 'Contacted' },
@@ -113,7 +113,7 @@ export default function Dashboard({
   const allLeadsList = (data.leads && data.leads.length > 0) ? data.leads : leads;
   const targetSources = [
     { label: 'Website', fallbackCount: 34, color: 'from-indigo-500 to-indigo-600' },
-    { label: 'Instagram', fallbackCount: 24, color: 'from-blue-500 to-indigo-500' },
+    { label: 'WhatsApp', fallbackCount: 24, color: 'from-blue-500 to-indigo-500' },
     { label: 'QR Code (Campus Reception)', fallbackCount: 16, color: 'from-violet-500 to-purple-600' },
     { label: 'Walk-in', fallbackCount: 12, color: 'from-emerald-500 to-teal-600' },
   ];
