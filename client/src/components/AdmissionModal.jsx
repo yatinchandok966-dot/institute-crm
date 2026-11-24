@@ -766,7 +766,7 @@ export default function AdmissionModal({
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
           {/* Section 1: Student Personal Information */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-200">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
               <h4 className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
                 1. Student Personal Information
               </h4>
@@ -777,22 +777,28 @@ export default function AdmissionModal({
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Student Full Name *</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Student Full Name <span className="text-rose-500">*</span>
+                  </label>
+                </div>
                 <input
                   type="text"
                   required
                   value={formData.studentName}
                   onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">Contact Phone (WhatsApp) *</label>
-                  <span className={`text-[10px] font-mono font-bold ${(formData.phone || '').replace(/\D/g, '').length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Contact Phone (WhatsApp) <span className="text-rose-500">*</span>
+                  </label>
+                  <span className={`text-[10px] font-mono font-bold shrink-0 ml-2 ${(formData.phone || '').replace(/\D/g, '').length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
                     {(formData.phone || '').replace(/\D/g, '').length}/10 digits
                   </span>
                 </div>
@@ -803,54 +809,58 @@ export default function AdmissionModal({
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
                   placeholder="10-digit number"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">Email Address</label>
-                  <span className="text-[10px] text-slate-400">lowercase only</span>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Email Address</label>
+                  <span className="text-[10px] text-slate-400 shrink-0 ml-2 font-medium">lowercase only</span>
                 </div>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
                   placeholder="student@example.com"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Residential Address</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Residential Address</label>
+                </div>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="Street / City / Pin Code"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Parent / Guardian Name</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Parent / Guardian Name</label>
+                </div>
                 <input
                   type="text"
                   value={formData.guardianName}
                   onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
                   placeholder="e.g. Rajesh Sharma (Father)"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">Guardian Phone Contact</label>
-                  <span className={`text-[10px] font-mono font-bold ${(formData.guardianPhone || '').replace(/\D/g, '').length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Guardian Phone Contact</label>
+                  <span className={`text-[10px] font-mono font-bold shrink-0 ml-2 ${(formData.guardianPhone || '').replace(/\D/g, '').length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
                     {(formData.guardianPhone || '').replace(/\D/g, '').length}/10 digits
                   </span>
                 </div>
@@ -860,7 +870,7 @@ export default function AdmissionModal({
                   value={formData.guardianPhone}
                   onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value.replace(/\D/g, '') })}
                   placeholder="10-digit number"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
@@ -868,7 +878,7 @@ export default function AdmissionModal({
 
           {/* Section 2: Trainer, Batch Availability & Course Program Allotment */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-200">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
               <h4 className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
                 2. Academic Program, Batch & Trainer Allotment
               </h4>
@@ -877,19 +887,19 @@ export default function AdmissionModal({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* 1. Trainer Selection (FIRST) */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
                     Assigned Trainer / Faculty <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[10px] text-slate-400 font-medium">All registered instructors</span>
+                  <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-2">All registered instructors</span>
                 </div>
                 <select
                   value={formData.trainer}
                   onChange={handleTrainerChange}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">Select Trainer / Faculty</option>
                   {effectiveTrainers.map((t, i) => {
@@ -908,18 +918,18 @@ export default function AdmissionModal({
 
               {/* 2. Trainer Availability Schedule & Allotted Batch (SECOND) */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
                     Trainer Availability Schedule & Batch <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[10px] text-emerald-600 font-bold">
+                  <span className="text-[10px] text-emerald-600 font-bold shrink-0 ml-2">
                     {trainerAvailableBatches.length} {trainerAvailableBatches.length === 1 ? 'Slot' : 'Slots'} Available
                   </span>
                 </div>
                 <select
                   value={formData.batch}
                   onChange={handleBatchChange}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {(trainerAvailableBatches && trainerAvailableBatches.length > 0) ? (
                     trainerAvailableBatches.map((b, i) => {
@@ -958,19 +968,19 @@ export default function AdmissionModal({
                     selectedTrainerObj.schedule.map((slot, idx) => (
                       <div
                         key={slot.id || idx}
-                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-center justify-between gap-2"
+                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-start justify-between gap-2"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                        <div className="flex items-start gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1" />
                           <div>
-                            <span className="font-bold text-slate-900 block">{slot.day || 'Mon-Fri'}</span>
-                            <span className="text-[11px] text-indigo-600 font-semibold">{slot.time}</span>
+                            <span className="font-bold text-slate-900 block leading-tight">{slot.day || 'Mon-Fri'}</span>
+                            <span className="text-[11px] text-indigo-600 font-semibold block leading-tight mt-0.5">{slot.time}</span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          {slot.batch && <span className="block text-[11px] font-bold text-slate-800">{slot.batch}</span>}
+                        <div className="text-right shrink-0">
+                          {slot.batch && <span className="block text-[11px] font-bold text-slate-800 leading-tight">{slot.batch}</span>}
                           {slot.room && (
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-slate-400 font-mono block leading-tight mt-0.5">
                               [{slot.room}]{slot.mode ? ` • ${slot.mode}` : ''}
                             </span>
                           )}
@@ -981,18 +991,18 @@ export default function AdmissionModal({
                     trainerAvailableBatches.map((b, idx) => (
                       <div
                         key={b.id || idx}
-                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-center justify-between gap-2"
+                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-start justify-between gap-2"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                        <div className="flex items-start gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1" />
                           <div>
-                            <span className="font-bold text-slate-900 block">{b.name}</span>
-                            <span className="text-[11px] text-indigo-600 font-semibold">{b.timing || 'Mon-Fri 09:00 AM - 11:30 AM'}</span>
+                            <span className="font-bold text-slate-900 block leading-tight">{b.name}</span>
+                            <span className="text-[11px] text-indigo-600 font-semibold block leading-tight mt-0.5">{b.timing || 'Mon-Fri 09:00 AM - 11:30 AM'}</span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          {b.mode && <span className="block text-[11px] font-bold text-slate-800">{b.mode}</span>}
-                          {b.room && <span className="text-[10px] text-slate-400 font-mono">[{b.room}]</span>}
+                        <div className="text-right shrink-0">
+                          {b.mode && <span className="block text-[11px] font-bold text-slate-800 leading-tight">{b.mode}</span>}
+                          {b.room && <span className="text-[10px] text-slate-400 font-mono block leading-tight mt-0.5">[{b.room}]</span>}
                         </div>
                       </div>
                     ))
@@ -1001,16 +1011,18 @@ export default function AdmissionModal({
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* 3. Selected Course Program */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Selected Course Program <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Selected Course Program <span className="text-rose-500">*</span>
+                  </label>
+                </div>
                 <select
                   value={formData.course}
                   onChange={handleCourseChange}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {(courses && courses.length > 0) ? (
                     courses.map((c, i) => {
@@ -1025,23 +1037,27 @@ export default function AdmissionModal({
 
               {/* 4. Course Duration */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Course Duration</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Course Duration</label>
+                </div>
                 <input
                   type="text"
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-medium"
+                  className="w-full h-10 px-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 text-xs font-medium focus:outline-none"
                 />
               </div>
 
               {/* 5. Admission Date */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Admission Date</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Admission Date</label>
+                </div>
                 <input
                   type="date"
                   value={formData.admissionDate}
                   onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
@@ -1049,26 +1065,32 @@ export default function AdmissionModal({
 
           {/* Section 3: Tuition Fee, Scholarship & Payment Plan */}
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-800 text-[11px] uppercase tracking-wider pb-1 border-b border-slate-200">
+            <h4 className="font-bold text-slate-800 text-[11px] uppercase tracking-wider pb-1.5 border-b border-slate-200">
               3. Tuition Fee, Scholarship & Payment Plan
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Total Course Fee (INR) *</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Total Course Fee (INR) <span className="text-rose-500">*</span>
+                  </label>
+                </div>
                 <input
                   type="number"
                   min="0"
                   value={formData.totalCourseFee}
                   onChange={(e) => setFormData({ ...formData, totalCourseFee: Math.max(0, Number(e.target.value)) })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-bold"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-700">Scholarship / Discount (INR)</label>
-                  <span className="text-[10px] text-slate-400">Non-negative</span>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Scholarship / Discount (INR)
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-2">Non-negative</span>
                 </div>
                 <input
                   type="number"
@@ -1094,21 +1116,27 @@ export default function AdmissionModal({
                       setFormData({ ...formData, discount: clamped });
                     }
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Net Course Fee</label>
-                <div className="px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg font-black text-indigo-700 text-sm">
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">Net Course Fee</label>
+                </div>
+                <div className="w-full h-10 flex items-center px-3 bg-indigo-50/70 border border-indigo-200 rounded-lg font-black text-indigo-700 text-sm">
                   ₹{netPayable.toLocaleString('en-IN')}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Admission / Seat Booking Fee Paid Now *</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Admission / Seat Booking Fee Paid Now <span className="text-rose-500">*</span>
+                  </label>
+                </div>
                 <input
                   type="number"
                   min="0"
@@ -1127,16 +1155,20 @@ export default function AdmissionModal({
                     const num = Math.max(0, parseInt(val, 10));
                     setFormData({ ...formData, admissionFeePaid: isNaN(num) ? '' : num });
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-emerald-700 font-black text-sm"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-emerald-700 text-xs font-black focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Payment Plan Agreement *</label>
+                <div className="flex items-center justify-between h-5 mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 truncate">
+                    Payment Plan Agreement <span className="text-rose-500">*</span>
+                  </label>
+                </div>
                 <select
                   value={formData.paymentPlan}
                   onChange={(e) => setFormData({ ...formData, paymentPlan: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="Full One-Time Payment">Full One-Time Payment (100% Upfront)</option>
                   <option value="2 Installments (50% now, 50% in 30 days)">2 Installments (50% now, 50% in 30 days)</option>
@@ -1150,7 +1182,7 @@ export default function AdmissionModal({
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-slate-200">
                 <div className="flex items-center gap-2">
-                  <Calculator className="w-4 h-4 text-indigo-600" />
+                  <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
                   <span className="font-bold text-slate-800 text-xs">
                     {installmentSchedule.title}
                   </span>
@@ -1169,25 +1201,44 @@ export default function AdmissionModal({
               </div>
 
               {/* Installment breakdown items */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1">
+              <div className={`grid gap-2.5 pt-1 ${
+                (installmentSchedule?.installments || []).length === 1
+                  ? 'grid-cols-1'
+                  : (installmentSchedule?.installments || []).length === 2
+                    ? 'grid-cols-1 sm:grid-cols-2'
+                    : (installmentSchedule?.installments || []).length === 3
+                      ? 'grid-cols-1 sm:grid-cols-3'
+                      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+              }`}>
                 {(installmentSchedule?.installments || []).map((inst, idx) => (
                   <div
                     key={idx}
-                    className="p-2.5 bg-white border border-slate-200 rounded-lg shadow-2xs space-y-1"
+                    className="p-3 bg-white border border-slate-200 rounded-xl shadow-2xs flex flex-col justify-between"
                   >
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-bold text-indigo-700 uppercase">{inst.number || `${idx + 1}`}</span>
-                      <span className="text-slate-500 font-medium">{inst.dueMonth || 'Scheduled'}</span>
+                    <div className="flex items-center justify-between gap-2 text-[10px] pb-1.5 border-b border-slate-100">
+                      <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 uppercase tracking-wide whitespace-nowrap shrink-0">
+                        {inst.number || `Inst ${idx + 1}`}
+                      </span>
+                      <span className="text-slate-500 font-medium truncate" title={inst.dueMonth || 'Scheduled'}>
+                        {inst.dueMonth || 'Scheduled'}
+                      </span>
                     </div>
-                    <div className="text-sm font-black text-slate-900">
-                      ₹{(Number(inst.amount) || 0).toLocaleString('en-IN')}
+                    <div className="my-2">
+                      <div className="text-base font-black text-slate-900">
+                        ₹{(Number(inst.amount) || 0).toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-[10px] font-semibold text-slate-500 truncate mt-0.5" title={inst.name || 'Installment'}>
+                        {inst.name || 'Installment'}
+                      </div>
                     </div>
-                    <div className="text-[10px] font-semibold text-slate-500 truncate" title={inst.name || 'Installment'}>
-                      {inst.name || 'Installment'}
-                    </div>
-                    <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded inline-block ${idx === 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                    <div>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                        idx === 0
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}>
-                      {inst.status || 'Scheduled'}
+                        {inst.status || 'Scheduled'}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -1204,13 +1255,15 @@ export default function AdmissionModal({
           </div>
 
           {/* Section 4: Counselor & Admission Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Assigned Counselor</label>
+              <div className="flex items-center justify-between h-5 mb-1.5">
+                <label className="text-xs font-semibold text-slate-700 truncate">Assigned Counselor</label>
+              </div>
               <select
                 value={formData.counselor}
                 onChange={(e) => setFormData({ ...formData, counselor: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 {availableCounselors.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -1218,11 +1271,13 @@ export default function AdmissionModal({
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Admission Status</label>
+              <div className="flex items-center justify-between h-5 mb-1.5">
+                <label className="text-xs font-semibold text-slate-700 truncate">Admission Status</label>
+              </div>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold"
+                className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="Admission Confirmed">Admission Confirmed</option>
                 <option value="Fee Pending">Fee Pending</option>
