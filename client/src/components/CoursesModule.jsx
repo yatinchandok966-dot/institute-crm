@@ -447,7 +447,7 @@ export default function CoursesModule({
                 type="button"
                 onClick={() => {
                   if (onDeleteCourse) {
-                    onDeleteCourse(courseToDelete.id);
+                    onDeleteCourse(courseToDelete);
                   }
                   setCourseToDelete(null);
                 }}

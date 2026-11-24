@@ -63,15 +63,26 @@ export default function App() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          const deletedCourseIds = new Set(Array.isArray(parsed.deletedCourseIds) ? parsed.deletedCourseIds : []);
+          const rawDeleted = Array.isArray(parsed.deletedCourseIds) ? parsed.deletedCourseIds : [];
+          const deletedSet = new Set(rawDeleted.map(s => String(s).trim().toLowerCase()));
           const existingCourses = Array.isArray(parsed.courses) ? parsed.courses : [];
           
+          const isDeleted = (c) => {
+            if (!c) return true;
+            const cId = String(c.id || '').trim().toLowerCase();
+            const cCode = String(c.code || '').trim().toLowerCase();
+            const cName = String(c.name || c.title || '').trim().toLowerCase();
+            return (
+              (cId && deletedSet.has(cId)) ||
+              (cCode && deletedSet.has(cCode)) ||
+              (cName && deletedSet.has(cName))
+            );
+          };
+
           let initialCoursesList = [];
           if (existingCourses.length > 0) {
-            initialCoursesList = existingCourses.filter(c => 
-              c && !deletedCourseIds.has(String(c.id)) && !deletedCourseIds.has(String(c.code)) && !deletedCourseIds.has(String(c.name))
-            );
-          } else if (deletedCourseIds.size > 0) {
+            initialCoursesList = existingCourses.filter(c => !isDeleted(c));
+          } else if (deletedSet.size > 0) {
             initialCoursesList = [];
           } else {
             initialCoursesList = OFFICIAL_COURSES;
@@ -297,28 +308,36 @@ export default function App() {
             // Smart merge for courses (respects deleted courses)
             const serverCourses = Array.isArray(result.courses) ? result.courses : [];
             const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
-            const deletedCourseIds = new Set(Array.isArray(prev.deletedCourseIds) ? prev.deletedCourseIds : []);
+            const deletedSet = new Set((prev.deletedCourseIds || []).map(s => String(s).trim().toLowerCase()));
+
+            const isDeleted = (c) => {
+              if (!c) return true;
+              const cId = String(c.id || '').trim().toLowerCase();
+              const cCode = String(c.code || '').trim().toLowerCase();
+              const cName = String(c.name || c.title || '').trim().toLowerCase();
+              return (
+                (cId && deletedSet.has(cId)) ||
+                (cCode && deletedSet.has(cCode)) ||
+                (cName && deletedSet.has(cName))
+              );
+            };
 
             const cMap = new Map();
             // Server courses first (filtered by deleted)
             serverCourses.forEach(c => {
-              if (c && (c.name || c.id)) {
-                const key = String(c.id || c.name);
-                if (!deletedCourseIds.has(String(c.id)) && !deletedCourseIds.has(String(c.code)) && !deletedCourseIds.has(String(c.name))) {
-                  cMap.set(key, c);
-                }
+              if (c && !isDeleted(c)) {
+                const key = String(c.code || c.name || c.id).trim().toLowerCase();
+                cMap.set(key, c);
               }
             });
             // Merge in local courses (preserve any added/edited, also filtered by deleted)
             localCourses.forEach(c => {
-              if (c && (c.name || c.id)) {
-                const key = String(c.id || c.name);
-                if (!deletedCourseIds.has(String(c.id)) && !deletedCourseIds.has(String(c.code)) && !deletedCourseIds.has(String(c.name))) {
-                  if (!cMap.has(key)) {
-                    cMap.set(key, c);
-                  } else {
-                    cMap.set(key, { ...cMap.get(key), ...c });
-                  }
+              if (c && !isDeleted(c)) {
+                const key = String(c.code || c.name || c.id).trim().toLowerCase();
+                if (!cMap.has(key)) {
+                  cMap.set(key, c);
+                } else {
+                  cMap.set(key, { ...cMap.get(key), ...c });
                 }
               }
             });
@@ -884,31 +903,43 @@ export default function App() {
     }
   };
 
-  const handleDeleteCourse = (courseId) => {
-    const targetCourse = (instituteData.courses || []).find(c =>
-      String(c.id) === String(courseId) ||
-      String(c.code) === String(courseId) ||
-      String(c.name) === String(courseId)
-    );
+  const handleDeleteCourse = (courseParam) => {
+    const courseObj = typeof courseParam === 'object' && courseParam !== null
+      ? courseParam
+      : (instituteData.courses || []).find(c =>
+          String(c.id) === String(courseParam) ||
+          String(c.code) === String(courseParam) ||
+          String(c.name) === String(courseParam)
+        ) || { id: courseParam };
 
-    const idStr = String(courseId);
-    const codeStr = targetCourse?.code ? String(targetCourse.code) : null;
-    const nameStr = targetCourse?.name ? String(targetCourse.name) : null;
+    const cId = courseObj.id ? String(courseObj.id).trim() : '';
+    const cCode = courseObj.code ? String(courseObj.code).trim() : '';
+    const cName = (courseObj.name || courseObj.title) ? String(courseObj.name || courseObj.title).trim() : '';
+
+    const identifiersToAdd = [
+      cId,
+      cCode,
+      cName,
+      cId.toLowerCase(),
+      cCode.toLowerCase(),
+      cName.toLowerCase()
+    ].filter(Boolean);
 
     setInstituteData(prev => {
       const currentDeleted = prev.deletedCourseIds || [];
-      const newDeleted = Array.from(new Set([
-        ...currentDeleted,
-        idStr,
-        ...(codeStr ? [codeStr] : []),
-        ...(nameStr ? [nameStr] : [])
-      ]));
+      const newDeleted = Array.from(new Set([...currentDeleted, ...identifiersToAdd]));
+      const newDeletedSet = new Set(newDeleted.map(s => String(s).trim().toLowerCase()));
 
-      const updatedCourses = (prev.courses || []).filter(c =>
-        String(c.id) !== idStr &&
-        (!codeStr || String(c.code) !== codeStr) &&
-        (!nameStr || String(c.name) !== nameStr)
-      );
+      const updatedCourses = (prev.courses || []).filter(c => {
+        const itemCId = String(c.id || '').trim().toLowerCase();
+        const itemCCode = String(c.code || '').trim().toLowerCase();
+        const itemCName = String(c.name || c.title || '').trim().toLowerCase();
+        return (
+          (!itemCId || !newDeletedSet.has(itemCId)) &&
+          (!itemCCode || !newDeletedSet.has(itemCCode)) &&
+          (!itemCName || !newDeletedSet.has(itemCName))
+        );
+      });
 
       return {
         ...prev,
@@ -921,7 +952,11 @@ export default function App() {
       };
     });
 
-    fetch(`/api/courses/${encodeURIComponent(courseId)}`, {
+    const paramId = courseObj.id || courseObj.code || courseParam;
+    const qName = encodeURIComponent(courseObj.name || courseObj.title || '');
+    const qCode = encodeURIComponent(courseObj.code || '');
+
+    fetch(`/api/courses/${encodeURIComponent(paramId)}?name=${qName}&code=${qCode}`, {
       method: 'DELETE'
     }).catch(() => null);
   };

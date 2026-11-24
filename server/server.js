@@ -725,26 +725,45 @@ app.put('/api/courses/:id', async (req, res) => {
 
 app.delete('/api/courses/:id', async (req, res) => {
   try {
-    const rawId = decodeURIComponent(req.params.id);
+    const rawId = decodeURIComponent(req.params.id || '');
     const courseId = parseInt(rawId, 10);
+    const qName = req.query.name ? decodeURIComponent(req.query.name) : '';
+    const qCode = req.query.code ? decodeURIComponent(req.query.code) : '';
 
     try {
-      if (!isNaN(courseId)) {
-        await pool.query('UPDATE enrollments SET course_id = NULL WHERE course_id = $1', [courseId]).catch(() => null);
-        await pool.query('UPDATE batches SET course_id = NULL WHERE course_id = $1', [courseId]).catch(() => null);
-        await pool.query('UPDATE leads SET interested_course_id = NULL WHERE interested_course_id = $1', [courseId]).catch(() => null);
-        await pool.query('DELETE FROM courses WHERE id = $1 OR code = $2 OR name = $2', [courseId, String(rawId)]);
-      } else {
-        const findRes = await pool.query('SELECT id FROM courses WHERE code = $1 OR name = $1', [rawId]);
-        if (findRes.rows.length > 0) {
-          const resolvedId = findRes.rows[0].id;
-          await pool.query('UPDATE enrollments SET course_id = NULL WHERE course_id = $1', [resolvedId]).catch(() => null);
-          await pool.query('UPDATE batches SET course_id = NULL WHERE course_id = $1', [resolvedId]).catch(() => null);
-          await pool.query('UPDATE leads SET interested_course_id = NULL WHERE interested_course_id = $1', [resolvedId]).catch(() => null);
-          await pool.query('DELETE FROM courses WHERE id = $1', [resolvedId]);
-        } else {
-          await pool.query('DELETE FROM courses WHERE code = $1 OR name = $1', [rawId]);
-        }
+      // Find all IDs in PostgreSQL matching rawId, courseId, qCode, or qName
+      const findRes = await pool.query(
+        `SELECT id FROM courses 
+         WHERE (id = $1)
+            OR (code = $2 OR code = $3)
+            OR (name ILIKE $4 OR name ILIKE $5)`,
+        [
+          !isNaN(courseId) ? courseId : -1,
+          rawId,
+          qCode || rawId,
+          qName ? `%${qName}%` : rawId,
+          `%${rawId}%`
+        ]
+      );
+
+      const idsToDelete = findRes.rows.map(r => r.id);
+      if (!isNaN(courseId) && !idsToDelete.includes(courseId)) {
+        idsToDelete.push(courseId);
+      }
+
+      for (const cid of idsToDelete) {
+        await pool.query('UPDATE enrollments SET course_id = NULL WHERE course_id = $1', [cid]).catch(() => null);
+        await pool.query('UPDATE batches SET course_id = NULL WHERE course_id = $1', [cid]).catch(() => null);
+        await pool.query('UPDATE leads SET interested_course_id = NULL WHERE interested_course_id = $1', [cid]).catch(() => null);
+        await pool.query('DELETE FROM courses WHERE id = $1', [cid]).catch(() => null);
+      }
+
+      // Also direct cleanup if not matched by ID
+      if (rawId || qCode || qName) {
+        await pool.query(
+          'DELETE FROM courses WHERE code = $1 OR code = $2 OR name ILIKE $3',
+          [rawId, qCode || rawId, qName || rawId]
+        ).catch(() => null);
       }
     } catch (dbErr) {
       console.warn('PostgreSQL course delete warning:', dbErr.message);
@@ -755,11 +774,12 @@ app.delete('/api/courses/:id', async (req, res) => {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
         const data = JSON.parse(raw);
         if (Array.isArray(data.courses)) {
-          data.courses = data.courses.filter(c =>
-            String(c.id) !== String(rawId) &&
-            String(c.code) !== String(rawId) &&
-            String(c.name) !== String(rawId)
-          );
+          data.courses = data.courses.filter(c => {
+            const matchesId = String(c.id) === String(rawId);
+            const matchesCode = (c.code && (String(c.code) === String(rawId) || String(c.code) === String(qCode)));
+            const matchesName = (c.name && (String(c.name).toLowerCase() === String(rawId).toLowerCase() || (qName && String(c.name).toLowerCase() === String(qName).toLowerCase())));
+            return !matchesId && !matchesCode && !matchesName;
+          });
           fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
         }
       } catch (fileErr) {
