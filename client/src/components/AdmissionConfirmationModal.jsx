@@ -76,7 +76,7 @@ Welcome to EduPulse Academy!`;
                 {admission.admissionNo}
               </p>
               <p className="text-slate-500 text-[10px]">
-                Date: {admission.admissionDate}
+                Date: {admission.admissionDate ? String(admission.admissionDate).split('T')[0] : 'N/A'}
               </p>
             </div>
           </div>

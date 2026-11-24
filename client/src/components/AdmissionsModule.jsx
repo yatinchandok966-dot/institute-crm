@@ -187,16 +187,11 @@ export default function AdmissionsModule({
               ) : (
                 filtered.map(adm => (
                   <tr key={adm.id} className="hover:bg-slate-50/80 transition-colors">
-                    {/* 1. Admission # & Date */}
+                    {/* 1. Admission # */}
                     <td className="px-3.5 py-3 align-middle whitespace-nowrap overflow-hidden">
                       <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[10px] border border-indigo-200 shadow-2xs">
                         {adm.admissionNo || adm.admission_no || 'ADM-2026'}
                       </span>
-                      {(adm.admissionDate || adm.admission_date) && (
-                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                          {adm.admissionDate || adm.admission_date}
-                        </div>
-                      )}
                     </td>
 
                     {/* 2. Student Name & Phone */}
