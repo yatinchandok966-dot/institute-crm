@@ -7,7 +7,8 @@ import {
   FileText,
   BarChart3,
   PieChart,
-  Filter
+  Filter,
+  BookOpen
 } from 'lucide-react';
 
 // Crisp angular sparkline component
@@ -63,6 +64,10 @@ export default function Dashboard({
   const totalLeadsCount = leadsList.length > 0
     ? leadsList.length
     : Number(stats.newLeadsThisMonth || stats.totalLeads || 0);
+
+  const totalCoursesCount = coursesList.length > 0
+    ? coursesList.length
+    : Number(stats.totalCourses || 0);
 
   const activeStudentsCount = studentsList.length > 0
     ? studentsList.filter(s => (s.status || 'Active').toLowerCase() !== 'dropped').length
@@ -261,22 +266,26 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* KPI 2: Active Students */}
-        <div className="bg-gradient-to-br from-white via-white to-purple-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(147,51,234,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(147,51,234,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+        {/* KPI 2: Total Courses */}
+        <div
+          onClick={() => onNavigate && onNavigate('courses')}
+          className="bg-gradient-to-br from-white via-white to-purple-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(147,51,234,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(147,51,234,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden cursor-pointer"
+          title="Click to view all courses & syllabus"
+        >
           <div className="flex justify-between items-center mb-2.5 z-10">
-            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Active Students</h3>
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Total Courses</h3>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-fuchsia-500 flex items-center justify-center shadow-sm">
-              <GraduationCap className="w-4 h-4 text-white" />
+              <BookOpen className="w-4 h-4 text-white" />
             </div>
           </div>
           <div className="flex items-baseline gap-2.5 z-10">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">{activeStudentsCount}</span>
+            <span className="text-3xl font-black text-slate-900 tracking-tight">{totalCoursesCount}</span>
             <span className="text-[11px] font-bold text-purple-700 bg-purple-100/80 border border-purple-200/70 px-2 py-0.5 rounded-full">
-              In Batches
+              Active Programs
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
-            <p className="text-[11px] text-slate-500 font-semibold">Currently studying in courses</p>
+            <p className="text-[11px] text-slate-500 font-semibold">Academic courses & syllabus</p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 opacity-95">
             <Sparkline color="#9333ea" />
