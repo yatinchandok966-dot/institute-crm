@@ -173,7 +173,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
     }
   };
 
-  // Single Share Handler: Ensures message is 100% shown in WhatsApp
+  // Single Share Handler: Shares the scanner QR card image with admission message
   const handleShareQRCode = async () => {
     try {
       setSharing(true);
@@ -184,7 +184,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
       const qrFile = new File([cardBlob], 'EduPulse-Academy-QR.png', { type: 'image/png' });
 
-      // Automatically copy the Paytm-style QR image card to clipboard for instant Ctrl+V
+      // Automatically copy the Paytm-style QR image card to clipboard
       if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
         try {
           await navigator.clipboard.write([
@@ -195,21 +195,21 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
         }
       }
 
-      // Check device: Mobile vs Desktop
-      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
-      if (isMobile && navigator.canShare && navigator.canShare({ files: [qrFile] })) {
-        // On mobile phones (Android & iOS), native share delivers both image and text into WhatsApp
+      // Try native share with the scanner card file
+      if (navigator.canShare && navigator.canShare({ files: [qrFile] })) {
         await navigator.share({
           title: 'EduPulse Academy - QR Admission',
           text: admissionCaption,
           files: [qrFile]
         });
+      } else if (navigator.share) {
+        await navigator.share({
+          title: 'EduPulse Academy - QR Admission',
+          text: admissionCaption,
+          url: publicInquiryUrl
+        });
       } else {
-        // On Windows / PC:
-        // Windows Share drops the caption in WhatsApp Desktop.
-        // Therefore, opening WhatsApp URL guarantees the message is 100% prefilled and shown in WhatsApp!
-        // We also trigger download of the Paytm-style card and copied it to clipboard so user can press Ctrl+V in the chat.
+        // Fallback for browsers without share API: download QR card and open WhatsApp
         const url = URL.createObjectURL(cardBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -219,14 +219,12 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        setShareSuccessToast(true);
-        setTimeout(() => setShareSuccessToast(false), 5000);
-
         const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(admissionCaption)}`;
         window.open(waUrl, '_blank');
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
+        console.warn('Share error:', err);
         const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(admissionCaption)}`;
         window.open(waUrl, '_blank');
       }
@@ -625,29 +623,16 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   <button
                     onClick={handleShareQRCode}
                     disabled={sharing}
-                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer"
-                    title="Share QR code with admission message"
+                    className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer"
+                    title="Share QR scanner card with admission message"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{sharing ? 'Opening Share...' : 'Share QR Code & Message'}</span>
+                    <Share2 className="w-4 h-4" />
+                    <span>{sharing ? 'Sharing Scanner...' : 'Share QR Code'}</span>
                   </button>
 
-                  {/* Toast/Hint letting user know message and card are ready */}
-                  {shareSuccessToast ? (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-[11px] font-semibold space-y-0.5 animate-in fade-in">
-                      <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>WhatsApp opened with official admission message!</span>
-                      </div>
-                      <p className="text-[10px] text-emerald-700 pl-5 font-normal">
-                        QR card image is also copied to clipboard. Press <strong>Ctrl+V</strong> in WhatsApp chat to paste the image card!
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-[10.5px] text-slate-500 text-center leading-relaxed">
-                      Shares message: <span className="text-slate-700 font-semibold">"Here's our official QR code! Scan & get admission in our academy"</span>
-                    </p>
-                  )}
+                  <p className="text-[10.5px] text-slate-500 text-center leading-relaxed">
+                    Shares scanner card with: <span className="text-indigo-700 font-semibold">"Here's our official QR Code! Scan & get admission in our academy"</span>
+                  </p>
 
                   <div className="flex items-center gap-2 pt-1">
                     <button
