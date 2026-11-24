@@ -10,7 +10,7 @@
       "durationWeeks": 12,
       "fee": 25000,
       "activeStudents": 0,
-      "description": "",
+      "description": "Practical hands-on training in MongoDB, Express, React, and Node.js.",
       "modules": [
         "Module 1: Foundations",
         "Module 2: Advanced Implementation"
@@ -26,8 +26,77 @@
       "durationWeeks": 16,
       "fee": 45000,
       "activeStudents": 0,
-      "description": "",
-      "modules": []
+      "description": "Master modern full-stack web applications with React, Node.js, and MongoDB/PostgreSQL.",
+      "modules": [
+        "Module 1: Frontend & UI Foundations",
+        "Module 2: Backend APIs & Microservices",
+        "Module 3: Full Stack Integration & Cloud Deploy"
+      ]
+    },
+    {
+      "id": 1795413901537,
+      "name": "Data Science & Machine Learning with Python",
+      "code": "DSML-201",
+      "category": "Data & AI",
+      "trainerId": "",
+      "trainerName": "Unassigned",
+      "durationWeeks": 20,
+      "fee": 55000,
+      "activeStudents": 0,
+      "description": "Python, Pandas, Scikit-learn, PyTorch, and hands-on LLM engineering.",
+      "modules": [
+        "Module 1: Python for Data Science",
+        "Module 2: Machine Learning Models",
+        "Module 3: Deep Learning & AI"
+      ]
+    },
+    {
+      "id": 1795413901538,
+      "name": "UI/UX Design Masterclass",
+      "code": "UIUX-301",
+      "category": "Design",
+      "trainerId": "",
+      "trainerName": "Unassigned",
+      "durationWeeks": 12,
+      "fee": 35000,
+      "activeStudents": 0,
+      "description": "Figma, wireframing, design systems, usability testing, and portfolio creation.",
+      "modules": [
+        "Module 1: Design Fundamentals & Wireframing",
+        "Module 2: Figma & Design Systems"
+      ]
+    },
+    {
+      "id": 1795413901539,
+      "name": "Digital Marketing & Growth Hacking",
+      "code": "DM-401",
+      "category": "Marketing",
+      "trainerId": "",
+      "trainerName": "Unassigned",
+      "durationWeeks": 10,
+      "fee": 28000,
+      "activeStudents": 0,
+      "description": "SEO, Meta & Google Ads, analytics, content strategy, and performance marketing.",
+      "modules": [
+        "Module 1: SEO & Content Marketing",
+        "Module 2: Paid Ads & Performance Marketing"
+      ]
+    },
+    {
+      "id": 1795413901540,
+      "name": "Cyber Security & Ethical Hacking",
+      "code": "SEC-501",
+      "category": "Cyber Security",
+      "trainerId": "",
+      "trainerName": "Unassigned",
+      "durationWeeks": 18,
+      "fee": 50000,
+      "activeStudents": 0,
+      "description": "Network security, penetration testing, CEH syllabus, and vulnerability assessment.",
+      "modules": [
+        "Module 1: Networking & Linux Fundamentals",
+        "Module 2: Penetration Testing & Defense"
+      ]
     }
   ],
   "batches": [],
@@ -41,7 +110,7 @@
       "qualification": "B.Tech.",
       "college": "Pune",
       "course": "MERN",
-      "source": "Website",
+      "source": "QR Code (Campus Reception)",
       "status": "New",
       "counselor": "Harshika",
       "priority": "Warm",

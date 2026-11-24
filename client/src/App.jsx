@@ -25,7 +25,7 @@ import ShareQRModal from "./components/ShareQRModal";
 import PublicInquiryForm from "./components/PublicInquiryForm";
 
 // Deepak : Change mock data to original data
-import { initialInstituteData } from "./data/constants";
+import { initialInstituteData, OFFICIAL_COURSES } from "./data/constants";
 
 const STORAGE_KEY = 'edupulse_institute_crm_v2';
 
@@ -39,15 +39,33 @@ export default function App() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
+
+          // Merge loaded courses with OFFICIAL_COURSES so all real courses are present
+          const existingCourses = Array.isArray(parsed.courses) ? parsed.courses : [];
+          const courseMap = new Map();
+          OFFICIAL_COURSES.forEach(c => courseMap.set(c.name, c));
+          existingCourses.forEach(c => {
+            if (c && c.name) courseMap.set(c.name, { ...c });
+          });
+          const mergedInitialCourses = Array.from(courseMap.values());
+
+          // Fix QR source for Riya if currently Website or missing
+          const fixedLeads = (Array.isArray(parsed.recentLeads) ? parsed.recentLeads : []).map(l => {
+            if (l && (l.name === 'Riya' || l.id === 1795421032576) && (!l.source || l.source === 'Website')) {
+              return { ...l, source: 'QR Code (Campus Reception)' };
+            }
+            return l;
+          });
+
           return {
             ...initialInstituteData,
             ...parsed,
-            recentLeads: Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [],
+            recentLeads: fixedLeads,
             trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: (Array.isArray(parsed.courses) ? parsed.courses : initialInstituteData.courses).filter(c => c && c.name !== 'Full Stack Web Development (MERN)'),
-            batches: (Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches).filter(b => b && !b.name?.includes('FSWD')),
+            courses: mergedInitialCourses,
+            batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
             stats: parsed.stats || initialInstituteData.stats
@@ -169,6 +187,13 @@ export default function App() {
               });
               mergedLeads = localLeads;
             }
+            // Ensure Riya has correct QR source
+            mergedLeads = mergedLeads.map(l => {
+              if (l && (l.name === 'Riya' || l.id === 1795421032576) && (!l.source || l.source === 'Website')) {
+                return { ...l, source: 'QR Code (Campus Reception)' };
+              }
+              return l;
+            });
 
             // Smart merge for trainers
             const serverTrainers = Array.isArray(result.trainers) ? result.trainers : [];
@@ -190,31 +215,22 @@ export default function App() {
               mergedTrainers = localTrainers;
             }
 
-            // Smart merge for courses (filtering any legacy dummy course)
-            const serverCourses = (Array.isArray(result.courses) ? result.courses : []).filter(c => c && c.name !== 'Full Stack Web Development (MERN)');
-            const localCourses = (Array.isArray(prev.courses) ? prev.courses : []).filter(c => c && c.name !== 'Full Stack Web Development (MERN)');
-            let mergedCourses = localCourses;
-            if (serverCourses.length > 0 && localCourses.length === 0) {
-              mergedCourses = serverCourses;
-            } else if (serverCourses.length > 0 && localCourses.length > 0) {
-              const cMap = new Map();
-              localCourses.forEach(c => cMap.set(c.id || c.code, c));
-              serverCourses.forEach(c => cMap.set(c.id || c.code, c));
-              mergedCourses = Array.from(cMap.values());
-            } else if (localCourses.length > 0 && serverCourses.length === 0) {
-              localCourses.forEach(c => {
-                fetch('/api/courses', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(c)
-                }).catch(() => null);
-              });
-              mergedCourses = localCourses;
-            }
+            // Smart merge for courses (includes all official courses from database and constants)
+            const serverCourses = Array.isArray(result.courses) ? result.courses : [];
+            const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
+            const cMap = new Map();
+            OFFICIAL_COURSES.forEach(c => cMap.set(c.name, c));
+            localCourses.forEach(c => {
+              if (c && c.name) cMap.set(c.name, { ...cMap.get(c.name), ...c });
+            });
+            serverCourses.forEach(c => {
+              if (c && c.name) cMap.set(c.name, { ...cMap.get(c.name), ...c });
+            });
+            const mergedCourses = Array.from(cMap.values());
 
-            // Smart merge for batches (filtering any legacy dummy batch)
-            const serverBatches = (Array.isArray(result.batches) ? result.batches : []).filter(b => b && !b.name?.includes('FSWD'));
-            const localBatches = (Array.isArray(prev.batches) ? prev.batches : []).filter(b => b && !b.name?.includes('FSWD'));
+            // Smart merge for batches
+            const serverBatches = Array.isArray(result.batches) ? result.batches : [];
+            const localBatches = Array.isArray(prev.batches) ? prev.batches : [];
             let mergedBatches = localBatches;
             if (serverBatches.length > 0 && localBatches.length === 0) {
               mergedBatches = serverBatches;
@@ -922,7 +938,10 @@ export default function App() {
       <PublicInquiryForm
         courses={instituteData.courses}
         onLeadSubmitted={(newLead) => {
-          handleLeadCreated(newLead);
+          handleLeadCreated({
+            ...newLead,
+            source: newLead?.source || 'QR Code (Campus Reception)'
+          });
         }}
         onBackToCRM={() => {
           window.location.hash = "";

@@ -62,13 +62,26 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      if (data.success && onLeadSubmitted) {
-        onLeadSubmitted(data.lead);
+      const data = await res.json().catch(() => null);
+      if (data && data.success && data.lead && onLeadSubmitted) {
+        onLeadSubmitted({
+          ...data.lead,
+          source: data.lead.source || 'QR Code (Campus Reception)'
+        });
+      } else if (onLeadSubmitted) {
+        onLeadSubmitted({
+          id: Date.now(),
+          ...payload,
+          createdAt: new Date().toISOString().split('T')[0]
+        });
       }
     } catch {
       if (onLeadSubmitted) {
-        onLeadSubmitted({ id: Date.now(), ...payload, createdAt: new Date().toISOString().split('T')[0] });
+        onLeadSubmitted({
+          id: Date.now(),
+          ...payload,
+          createdAt: new Date().toISOString().split('T')[0]
+        });
       }
     } finally {
       setIsSubmitting(false);

@@ -22,7 +22,8 @@ import {
 import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
-  LEAD_PRIORITIES
+  LEAD_PRIORITIES,
+  OFFICIAL_COURSES
 } from '../data/constants';
 
     export default function NewLeadModal({
@@ -74,6 +75,24 @@ import {
 
       return Array.from(set).sort();
     }, [existingLeads, trainers]);
+
+    // Consolidate all real courses from database and official constants
+    const allCourseList = useMemo(() => {
+      const map = new Map();
+      (OFFICIAL_COURSES || []).forEach(c => {
+        if (c && c.name) map.set(c.name.trim().toLowerCase(), c);
+      });
+      (courses || []).forEach(c => {
+        if (!c) return;
+        const cName = typeof c === 'string' ? c : c.name;
+        if (cName && cName.trim()) {
+          const key = cName.trim().toLowerCase();
+          const existing = map.get(key);
+          map.set(key, typeof c === 'object' ? { ...existing, ...c } : (existing || { name: cName }));
+        }
+      });
+      return Array.from(map.values());
+    }, [courses]);
 
     const initialForm = {
       name: '',
@@ -459,13 +478,13 @@ const handleSubmit = async (e) => {
                                             list="available-courses-list"
                                             value={formData.course}
                                             onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                                            placeholder={courses?.length > 0 ? "Select or enter course name" : "Enter interested course"}
+                                            placeholder={allCourseList?.length > 0 ? "Select or enter course name" : "Enter interested course"}
                                             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                                             required
                                           />
                                           <datalist id="available-courses-list">
-                                            {courses.map((c) => (
-                                              <option key={c.id || c.name} value={c.name} />
+                                            {allCourseList.map((c) => (
+                                              <option key={c.id || c.code || c.name} value={c.name} />
                                             ))}
                                           </datalist>
                                         </div>

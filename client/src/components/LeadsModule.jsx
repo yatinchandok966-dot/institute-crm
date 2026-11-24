@@ -731,18 +731,29 @@ export default function LeadsModule({
       {/* 5. Professional Leads Table View */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[1050px] text-left text-xs border-collapse table-fixed">
+            <colgroup>
+              <col className="w-[18%]" /> {/* 1. Lead Information */}
+              <col className="w-[13%]" /> {/* 2. Contact & Actions */}
+              <col className="w-[11%]" /> {/* 3. Interested Course */}
+              <col className="w-[10%]" /> {/* 4. Source */}
+              <col className="w-[11%]" /> {/* 5. Assigned Counsellor */}
+              <col className="w-[8%]" />  {/* 6. Priority */}
+              <col className="w-[11%]" /> {/* 7. Next Follow-Up */}
+              <col className="w-[8%]" />  {/* 8. Lead Status */}
+              <col className="w-[10%]" /> {/* 9. Actions */}
+            </colgroup>
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
               <tr>
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">Lead Information</th>
-                <th className="px-2.5 py-2.5 text-left whitespace-nowrap">Contact & Actions</th>
-                <th className="px-2 py-2.5 text-left whitespace-nowrap">Interested Course</th>
-                <th className="px-2 py-2.5 text-left whitespace-nowrap">Source</th>
-                <th className="px-2 py-2.5 text-left whitespace-nowrap">Assigned Counsellor</th>
-                <th className="px-1.5 py-2.5 text-center whitespace-nowrap">Priority</th>
-                <th className="px-2 py-2.5 text-left whitespace-nowrap">Next Follow-Up</th>
-                <th className="px-2 py-2.5 text-left whitespace-nowrap">Lead Status</th>
-                <th className="px-3 py-2.5 text-right whitespace-nowrap">Actions</th>
+                <th className="px-3.5 py-3 text-left whitespace-nowrap">Lead Information</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Contact & Actions</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Interested Course</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Source</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Assigned Counsellor</th>
+                <th className="px-2 py-3 text-center whitespace-nowrap">Priority</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Next Follow-Up</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Lead Status</th>
+                <th className="px-3.5 py-3 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -810,22 +821,22 @@ export default function LeadsModule({
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
                       {/* 1. Lead Information */}
-                      <td className="px-3 py-2.5 align-middle">
-                        <div className="flex items-center gap-2.5">
+                      <td className="px-3.5 py-3 align-middle overflow-hidden">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                             {(lead.name || 'L').charAt(0).toUpperCase()}
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-bold text-slate-900 text-xs leading-tight truncate">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-slate-900 text-xs leading-tight truncate" title={lead.name}>
                               {lead.name}
                             </div>
                             {lead.email && (
-                              <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                              <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5" title={lead.email}>
                                 {lead.email}
                               </div>
                             )}
                             {(lead.city || lead.qualification || lead.college) && (
-                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500">
+                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 truncate">
                                 {lead.city && (
                                   <span className="inline-flex items-center gap-0.5 font-medium text-slate-600 shrink-0">
                                     <MapPin className="w-2.5 h-2.5 text-slate-400" />
@@ -833,7 +844,7 @@ export default function LeadsModule({
                                   </span>
                                 )}
                                 {(lead.qualification || lead.college) && (
-                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-500 truncate max-w-[160px]">
+                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-500 truncate" title={[lead.qualification, lead.college].filter(Boolean).join(' • ')}>
                                     <GraduationCap className="w-3 h-3 text-slate-400 shrink-0" />
                                     <span className="truncate">
                                       {[lead.qualification, lead.college].filter(Boolean).join(' • ')}
@@ -847,7 +858,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 2. Phone & Quick Connect */}
-                      <td className="px-2.5 py-2.5 align-middle whitespace-nowrap">
+                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
                         <div className="font-mono text-slate-800 font-bold text-xs tracking-tight">
                           {formatPhoneNumber(lead.phone)}
                         </div>
@@ -880,35 +891,42 @@ export default function LeadsModule({
                       </td>
 
                       {/* 3. Interested Course */}
-                      <td className="px-2 py-2.5 align-middle whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50/80 text-indigo-900 border border-indigo-100 max-w-[150px] truncate shadow-2xs">
+                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50/80 text-indigo-900 border border-indigo-100 max-w-full truncate shadow-2xs" title={lead.course}>
                           <BookOpen className="w-3 h-3 text-indigo-600 shrink-0" />
-                          <span className="truncate" title={lead.course}>{lead.course}</span>
+                          <span className="truncate">{lead.course}</span>
                         </span>
                       </td>
 
                       {/* 4. Lead Source */}
-                      <td className="px-2 py-2.5 align-middle whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                          <span>{lead.source || 'Website'}</span>
-                        </span>
+                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                        {lead.source?.toLowerCase().includes('qr') ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs max-w-full truncate" title={lead.source}>
+                            <QrCode className="w-3 h-3 text-indigo-600 shrink-0" />
+                            <span className="truncate">{lead.source}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 max-w-full truncate" title={lead.source || 'Website'}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                            <span className="truncate">{lead.source || 'Website'}</span>
+                          </span>
+                        )}
                       </td>
 
                       {/* 5. Assigned Counsellor */}
-                      <td className="px-2 py-2.5 align-middle whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border max-w-full truncate ${
                           lead.counselor && lead.counselor !== 'Unassigned'
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : 'bg-slate-50 text-slate-500 border-slate-200'
-                        }`}>
+                        }`} title={lead.counselor || 'Unassigned'}>
                           <User className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{lead.counselor || 'Unassigned'}</span>
+                          <span className="truncate">{lead.counselor || 'Unassigned'}</span>
                         </span>
                       </td>
 
                       {/* 6. Lead Priority */}
-                      <td className="px-1.5 py-2.5 align-middle text-center whitespace-nowrap">
+                      <td className="px-2 py-3 align-middle text-center whitespace-nowrap overflow-hidden">
                         <select
                           value={lead.priority || 'Warm'}
                           onChange={(e) => {
@@ -933,14 +951,14 @@ export default function LeadsModule({
                       </td>
 
                       {/* 7. Next Follow-up Date */}
-                      <td className="px-2 py-2.5 align-middle whitespace-nowrap">
+                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
                         {lead.nextFollowUpDate ? (
                           <div className="space-y-0.5">
                             <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border ${fuStatus.badgeClass}`}>
                               <Clock className="w-2.5 h-2.5 shrink-0" />
                               <span>{fuStatus.label}</span>
                             </span>
-                            <div className="text-[10px] text-slate-700 font-medium">
+                            <div className="text-[10px] text-slate-700 font-medium truncate">
                               <span>{fuFormatted.date}</span>
                               {fuFormatted.time && (
                                 <span className="text-slate-400 font-mono text-[9px] ml-1">
@@ -955,11 +973,11 @@ export default function LeadsModule({
                       </td>
 
                       {/* 8. Lead Status (Pipeline) */}
-                      <td className="px-2 py-2.5 align-middle whitespace-nowrap">
+                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
                         <select
                           value={lead.status}
                           onChange={(e) => onUpdateLeadStatus(lead.id, e.target.value)}
-                          className="text-[10px] font-semibold bg-white border border-slate-300 rounded-md px-1.5 py-0.5 text-slate-800 shadow-2xs hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer max-w-[110px]"
+                          className="text-[10px] font-semibold bg-white border border-slate-300 rounded-md px-1.5 py-0.5 text-slate-800 shadow-2xs hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer w-full max-w-[100px] truncate"
                         >
                           {LEAD_PIPELINE_STAGES.map((s) => (
                             <option key={s} value={s}>{s}</option>
@@ -968,7 +986,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 9. Actions: Convert to Admission, Edit, Delete */}
-                      <td className="px-3 py-2.5 align-middle text-right whitespace-nowrap">
+                      <td className="px-3.5 py-3 align-middle text-right whitespace-nowrap overflow-hidden">
                         <div className="inline-flex items-center gap-1 justify-end">
                           {/* Convert to Admission */}
                           <button
