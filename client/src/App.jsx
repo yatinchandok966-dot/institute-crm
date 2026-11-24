@@ -255,8 +255,15 @@ export default function App() {
             let mergedTrainers = localTrainers.length > 0 ? localTrainers : (serverTrainers.length > 0 ? serverTrainers : initialInstituteData.trainers);
             if (serverTrainers.length > 0 && localTrainers.length > 0) {
               const tMap = new Map();
-              localTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
-              serverTrainers.forEach(t => tMap.set(t.id || t.employeeId, t));
+              localTrainers.forEach(t => tMap.set(t.employeeId || t.id || t.name, t));
+              serverTrainers.forEach(t => {
+                const key = t.employeeId || t.id || t.name;
+                const existing = tMap.get(key) || {};
+                const assignedCourses = (Array.isArray(t.assignedCourses) && t.assignedCourses.length > 0)
+                  ? t.assignedCourses
+                  : (existing.assignedCourses || []);
+                tMap.set(key, { ...existing, ...t, assignedCourses });
+              });
               mergedTrainers = Array.from(tMap.values());
             } else if (localTrainers.length > 0 && serverTrainers.length === 0) {
               localTrainers.forEach(t => {
@@ -876,15 +883,26 @@ export default function App() {
   };
 
   const handleTrainerUpdated = (updatedTrainer) => {
-    setInstituteData(prev => ({
-      ...prev,
-      trainers: (prev.trainers || []).map(t => (t.id === updatedTrainer.id ? updatedTrainer : t))
-    }));
-    fetch(`/api/trainers/${updatedTrainer.id}`, {
+    setInstituteData(prev => {
+      const updatedTrainers = (prev.trainers || []).map(t => {
+        const isMatch =
+          (t.id != null && updatedTrainer.id != null && String(t.id) === String(updatedTrainer.id)) ||
+          (t.employeeId && updatedTrainer.employeeId && t.employeeId === updatedTrainer.employeeId) ||
+          (t.name && updatedTrainer.name && t.name.toLowerCase() === updatedTrainer.name.toLowerCase());
+        return isMatch ? { ...t, ...updatedTrainer } : t;
+      });
+      return {
+        ...prev,
+        trainers: updatedTrainers
+      };
+    });
+
+    const trainerKey = updatedTrainer.id || updatedTrainer.employeeId;
+    fetch(`/api/trainers/${trainerKey}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedTrainer)
-    }).catch(() => null);
+    }).catch(err => console.warn('Failed to update trainer on server:', err));
   };
 
   const handleTrainerDeleted = (trainerId) => {

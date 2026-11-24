@@ -1485,7 +1485,25 @@ app.post('/api/fees', async (req, res) => {
 app.get('/api/trainers', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM trainers ORDER BY id ASC');
-    res.json({ success: true, data: result.rows });
+    const trainers = result.rows.map(t => ({
+      id: t.id,
+      employeeId: t.employee_id,
+      name: t.name,
+      role: t.role,
+      department: t.department,
+      phone: t.phone,
+      email: t.email,
+      qualification: t.qualification,
+      experience: t.experience,
+      status: t.status,
+      bio: t.bio,
+      skills: Array.isArray(t.skills) ? t.skills : [],
+      assignedCourses: Array.isArray(t.assigned_courses) ? t.assigned_courses : [],
+      assignedBatches: Array.isArray(t.assigned_batches) ? t.assigned_batches : [],
+      schedule: Array.isArray(t.schedule) ? t.schedule : [],
+      joiningDate: t.joining_date
+    }));
+    res.json({ success: true, data: trainers });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -1493,20 +1511,71 @@ app.get('/api/trainers', async (req, res) => {
 
 app.post('/api/trainers', async (req, res) => {
   try {
-    const { name, phone, email, role, department, qualification, experience, bio } = req.body;
+    const {
+      name, phone, email, role, department, qualification, experience, bio,
+      status, skills, assignedCourses, assignedBatches, schedule, joiningDate, employeeId
+    } = req.body;
     if (!name || !phone) return res.status(400).json({ success: false, message: 'Name and Phone required' });
 
     const countRes = await pool.query('SELECT COUNT(*) FROM trainers');
     const nextSeq = String(Number(countRes.rows[0].count) + 1).padStart(3, '0');
-    const empId = req.body.employeeId || `EMP-2026-${nextSeq}`;
+    const empId = employeeId || `EMP-2026-${nextSeq}`;
+
+    const safeSkills = JSON.stringify(Array.isArray(skills) ? skills : []);
+    const safeCourses = JSON.stringify(Array.isArray(assignedCourses) ? assignedCourses : []);
+    const safeBatches = JSON.stringify(Array.isArray(assignedBatches) ? assignedBatches : []);
+    const safeSchedule = JSON.stringify(Array.isArray(schedule) ? schedule : []);
 
     const result = await pool.query(
-      `INSERT INTO trainers (employee_id, name, role, department, phone, email, qualification, experience, bio)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO trainers (
+         employee_id, name, role, department, phone, email, qualification, experience, bio,
+         status, skills, assigned_courses, assigned_batches, schedule, joining_date
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15)
+       ON CONFLICT (employee_id) DO UPDATE SET
+         name = EXCLUDED.name,
+         phone = EXCLUDED.phone,
+         email = EXCLUDED.email,
+         role = EXCLUDED.role,
+         department = EXCLUDED.department,
+         qualification = EXCLUDED.qualification,
+         experience = EXCLUDED.experience,
+         bio = EXCLUDED.bio,
+         status = EXCLUDED.status,
+         skills = EXCLUDED.skills,
+         assigned_courses = EXCLUDED.assigned_courses,
+         assigned_batches = EXCLUDED.assigned_batches,
+         schedule = EXCLUDED.schedule
        RETURNING *`,
-      [empId, name, role || 'Trainer', department || 'Faculty', phone, email || '', qualification || '', experience || '', bio || '']
+      [
+        empId, name, role || 'Technical Trainer', department || 'Academic Faculty',
+        phone, email || '', qualification || '', experience || '', bio || '',
+        status || 'Active', safeSkills, safeCourses, safeBatches, safeSchedule,
+        joiningDate || new Date().toISOString().split('T')[0]
+      ]
     );
-    res.status(201).json({ success: true, trainer: result.rows[0] });
+
+    const t = result.rows[0];
+    const trainerFormatted = {
+      id: t.id,
+      employeeId: t.employee_id,
+      name: t.name,
+      role: t.role,
+      department: t.department,
+      phone: t.phone,
+      email: t.email,
+      qualification: t.qualification,
+      experience: t.experience,
+      status: t.status,
+      bio: t.bio,
+      skills: Array.isArray(t.skills) ? t.skills : [],
+      assignedCourses: Array.isArray(t.assigned_courses) ? t.assigned_courses : [],
+      assignedBatches: Array.isArray(t.assigned_batches) ? t.assigned_batches : [],
+      schedule: Array.isArray(t.schedule) ? t.schedule : [],
+      joiningDate: t.joining_date
+    };
+
+    res.status(201).json({ success: true, trainer: trainerFormatted });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -1514,33 +1583,130 @@ app.post('/api/trainers', async (req, res) => {
 
 app.put('/api/trainers/:id', async (req, res) => {
   try {
-    const trainerId = parseInt(req.params.id, 10);
-    const { name, phone, email, role, department, qualification, experience, bio } = req.body;
-    const result = await pool.query(
-      `UPDATE trainers SET
-        name = COALESCE($1, name),
-        phone = COALESCE($2, phone),
-        email = COALESCE($3, email),
-        role = COALESCE($4, role),
-        department = COALESCE($5, department),
-        qualification = COALESCE($6, qualification),
-        experience = COALESCE($7, experience),
-        bio = COALESCE($8, bio)
-       WHERE id = $9
-       RETURNING *`,
-      [name, phone, email, role, department, qualification, experience, bio, trainerId]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Trainer not found' });
-    res.json({ success: true, trainer: result.rows[0] });
+    const rawId = req.params.id;
+    const numId = Number(rawId);
+    const isValidInt = Number.isInteger(numId) && numId > 0 && numId <= 2147483647;
+
+    const {
+      name, phone, email, role, department, qualification, experience, bio,
+      status, skills, assignedCourses, assignedBatches, schedule, employeeId
+    } = req.body;
+
+    const safeSkills = JSON.stringify(Array.isArray(skills) ? skills : []);
+    const safeCourses = JSON.stringify(Array.isArray(assignedCourses) ? assignedCourses : []);
+    const safeBatches = JSON.stringify(Array.isArray(assignedBatches) ? assignedBatches : []);
+    const safeSchedule = JSON.stringify(Array.isArray(schedule) ? schedule : []);
+
+    let result;
+    if (isValidInt) {
+      result = await pool.query(
+        `UPDATE trainers SET
+          name = COALESCE($1, name),
+          phone = COALESCE($2, phone),
+          email = COALESCE($3, email),
+          role = COALESCE($4, role),
+          department = COALESCE($5, department),
+          qualification = COALESCE($6, qualification),
+          experience = COALESCE($7, experience),
+          bio = COALESCE($8, bio),
+          status = COALESCE($9, status),
+          skills = $10::jsonb,
+          assigned_courses = $11::jsonb,
+          assigned_batches = $12::jsonb,
+          schedule = $13::jsonb
+         WHERE id = $14 OR employee_id = $15 OR employee_id = $16
+         RETURNING *`,
+        [
+          name, phone, email, role, department, qualification, experience, bio,
+          status, safeSkills, safeCourses, safeBatches, safeSchedule,
+          numId, String(rawId), employeeId || String(rawId)
+        ]
+      );
+    } else {
+      result = await pool.query(
+        `UPDATE trainers SET
+          name = COALESCE($1, name),
+          phone = COALESCE($2, phone),
+          email = COALESCE($3, email),
+          role = COALESCE($4, role),
+          department = COALESCE($5, department),
+          qualification = COALESCE($6, qualification),
+          experience = COALESCE($7, experience),
+          bio = COALESCE($8, bio),
+          status = COALESCE($9, status),
+          skills = $10::jsonb,
+          assigned_courses = $11::jsonb,
+          assigned_batches = $12::jsonb,
+          schedule = $13::jsonb
+         WHERE employee_id = $14 OR employee_id = $15 OR phone = $2
+         RETURNING *`,
+        [
+          name, phone, email, role, department, qualification, experience, bio,
+          status, safeSkills, safeCourses, safeBatches, safeSchedule,
+          String(rawId), employeeId || String(rawId)
+        ]
+      );
+    }
+
+    if (result.rows.length === 0) {
+      const countRes = await pool.query('SELECT COUNT(*) FROM trainers');
+      const nextSeq = String(Number(countRes.rows[0].count) + 1).padStart(3, '0');
+      const empId = employeeId || (String(rawId).startsWith('EMP-') ? rawId : `EMP-2026-${nextSeq}`);
+
+      const insRes = await pool.query(
+        `INSERT INTO trainers (
+           employee_id, name, role, department, phone, email, qualification, experience, bio,
+           status, skills, assigned_courses, assigned_batches, schedule
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb)
+         RETURNING *`,
+        [
+          empId, name || 'Trainer', role || 'Technical Trainer', department || 'Academic Faculty',
+          phone || '0000000000', email || '', qualification || '', experience || '', bio || '',
+          status || 'Active', safeSkills, safeCourses, safeBatches, safeSchedule
+        ]
+      );
+      result = insRes;
+    }
+
+    const t = result.rows[0];
+    const trainerFormatted = {
+      id: t.id,
+      employeeId: t.employee_id,
+      name: t.name,
+      role: t.role,
+      department: t.department,
+      phone: t.phone,
+      email: t.email,
+      qualification: t.qualification,
+      experience: t.experience,
+      status: t.status,
+      bio: t.bio,
+      skills: Array.isArray(t.skills) ? t.skills : [],
+      assignedCourses: Array.isArray(t.assigned_courses) ? t.assigned_courses : [],
+      assignedBatches: Array.isArray(t.assigned_batches) ? t.assigned_batches : [],
+      schedule: Array.isArray(t.schedule) ? t.schedule : [],
+      joiningDate: t.joining_date
+    };
+
+    res.json({ success: true, trainer: trainerFormatted });
   } catch (err) {
+    console.error('Error updating trainer:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 app.delete('/api/trainers/:id', async (req, res) => {
   try {
-    const trainerId = parseInt(req.params.id, 10);
-    await pool.query('DELETE FROM trainers WHERE id = $1', [trainerId]);
+    const rawId = req.params.id;
+    const numId = Number(rawId);
+    const isValidInt = Number.isInteger(numId) && numId > 0 && numId <= 2147483647;
+
+    if (isValidInt) {
+      await pool.query('DELETE FROM trainers WHERE id = $1 OR employee_id = $2', [numId, String(rawId)]);
+    } else {
+      await pool.query('DELETE FROM trainers WHERE employee_id = $1', [String(rawId)]);
+    }
     res.json({ success: true, message: 'Trainer deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
