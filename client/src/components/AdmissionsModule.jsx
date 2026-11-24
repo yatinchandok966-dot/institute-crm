@@ -4,8 +4,7 @@ import {
   Search,
   Filter,
   Plus,
-  LayoutGrid,
-  List,
+  BookOpen,
   FileText,
   MessageSquare,
   Printer,
@@ -25,7 +24,6 @@ export default function AdmissionsModule({
   onOpenConfirmationLetter,
   onUpdateAdmissionStatus
 }) {
-  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'table'
   const [searchQuery, setSearchQuery] = useState('');
   const [courseFilter, setCourseFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -78,7 +76,7 @@ export default function AdmissionsModule({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Admissions Pipeline
+              Admissions Register
             </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
               {admissions.length} Registered Admissions
@@ -90,30 +88,6 @@ export default function AdmissionsModule({
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* View mode toggle */}
-          <div className="flex items-center bg-slate-200 p-1 rounded-lg text-xs font-semibold">
-            <button
-              onClick={() => setViewMode('kanban')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${viewMode === 'kanban'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Pipeline</span>
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${viewMode === 'table'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              <List className="w-3.5 h-3.5" />
-              <span>Register Table</span>
-            </button>
-          </div>
-
           <button
             onClick={onOpenNewAdmission}
             className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
@@ -133,7 +107,7 @@ export default function AdmissionsModule({
             placeholder="Search by student name, admission #, phone, course..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
           />
         </div>
 
@@ -143,11 +117,11 @@ export default function AdmissionsModule({
             <select
               value={courseFilter}
               onChange={(e) => setCourseFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium max-w-[200px] truncate focus:outline-none"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium max-w-[200px] truncate focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="All">All Courses</option>
               {courses.map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+                <option key={c.id || c.name} value={c.name}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -157,7 +131,7 @@ export default function AdmissionsModule({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="All">All Stages</option>
               {pipelineStages.map(s => (
@@ -168,210 +142,159 @@ export default function AdmissionsModule({
         </div>
       </div>
 
-      {/* Kanban Pipeline View */}
-      {viewMode === 'kanban' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-          {pipelineStages.map(stage => {
-            const stageItems = filtered.filter(a => a.status === stage.id);
-            return (
-              <div
-                key={stage.id}
-                className="bg-slate-100 rounded-xl p-3 border border-slate-200 flex flex-col min-h-[550px]"
-              >
-                {/* Stage Header */}
-                <div className={`p-2.5 rounded-lg border-l-4 mb-3 flex items-center justify-between font-bold text-xs ${stage.border} ${stage.bg}`}>
-                  <span className="truncate">{stage.label}</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-white shadow-xs">
-                    {stageItems.length}
-                  </span>
-                </div>
-
-                {/* Admission Cards */}
-                <div className="space-y-3 flex-1 overflow-y-auto">
-                  {stageItems.length === 0 ? (
-                    <div className="py-10 text-center text-[11px] text-slate-400 font-medium border-2 border-dashed border-slate-200 rounded-lg">
-                      No applications in this stage
-                    </div>
-                  ) : (
-                    stageItems.map(adm => (
-                      <div
-                        key={adm.id}
-                        className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow text-xs space-y-3"
-                      >
-                        {/* Header: Admission Number & Date */}
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[10px] border border-indigo-200">
-                              {adm.admissionNo || adm.admission_no || 'ADM-2026'}
-                            </span>
-                            <h4 className="font-bold text-slate-900 text-sm mt-1.5">{adm.studentName || adm.student_name || 'Student'}</h4>
-                            <p className="text-[11px] text-slate-500">{adm.phone || '-'}</p>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-medium">{adm.admissionDate || adm.admission_date || ''}</span>
+      {/* Register Table View (Only View - Pipeline View Removed) */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1050px] text-left text-xs border-collapse table-fixed">
+            <colgroup>
+              <col className="w-[12%]" /> {/* 1. Admission # */}
+              <col className="w-[16%]" /> {/* 2. Student Name */}
+              <col className="w-[15%]" /> {/* 3. Course Program */}
+              <col className="w-[14%]" /> {/* 4. Allotted Batch */}
+              <col className="w-[10%]" /> {/* 5. Total Fee */}
+              <col className="w-[10%]" /> {/* 6. Paid Fee */}
+              <col className="w-[10%]" /> {/* 7. Balance Due */}
+              <col className="w-[11%]" /> {/* 8. Stage Status */}
+              <col className="w-[12%]" /> {/* 9. Actions */}
+            </colgroup>
+            <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
+              <tr>
+                <th className="px-3.5 py-3 text-left whitespace-nowrap">Admission #</th>
+                <th className="px-3.5 py-3 text-left whitespace-nowrap">Student Name</th>
+                <th className="px-3.5 py-3 text-left whitespace-nowrap">Course Program</th>
+                <th className="px-3.5 py-3 text-left whitespace-nowrap">Allotted Batch</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Total Fee</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Paid Fee</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Balance Due</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">Stage Status</th>
+                <th className="px-3.5 py-3 text-right whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="py-12 text-center text-slate-400">
+                    <UserCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-600">No admissions recorded yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Confirmed inquiries converted to admissions or direct admissions will appear here</p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(adm => (
+                  <tr key={adm.id} className="hover:bg-slate-50/80 transition-colors">
+                    {/* 1. Admission # & Date */}
+                    <td className="px-3.5 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[10px] border border-indigo-200 shadow-2xs">
+                        {adm.admissionNo || adm.admission_no || 'ADM-2026'}
+                      </span>
+                      {(adm.admissionDate || adm.admission_date) && (
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                          {adm.admissionDate || adm.admission_date}
                         </div>
+                      )}
+                    </td>
 
-                        {/* Program & Batch & Trainer */}
-                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px] space-y-1">
-                          <p className="font-bold text-slate-800 truncate">{adm.course || '-'}</p>
-                          <div className="flex justify-between text-slate-500">
-                            <span>Batch: {(adm.batch || 'General Cohort')?.split(' ')[0]}</span>
-                            <span>{adm.duration || '16 Weeks'}</span>
-                          </div>
-                          {adm.trainer && adm.trainer !== 'Unassigned' && (
-                            <div className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-semibold inline-block">
-                              Trainer: {adm.trainer}
-                            </div>
-                          )}
+                    {/* 2. Student Name & Phone */}
+                    <td className="px-3.5 py-3 align-middle overflow-hidden">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200/80 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {(adm.studentName || adm.student_name || 'S').charAt(0).toUpperCase()}
                         </div>
-
-                        {/* Fee Summary */}
-                        <div className="flex items-center justify-between text-[11px] pt-1">
-                          <div>
-                            <span className="text-slate-400 text-[10px] block">Fee Paid:</span>
-                            <span className="font-extrabold text-emerald-700">₹{Number(adm.admissionFeePaid ?? adm.admission_fee_paid ?? 0).toLocaleString()}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-slate-900 text-xs truncate" title={adm.studentName || adm.student_name}>
+                            {adm.studentName || adm.student_name || 'Student'}
                           </div>
-                          <div className="text-right">
-                            <span className="text-slate-400 text-[10px] block">Balance Due:</span>
-                            <span className="font-bold text-slate-800">₹{Number(adm.feeDue ?? adm.fee_due ?? 0).toLocaleString()}</span>
-                          </div>
-                        </div>
-
-                        {/* Payment Plan Pill */}
-                        <div className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded truncate">
-                          Plan: {adm.paymentPlan || adm.payment_plan || 'Standard'}
-                        </div>
-
-                        {/* Stage Selector & Action Buttons */}
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                          <select
-                            value={adm.status}
-                            onChange={(e) => onUpdateAdmissionStatus(adm.id, e.target.value)}
-                            className="text-[10px] font-semibold bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none"
-                          >
-                            {pipelineStages.map(s => (
-                              <option key={s.id} value={s.id}>{s.id}</option>
-                            ))}
-                          </select>
-
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => openWhatsApp(adm)}
-                              title="Send WhatsApp Confirmation"
-                              className="p-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => onOpenConfirmationLetter(adm)}
-                              title="View Official Admission Letter"
-                              className="p-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </button>
+                          <div className="text-[10px] text-slate-400 font-mono truncate">
+                            {adm.phone || '-'}
                           </div>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Register Table View */
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Admission #</th>
-                  <th className="px-4 py-3">Student Name</th>
-                  <th className="px-4 py-3">Course Program</th>
-                  <th className="px-4 py-3">Allotted Batch</th>
-                  <th className="px-4 py-3">Total Fee</th>
-                  <th className="px-4 py-3">Paid Fee</th>
-                  <th className="px-4 py-3">Balance Due</th>
-                  <th className="px-4 py-3">Stage Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan="9" className="py-12 text-center text-slate-400">
-                      <UserCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-slate-600">No admissions in pipeline yet</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Confirmed inquiries converted to admissions will appear here</p>
                     </td>
-                  </tr>
-                ) : (
-                  filtered.map(adm => (
-                    <tr key={adm.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-mono font-bold text-indigo-700">
-                        {adm.admissionNo || adm.admission_no || 'ADM-2026'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">{adm.studentName || adm.student_name || 'Student'}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{adm.phone || '-'}</div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-800">
-                        {adm.course || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        <div>{adm.batch || 'General Cohort'}</div>
+
+                    {/* 3. Course Program */}
+                    <td className="px-3.5 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50/80 text-indigo-900 border border-indigo-100 max-w-full truncate shadow-2xs" title={adm.course}>
+                        <BookOpen className="w-3 h-3 text-indigo-600 shrink-0" />
+                        <span className="truncate">{adm.course || '-'}</span>
+                      </span>
+                    </td>
+
+                    {/* 4. Allotted Batch & Trainer */}
+                    <td className="px-3.5 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <div className="font-semibold text-slate-800 text-xs truncate" title={adm.batch || 'General Cohort'}>
+                        {adm.batch || 'General Cohort'}
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-500">
                         {adm.trainer && adm.trainer !== 'Unassigned' && (
-                          <span className="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold border border-indigo-200 inline-block mt-0.5">
+                          <span className="text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold border border-indigo-200 inline-block truncate max-w-full">
                             Trainer: {adm.trainer}
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-slate-900">
-                        ₹{Number(adm.totalCourseFee ?? adm.total_course_fee ?? 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-emerald-700">
-                        ₹{Number(adm.admissionFeePaid ?? adm.admission_fee_paid ?? 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-slate-800">
+                        {adm.duration && (
+                          <span className="text-[10px] text-slate-400">
+                            • {adm.duration}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* 5. Total Fee */}
+                    <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden font-semibold text-slate-900 text-xs">
+                      ₹{Number(adm.totalCourseFee ?? adm.total_course_fee ?? 0).toLocaleString()}
+                    </td>
+
+                    {/* 6. Paid Fee */}
+                    <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden font-bold text-emerald-700 text-xs">
+                      ₹{Number(adm.admissionFeePaid ?? adm.admission_fee_paid ?? 0).toLocaleString()}
+                    </td>
+
+                    {/* 7. Balance Due */}
+                    <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden font-bold text-xs">
+                      <span className={Number(adm.feeDue ?? adm.fee_due ?? 0) > 0 ? 'text-amber-700' : 'text-slate-600'}>
                         ₹{Number(adm.feeDue ?? adm.fee_due ?? 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={adm.status}
-                          onChange={(e) => onUpdateAdmissionStatus(adm.id, e.target.value)}
-                          className="text-[11px] font-semibold bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none"
+                      </span>
+                    </td>
+
+                    {/* 8. Stage Status */}
+                    <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <select
+                        value={adm.status || 'Admission Confirmed'}
+                        onChange={(e) => onUpdateAdmissionStatus(adm.id, e.target.value)}
+                        className="text-[10px] font-semibold bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800 shadow-2xs hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer w-full max-w-[130px] truncate"
+                      >
+                        {pipelineStages.map(s => (
+                          <option key={s.id} value={s.id}>{s.id}</option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* 9. Actions */}
+                    <td className="px-3.5 py-3 align-middle text-right whitespace-nowrap overflow-hidden">
+                      <div className="inline-flex items-center gap-1.5 justify-end">
+                        <button
+                          onClick={() => onOpenConfirmationLetter(adm)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px] border border-slate-200 transition-colors shadow-2xs"
+                          title="View Official Admission Letter"
                         >
-                          {pipelineStages.map(s => (
-                            <option key={s.id} value={s.id}>{s.id}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            onClick={() => onOpenConfirmationLetter(adm)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px]"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Letter</span>
-                          </button>
-                          <button
-                            onClick={() => openWhatsApp(adm)}
-                            className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
-                            title="WhatsApp Confirmation"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Letter</span>
+                        </button>
+                        <button
+                          onClick={() => openWhatsApp(adm)}
+                          className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors shadow-2xs"
+                          title="Send WhatsApp Confirmation"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }
