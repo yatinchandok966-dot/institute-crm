@@ -471,23 +471,22 @@ const handleSubmit = async (e) => {
                                         <label className="block font-semibold text-slate-700 mb-1">
                                           Interested Course <span className="text-rose-500">*</span>
                                         </label>
-                                        <div className="relative">
-                                          <BookOpen className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                                          <input
-                                            type="text"
-                                            list="available-courses-list"
-                                            value={formData.course}
-                                            onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                                            placeholder={allCourseList?.length > 0 ? "Select or enter course name" : "Enter interested course"}
-                                            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                                            required
-                                          />
-                                          <datalist id="available-courses-list">
-                                            {allCourseList.map((c) => (
-                                              <option key={c.id || c.code || c.name} value={c.name} />
-                                            ))}
-                                          </datalist>
-                                        </div>
+                                        <select
+                                          value={formData.course}
+                                          onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                          required
+                                        >
+                                          <option value="">Select or enter course name</option>
+                                          {allCourseList.map((c) => (
+                                            <option key={c.id || c.code || c.name} value={c.name}>
+                                              {c.name}
+                                            </option>
+                                          ))}
+                                          {formData.course && !allCourseList.some(c => c.name === formData.course) && (
+                                            <option value={formData.course}>{formData.course}</option>
+                                          )}
+                                        </select>
                                       </div>
 
                                       <div>

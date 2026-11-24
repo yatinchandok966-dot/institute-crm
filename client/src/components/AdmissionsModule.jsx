@@ -5,6 +5,7 @@ import {
   Filter,
   Plus,
   BookOpen,
+  Eye,
   FileText,
   MessageSquare,
   Printer,
@@ -274,10 +275,10 @@ export default function AdmissionsModule({
                         <button
                           onClick={() => onOpenConfirmationLetter(adm)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px] border border-slate-200 transition-colors shadow-2xs"
-                          title="View Official Admission Letter"
+                          title="View Official Admission Letter & Details"
                         >
-                          <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>Letter</span>
+                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>View</span>
                         </button>
                         <button
                           onClick={() => openWhatsApp(adm)}
