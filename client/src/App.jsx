@@ -862,8 +862,6 @@ export default function App() {
   };
 
   const handleDeleteCourse = (courseId) => {
-    if (!window.confirm('Are you sure you want to delete this course?')) return;
-
     setInstituteData(prev => {
       const updatedCourses = prev.courses.filter(c => c.id !== courseId);
       return {

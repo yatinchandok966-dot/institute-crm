@@ -57,6 +57,7 @@ export default function CoursesModule({
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseForDetails, setSelectedCourseForDetails] = useState(null);
+  const [courseToDelete, setCourseToDelete] = useState(null);
 
   const getEnrolledCount = (course) => {
     if (!course) return 0;
@@ -249,8 +250,8 @@ export default function CoursesModule({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDeleteCourse(course.id)}
-                        className="p-1.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg shadow-2xs transition-colors"
+                        onClick={() => setCourseToDelete(course)}
+                        className="p-1.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg shadow-2xs transition-colors cursor-pointer"
                         title="Delete Course"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -414,6 +415,46 @@ export default function CoursesModule({
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {/* Delete Course Confirmation Modal */}
+      {courseToDelete && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-6 text-center space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">Delete Course Program?</h3>
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                Are you sure you want to delete <strong className="text-slate-800">{courseToDelete.name || courseToDelete.title}</strong>
+                {courseToDelete.code ? ` (${courseToDelete.code})` : ''}? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setCourseToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeleteCourse) {
+                    onDeleteCourse(courseToDelete.id);
+                  }
+                  setCourseToDelete(null);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Course</span>
               </button>
             </div>
           </div>
