@@ -34,6 +34,23 @@ app.get('/api/health', (req, res) => {
 // ==========================================
 // Admissions & Students Synchronization
 // ==========================================
+const cleanupDuplicateLeads = async () => {
+  try {
+    await pool.query(`
+      DELETE FROM leads
+      WHERE id NOT IN (
+        SELECT MAX(id)
+        FROM leads
+        GROUP BY RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10)
+      )
+      AND phone IS NOT NULL
+      AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) >= 10
+    `);
+  } catch (err) {
+    console.warn('Cleanup duplicate leads warning:', err.message);
+  }
+};
+
 const syncAdmissionsAndStudents = async () => {
   try {
     const adms = await pool.query('SELECT * FROM admissions');
@@ -132,6 +149,7 @@ const syncAdmissionsAndStudents = async () => {
 // Comprehensive Dashboard stats endpoint (100% Direct from PostgreSQL)
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
+    await cleanupDuplicateLeads();
     await syncAdmissionsAndStudents();
     const [coursesRes, batchesRes, leadsRes, admissionsRes, studentsRes, feesRes, trainersRes] = await Promise.all([
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
@@ -196,25 +214,34 @@ app.get('/api/dashboard/stats', async (req, res) => {
       status: r.status
     }));
 
-    const recentLeads = leadsRes.rows.map(r => ({
-      id: r.id,
-      name: r.full_name,
-      phone: r.phone,
-      email: r.email || '',
-      city: r.city || '',
-      qualification: r.qualification || '',
-      college: r.college_university || '',
-      course: r.interested_course || '',
-      source: r.lead_source || 'Website',
-      status: r.lead_status || 'New',
-      priority: r.priority || 'Warm',
-      counselor: r.assigned_counsellor || 'Admissions Desk',
-      nextFollowUpDate: r.next_follow_up_date || '',
-      notes: r.notes || '',
-      notesList: [],
-      callHistory: [],
-      createdAt: r.created_date || new Date().toISOString().split('T')[0]
-    }));
+    const seenLeadPhones = new Set();
+    const recentLeads = [];
+    for (const r of leadsRes.rows) {
+      const cleanPhone = String(r.phone || '').replace(/\D/g, '').slice(-10);
+      const key = cleanPhone ? `phone_${cleanPhone}` : `id_${r.id}`;
+      if (!seenLeadPhones.has(key)) {
+        seenLeadPhones.add(key);
+        recentLeads.push({
+          id: r.id,
+          name: r.full_name,
+          phone: r.phone,
+          email: r.email || '',
+          city: r.city || '',
+          qualification: r.qualification || '',
+          college: r.college_university || '',
+          course: r.interested_course || '',
+          source: r.lead_source || 'Website',
+          status: r.lead_status || 'New',
+          priority: r.priority || 'Warm',
+          counselor: r.assigned_counsellor || 'Admissions Desk',
+          nextFollowUpDate: r.next_follow_up_date || '',
+          notes: r.notes || '',
+          notesList: [],
+          callHistory: [],
+          createdAt: r.created_date || new Date().toISOString().split('T')[0]
+        });
+      }
+    }
 
     const admissions = admissionsRes.rows.map(r => ({
       id: r.id,
@@ -334,24 +361,34 @@ app.get('/api/dashboard/stats', async (req, res) => {
 // ==========================================
 app.get('/api/leads', async (req, res) => {
   try {
+    await cleanupDuplicateLeads();
     const result = await pool.query('SELECT * FROM leads ORDER BY id DESC');
-    const leads = result.rows.map(r => ({
-      id: r.id,
-      name: r.full_name,
-      phone: r.phone,
-      email: r.email || '',
-      city: r.city || '',
-      qualification: r.qualification || '',
-      college: r.college_university || '',
-      course: r.interested_course || '',
-      source: r.lead_source || 'Website',
-      status: r.lead_status || 'New',
-      priority: r.priority || 'Warm',
-      counselor: r.assigned_counsellor || 'Admissions Desk',
-      nextFollowUpDate: r.next_follow_up_date || '',
-      notes: r.notes || '',
-      createdAt: r.created_date
-    }));
+    const seenPhones = new Set();
+    const leads = [];
+    for (const r of result.rows) {
+      const cleanPhone = String(r.phone || '').replace(/\D/g, '').slice(-10);
+      const key = cleanPhone ? `phone_${cleanPhone}` : `id_${r.id}`;
+      if (!seenPhones.has(key)) {
+        seenPhones.add(key);
+        leads.push({
+          id: r.id,
+          name: r.full_name,
+          phone: r.phone,
+          email: r.email || '',
+          city: r.city || '',
+          qualification: r.qualification || '',
+          college: r.college_university || '',
+          course: r.interested_course || '',
+          source: r.lead_source || 'Website',
+          status: r.lead_status || 'New',
+          priority: r.priority || 'Warm',
+          counselor: r.assigned_counsellor || 'Admissions Desk',
+          nextFollowUpDate: r.next_follow_up_date || '',
+          notes: r.notes || '',
+          createdAt: r.created_date
+        });
+      }
+    }
     res.json({ success: true, data: leads });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -367,6 +404,45 @@ app.post('/api/leads', async (req, res) => {
 
     if (!name || !phone) {
       return res.status(400).json({ success: false, message: 'Name and Phone are required' });
+    }
+
+    const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+
+    // Prevent duplicate lead insertion: if lead with same 10-digit phone exists, return it
+    if (cleanPhone) {
+      const existing = await pool.query(
+        `SELECT * FROM leads WHERE RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $1 ORDER BY id DESC LIMIT 1`,
+        [cleanPhone]
+      ).catch(() => null);
+
+      if (existing && existing.rows && existing.rows.length > 0) {
+        const r = existing.rows[0];
+        if (!r.interested_course && course) {
+          await pool.query(
+            'UPDATE leads SET interested_course = $1, lead_source = COALESCE(lead_source, $2) WHERE id = $3',
+            [course, source || 'QR Code (Campus Reception)', r.id]
+          ).catch(() => null);
+          r.interested_course = course;
+        }
+        const existingLead = {
+          id: r.id,
+          name: r.full_name,
+          phone: r.phone,
+          email: r.email,
+          city: r.city,
+          qualification: r.qualification,
+          college: r.college_university,
+          course: r.interested_course,
+          source: r.lead_source,
+          status: r.lead_status,
+          priority: r.priority,
+          counselor: r.assigned_counsellor,
+          nextFollowUpDate: r.next_follow_up_date,
+          notes: r.notes,
+          createdAt: r.created_date
+        };
+        return res.status(200).json({ success: true, lead: existingLead, deduplicated: true });
+      }
     }
 
     const result = await pool.query(

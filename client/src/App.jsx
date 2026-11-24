@@ -48,18 +48,28 @@ export default function App() {
           });
           const mergedInitialCourses = Array.from(courseMap.values());
 
-          // Fix QR source for Riya if currently Website or missing
-          const fixedLeads = (Array.isArray(parsed.recentLeads) ? parsed.recentLeads : []).map(l => {
-            if (l && (l.name === 'Riya' || l.id === 1795421032576) && (!l.source || l.source === 'Website')) {
-              return { ...l, source: 'QR Code (Campus Reception)' };
+          // Fix QR source for Riya if currently Website or missing, and deduplicate by phone/id
+          const rawParsedLeads = Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [];
+          const seenInitPhones = new Set();
+          const deduplicatedLeads = [];
+          for (const l of rawParsedLeads) {
+            if (!l) continue;
+            const cleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
+            const key = cleanPhone ? `phone_${cleanPhone}` : `id_${l.id}`;
+            if (!seenInitPhones.has(key)) {
+              seenInitPhones.add(key);
+              let item = l;
+              if ((item.name === 'Riya' || item.id === 1795421032576) && (!item.source || item.source === 'Website')) {
+                item = { ...item, source: 'QR Code (Campus Reception)' };
+              }
+              deduplicatedLeads.push(item);
             }
-            return l;
-          });
+          }
 
           return {
             ...initialInstituteData,
             ...parsed,
-            recentLeads: fixedLeads,
+            recentLeads: deduplicatedLeads,
             trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
@@ -164,18 +174,21 @@ export default function App() {
         const result = await statsRes.json();
         if (result.success) {
           setInstituteData(prev => {
-            // Smart merge for leads
+            // Smart deduplicated merge for leads
             const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
             const localLeads = Array.isArray(prev.recentLeads) ? prev.recentLeads : [];
-            let mergedLeads = localLeads;
-            if (serverLeads.length > 0 && localLeads.length === 0) {
-              mergedLeads = serverLeads;
-            } else if (serverLeads.length > 0 && localLeads.length > 0) {
-              const map = new Map();
-              localLeads.forEach(l => map.set(l.id || l.phone, l));
-              serverLeads.forEach(l => map.set(l.id || l.phone, l));
-              mergedLeads = Array.from(map.values());
-            } else if (localLeads.length > 0 && serverLeads.length === 0) {
+            const combined = serverLeads.length > 0 ? [...serverLeads, ...localLeads] : localLeads;
+            const leadMap = new Map();
+            combined.forEach(l => {
+              if (!l) return;
+              const cleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
+              const key = cleanPhone ? `phone_${cleanPhone}` : `id_${l.id}`;
+              if (!leadMap.has(key)) {
+                leadMap.set(key, l);
+              }
+            });
+            let mergedLeads = Array.from(leadMap.values());
+            if (localLeads.length > 0 && serverLeads.length === 0) {
               localLeads.forEach(l => {
                 fetch('/api/leads', {
                   method: 'POST',
@@ -183,7 +196,6 @@ export default function App() {
                   body: JSON.stringify(l)
                 }).catch(() => null);
               });
-              mergedLeads = localLeads;
             }
             // Ensure Riya has correct QR source
             mergedLeads = mergedLeads.map(l => {
@@ -1152,9 +1164,27 @@ export default function App() {
       <PublicInquiryForm
         courses={instituteData.courses}
         onLeadSubmitted={(newLead) => {
-          handleLeadCreated({
-            ...newLead,
-            source: newLead?.source || 'QR Code (Campus Reception)'
+          // PublicInquiryForm already sent POST /api/leads to the server.
+          // Update local state directly with deduplication without making a duplicate POST request!
+          setInstituteData((prev) => {
+            const cleanNewPhone = String(newLead?.phone || '').replace(/\D/g, '').slice(-10);
+            const filtered = (prev.recentLeads || []).filter(l => {
+              if (l.id === newLead.id) return false;
+              if (cleanNewPhone && String(l.phone || '').replace(/\D/g, '').slice(-10) === cleanNewPhone) return false;
+              return true;
+            });
+            const updatedLeads = [{
+              ...newLead,
+              source: newLead?.source || 'QR Code (Campus Reception)'
+            }, ...filtered];
+            return {
+              ...prev,
+              recentLeads: updatedLeads,
+              stats: {
+                ...prev.stats,
+                newLeadsThisMonth: updatedLeads.length,
+              },
+            };
           });
         }}
         onBackToCRM={() => {

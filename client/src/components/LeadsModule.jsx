@@ -202,9 +202,9 @@ export default function LeadsModule({
     return Array.from(set).sort();
   }, [leads, trainers]);
 
-  // Filtered Leads
+  // Filtered Leads (with automatic deduplication by phone number)
   const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
+    const rawList = leads.filter((lead) => {
       // 1. Text Search across Name, Phone, Email, City, Qualification, College, Course, Counselor
       const q = searchQuery.toLowerCase().trim();
       let matchesSearch = true;
@@ -272,6 +272,17 @@ export default function LeadsModule({
         matchesPriority &&
         matchesFollowUp
       );
+    });
+
+    // Guarantee uniqueness: no duplicate leads with identical 10-digit phone
+    const seenPhones = new Set();
+    return rawList.filter((l) => {
+      if (!l) return false;
+      const cleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
+      const key = cleanPhone ? `phone_${cleanPhone}` : `id_${l.id}`;
+      if (seenPhones.has(key)) return false;
+      seenPhones.add(key);
+      return true;
     });
   }, [
     leads,
