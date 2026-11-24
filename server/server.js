@@ -725,8 +725,48 @@ app.put('/api/courses/:id', async (req, res) => {
 
 app.delete('/api/courses/:id', async (req, res) => {
   try {
-    const courseId = parseInt(req.params.id, 10);
-    await pool.query('DELETE FROM courses WHERE id = $1', [courseId]);
+    const rawId = decodeURIComponent(req.params.id);
+    const courseId = parseInt(rawId, 10);
+
+    try {
+      if (!isNaN(courseId)) {
+        await pool.query('UPDATE enrollments SET course_id = NULL WHERE course_id = $1', [courseId]).catch(() => null);
+        await pool.query('UPDATE batches SET course_id = NULL WHERE course_id = $1', [courseId]).catch(() => null);
+        await pool.query('UPDATE leads SET interested_course_id = NULL WHERE interested_course_id = $1', [courseId]).catch(() => null);
+        await pool.query('DELETE FROM courses WHERE id = $1 OR code = $2 OR name = $2', [courseId, String(rawId)]);
+      } else {
+        const findRes = await pool.query('SELECT id FROM courses WHERE code = $1 OR name = $1', [rawId]);
+        if (findRes.rows.length > 0) {
+          const resolvedId = findRes.rows[0].id;
+          await pool.query('UPDATE enrollments SET course_id = NULL WHERE course_id = $1', [resolvedId]).catch(() => null);
+          await pool.query('UPDATE batches SET course_id = NULL WHERE course_id = $1', [resolvedId]).catch(() => null);
+          await pool.query('UPDATE leads SET interested_course_id = NULL WHERE interested_course_id = $1', [resolvedId]).catch(() => null);
+          await pool.query('DELETE FROM courses WHERE id = $1', [resolvedId]);
+        } else {
+          await pool.query('DELETE FROM courses WHERE code = $1 OR name = $1', [rawId]);
+        }
+      }
+    } catch (dbErr) {
+      console.warn('PostgreSQL course delete warning:', dbErr.message);
+    }
+
+    if (!process.env.VERCEL && fs.existsSync(DATA_FILE)) {
+      try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.courses)) {
+          data.courses = data.courses.filter(c =>
+            String(c.id) !== String(rawId) &&
+            String(c.code) !== String(rawId) &&
+            String(c.name) !== String(rawId)
+          );
+          fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+        }
+      } catch (fileErr) {
+        console.warn('Could not update data_store.json on course delete:', fileErr.message);
+      }
+    }
+
     res.json({ success: true, message: 'Course deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

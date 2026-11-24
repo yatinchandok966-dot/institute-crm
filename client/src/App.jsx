@@ -63,14 +63,19 @@ export default function App() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          // Merge loaded courses with OFFICIAL_COURSES so all real courses are present
+          const deletedCourseIds = new Set(Array.isArray(parsed.deletedCourseIds) ? parsed.deletedCourseIds : []);
           const existingCourses = Array.isArray(parsed.courses) ? parsed.courses : [];
-          const courseMap = new Map();
-          OFFICIAL_COURSES.forEach(c => courseMap.set(c.name, c));
-          existingCourses.forEach(c => {
-            if (c && c.name) courseMap.set(c.name, { ...c });
-          });
-          const mergedInitialCourses = Array.from(courseMap.values());
+          
+          let initialCoursesList = [];
+          if (existingCourses.length > 0) {
+            initialCoursesList = existingCourses.filter(c => 
+              c && !deletedCourseIds.has(String(c.id)) && !deletedCourseIds.has(String(c.code)) && !deletedCourseIds.has(String(c.name))
+            );
+          } else if (deletedCourseIds.size > 0) {
+            initialCoursesList = [];
+          } else {
+            initialCoursesList = OFFICIAL_COURSES;
+          }
 
           // Fix QR source for Riya if currently Website or missing, and deduplicate by phone/id
           const rawParsedLeads = Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [];
@@ -97,7 +102,8 @@ export default function App() {
             trainers: Array.isArray(parsed.trainers) ? parsed.trainers : [],
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
-            courses: mergedInitialCourses,
+            courses: initialCoursesList,
+            deletedCourseIds: Array.from(deletedCourseIds),
             batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
@@ -288,16 +294,33 @@ export default function App() {
               mergedTrainers = localTrainers;
             }
 
-            // Smart merge for courses (includes all official courses from database and constants)
+            // Smart merge for courses (respects deleted courses)
             const serverCourses = Array.isArray(result.courses) ? result.courses : [];
             const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
+            const deletedCourseIds = new Set(Array.isArray(prev.deletedCourseIds) ? prev.deletedCourseIds : []);
+
             const cMap = new Map();
-            OFFICIAL_COURSES.forEach(c => cMap.set(c.name, c));
-            localCourses.forEach(c => {
-              if (c && c.name) cMap.set(c.name, { ...cMap.get(c.name), ...c });
-            });
+            // Server courses first (filtered by deleted)
             serverCourses.forEach(c => {
-              if (c && c.name) cMap.set(c.name, { ...cMap.get(c.name), ...c });
+              if (c && (c.name || c.id)) {
+                const key = String(c.id || c.name);
+                if (!deletedCourseIds.has(String(c.id)) && !deletedCourseIds.has(String(c.code)) && !deletedCourseIds.has(String(c.name))) {
+                  cMap.set(key, c);
+                }
+              }
+            });
+            // Merge in local courses (preserve any added/edited, also filtered by deleted)
+            localCourses.forEach(c => {
+              if (c && (c.name || c.id)) {
+                const key = String(c.id || c.name);
+                if (!deletedCourseIds.has(String(c.id)) && !deletedCourseIds.has(String(c.code)) && !deletedCourseIds.has(String(c.name))) {
+                  if (!cMap.has(key)) {
+                    cMap.set(key, c);
+                  } else {
+                    cMap.set(key, { ...cMap.get(key), ...c });
+                  }
+                }
+              }
             });
             const mergedCourses = Array.from(cMap.values());
 
@@ -862,11 +885,35 @@ export default function App() {
   };
 
   const handleDeleteCourse = (courseId) => {
+    const targetCourse = (instituteData.courses || []).find(c =>
+      String(c.id) === String(courseId) ||
+      String(c.code) === String(courseId) ||
+      String(c.name) === String(courseId)
+    );
+
+    const idStr = String(courseId);
+    const codeStr = targetCourse?.code ? String(targetCourse.code) : null;
+    const nameStr = targetCourse?.name ? String(targetCourse.name) : null;
+
     setInstituteData(prev => {
-      const updatedCourses = prev.courses.filter(c => c.id !== courseId);
+      const currentDeleted = prev.deletedCourseIds || [];
+      const newDeleted = Array.from(new Set([
+        ...currentDeleted,
+        idStr,
+        ...(codeStr ? [codeStr] : []),
+        ...(nameStr ? [nameStr] : [])
+      ]));
+
+      const updatedCourses = (prev.courses || []).filter(c =>
+        String(c.id) !== idStr &&
+        (!codeStr || String(c.code) !== codeStr) &&
+        (!nameStr || String(c.name) !== nameStr)
+      );
+
       return {
         ...prev,
         courses: updatedCourses,
+        deletedCourseIds: newDeleted,
         stats: {
           ...prev.stats,
           activeCourses: updatedCourses.length
@@ -874,7 +921,7 @@ export default function App() {
       };
     });
 
-    fetch(`/api/courses/${courseId}`, {
+    fetch(`/api/courses/${encodeURIComponent(courseId)}`, {
       method: 'DELETE'
     }).catch(() => null);
   };
