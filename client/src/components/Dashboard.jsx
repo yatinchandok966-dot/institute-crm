@@ -196,90 +196,98 @@ export default function Dashboard({
       </div>
 
 
-      {/* 4 Metric Cards */}
+      {/* 4 Power BI-Style Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* KPI 1: Total Leads */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Total Leads</h3>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <UserPlus className="w-4 h-4 text-blue-600" />
+        <div className="bg-gradient-to-br from-white via-white to-blue-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-blue-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+          <div className="flex justify-between items-center mb-2.5 z-10">
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Total Leads</h3>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-sm">
+              <UserPlus className="w-4 h-4 text-white" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{totalLeadsCount}</span>
-            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+          <div className="flex items-baseline gap-2.5 z-10">
+            <span className="text-3xl font-black text-slate-900 tracking-tight">{totalLeadsCount}</span>
+            <span className="text-[11px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200/70 px-2 py-0.5 rounded-full">
               {stats.leadConversionRate || '50% conv.'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Total prospective inquiries</p>
-          <div className="absolute bottom-0 left-0 right-0">
-            <Sparkline color="#3b82f6" />
+          <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
+            <p className="text-[11px] text-slate-500 font-semibold">Total prospective inquiries</p>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+            <Sparkline color="#2563eb" />
           </div>
         </div>
 
 
         {/* KPI 2: Active Students */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Active Students</h3>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-              <GraduationCap className="w-4 h-4 text-purple-600" />
+        <div className="bg-gradient-to-br from-white via-white to-purple-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-purple-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+          <div className="flex justify-between items-center mb-2.5 z-10">
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Active Students</h3>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-fuchsia-500 flex items-center justify-center shadow-sm">
+              <GraduationCap className="w-4 h-4 text-white" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{activeStudentsCount}</span>
-            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+          <div className="flex items-baseline gap-2.5 z-10">
+            <span className="text-3xl font-black text-slate-900 tracking-tight">{activeStudentsCount}</span>
+            <span className="text-[11px] font-bold text-purple-700 bg-purple-100/80 border border-purple-200/70 px-2 py-0.5 rounded-full">
               {stats.activeStudentsGrowth || 'In Batches'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Currently studying in courses</p>
-          <div className="absolute bottom-0 left-0 right-0">
-            <Sparkline color="#a855f7" />
+          <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
+            <p className="text-[11px] text-slate-500 font-semibold">Currently studying in courses</p>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+            <Sparkline color="#9333ea" />
           </div>
         </div>
 
 
-        {/* KPI 3: Confirmed Admissions (Same) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Confirmed Admissions</h3>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <UserCheck className="w-4 h-4 text-emerald-600" />
+        {/* KPI 3: Confirmed Admissions */}
+        <div className="bg-gradient-to-br from-white via-white to-emerald-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-emerald-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+          <div className="flex justify-between items-center mb-2.5 z-10">
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Confirmed Admissions</h3>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-sm">
+              <UserCheck className="w-4 h-4 text-white" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{admissions.length || 4}</span>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+          <div className="flex items-baseline gap-2.5 z-10">
+            <span className="text-3xl font-black text-slate-900 tracking-tight">{admissions.length || 4}</span>
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/70 px-2 py-0.5 rounded-full">
               Admitted
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">Official enrolled admissions</p>
-          <div className="absolute bottom-0 left-0 right-0">
-            <Sparkline color="#10b981" />
+          <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
+            <p className="text-[11px] text-slate-500 font-semibold">Official enrolled admissions</p>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+            <Sparkline color="#059669" />
           </div>
         </div>
 
 
-        {/* KPI 4: Tuition Fees Collected (Same) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[160px] relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Tuition Fees Collected</h3>
-            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-              <CreditCard className="w-4 h-4 text-orange-600" />
+        {/* KPI 4: Tuition Fees Collected */}
+        <div className="bg-gradient-to-br from-white via-white to-amber-50/60 p-5 rounded-2xl border border-slate-200/90 border-l-4 border-l-amber-500 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
+          <div className="flex justify-between items-center mb-2.5 z-10">
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Tuition Fees Collected</h3>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+              <CreditCard className="w-4 h-4 text-white" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">₹{(stats.monthlyRevenue || 108000).toLocaleString()}</span>
-            <span className="text-xs font-bold text-emerald-700">
+          <div className="flex items-baseline gap-2.5 z-10">
+            <span className="text-2xl font-black text-slate-900 tracking-tight">₹{(stats.monthlyRevenue || 108000).toLocaleString()}</span>
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/70 px-2 py-0.5 rounded-full">
               {stats.revenueGrowth || '+100%'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium z-10">
-            ₹{(stats.pendingFees || 162000).toLocaleString()} pending installments due
-          </p>
-          <div className="absolute bottom-0 left-0 right-0">
-            <Sparkline color="#f59e0b" />
+          <div className="mt-2 pt-2 border-t border-slate-100/90 z-10">
+            <p className="text-[11px] text-slate-500 font-semibold">
+              ₹{(stats.pendingFees || 162000).toLocaleString()} pending installments due
+            </p>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 opacity-90">
+            <Sparkline color="#d97706" />
           </div>
         </div>
       </div>
