@@ -734,7 +734,7 @@ export default function LeadsModule({
           <table className="w-full min-w-[1280px] text-left text-xs border-collapse table-fixed">
             <colgroup>
               <col style={{ width: '16%' }} className="w-[16%] min-w-[210px]" /> {/* 1. Lead Information */}
-              <col style={{ width: '11%' }} className="w-[11%] min-w-[145px]" /> {/* 2. Contact & Actions */}
+              <col style={{ width: '11%' }} className="w-[11%] min-w-[145px]" /> {/* 2. Contact */}
               <col style={{ width: '12%' }} className="w-[12%] min-w-[155px]" /> {/* 3. Interested Course */}
               <col style={{ width: '8%' }} className="w-[8%] min-w-[100px]" />   {/* 4. Source */}
               <col style={{ width: '14%' }} className="w-[14%] min-w-[170px]" /> {/* 5. Assigned Counsellor */}
@@ -746,7 +746,7 @@ export default function LeadsModule({
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
               <tr>
                 <th className="pl-5 pr-3 py-3.5 text-left whitespace-nowrap">Lead Information</th>
-                <th className="px-3 py-3.5 text-left whitespace-nowrap">Contact & Actions</th>
+                <th className="px-3 py-3.5 text-left whitespace-nowrap">Contact</th>
                 <th className="px-3 py-3.5 text-left whitespace-nowrap">Interested Course</th>
                 <th className="px-3 py-3.5 text-left whitespace-nowrap">Source</th>
                 <th className="px-3 py-3.5 text-left whitespace-nowrap">Assigned Counsellor</th>
