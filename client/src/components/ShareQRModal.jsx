@@ -184,15 +184,14 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
       const qrFile = new File([cardBlob], 'EduPulse-Academy-QR.png', { type: 'image/png' });
 
-      // Automatically copy the Paytm-style QR image card to clipboard
-      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': cardBlob })
-          ]);
-        } catch (clipErr) {
-          console.warn('Could not copy image to clipboard:', clipErr);
-        }
+      // Copy the text caption to clipboard so that on Windows Desktop (where WhatsApp drops the share text),
+      // the user can simply press Ctrl+V in WhatsApp's caption box to get the exact Paytm look!
+      try {
+        await navigator.clipboard.writeText(admissionCaption);
+        setShareSuccessToast(true);
+        setTimeout(() => setShareSuccessToast(false), 4000);
+      } catch (clipErr) {
+        console.warn('Could not copy caption to clipboard:', clipErr);
       }
 
       // Try native share with the scanner card file
@@ -629,6 +628,13 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                     <Share2 className="w-4 h-4" />
                     <span>{sharing ? 'Sharing Scanner...' : 'Share QR Code'}</span>
                   </button>
+
+                  {shareSuccessToast && (
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-[11px] font-medium flex items-center gap-2 animate-in fade-in duration-200">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Caption copied!</strong> If WhatsApp opens with an empty caption box on PC, press <strong>Ctrl + V</strong> to paste it under the image card.</span>
+                    </div>
+                  )}
 
                   <p className="text-[10.5px] text-slate-500 text-center leading-relaxed">
                     Shares scanner card with: <span className="text-indigo-700 font-semibold">"Here's our official QR Code! Scan & get admission in our academy"</span>
