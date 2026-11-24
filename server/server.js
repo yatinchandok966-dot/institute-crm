@@ -31,9 +31,101 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ==========================================
+// Admissions & Students Synchronization
+// ==========================================
+const syncAdmissionsAndStudents = async () => {
+  try {
+    const adms = await pool.query('SELECT * FROM admissions');
+    for (const adm of adms.rows) {
+      const cleanPhone = adm.phone ? String(adm.phone).replace(/\D/g, '').slice(-10) : '';
+      const stuCheck = await pool.query(
+        `SELECT id FROM students
+         WHERE admission_no = $1
+            OR (phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)
+         LIMIT 1`,
+        [adm.admission_no, cleanPhone]
+      );
+
+      if (stuCheck.rows.length === 0) {
+        const stuCount = await pool.query('SELECT COUNT(*) FROM students');
+        const seq = String(Number(stuCount.rows[0].count) + 1).padStart(4, '0');
+        const studentCode = `STU-2026-${seq}`;
+        const nameParts = (adm.student_name || 'Student').trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const insRes = await pool.query(
+          `INSERT INTO students (
+             student_id_code, first_name, last_name, email, phone,
+             guardian_name, guardian_phone, address, admission_no, enrollment_status
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+           ON CONFLICT DO NOTHING
+           RETURNING id`,
+          [
+            studentCode,
+            firstName,
+            lastName,
+            adm.email || `${studentCode.toLowerCase()}@institute.local`,
+            adm.phone || cleanPhone,
+            adm.guardian_name || '',
+            adm.guardian_phone || '',
+            adm.address || '',
+            adm.admission_no,
+            'Active'
+          ]
+        );
+
+        const newId = insRes.rows[0]?.id;
+        if (newId) {
+          let courseId = null;
+          let batchId = null;
+          if (adm.course) {
+            const cRes = await pool.query('SELECT id FROM courses WHERE name = $1 LIMIT 1', [adm.course]);
+            courseId = cRes.rows[0]?.id || null;
+          }
+          if (adm.batch) {
+            const bRes = await pool.query('SELECT id FROM batches WHERE batch_name = $1 LIMIT 1', [adm.batch]);
+            batchId = bRes.rows[0]?.id || null;
+          }
+          const totalFee = Number(adm.total_course_fee) || 0;
+          const discount = Number(adm.discount) || 0;
+          const paidFee = Number(adm.admission_fee_paid) || 0;
+          const dueFee = Math.max(0, totalFee - discount - paidFee);
+
+          await pool.query(
+            `INSERT INTO enrollments (student_id, course_id, batch_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [
+              newId,
+              courseId,
+              batchId,
+              totalFee,
+              discount,
+              paidFee,
+              dueFee,
+              adm.admission_date || new Date().toISOString().split('T')[0],
+              dueFee === 0 ? 'Enrolled' : 'Fee Pending'
+            ]
+          );
+        }
+      } else {
+        await pool.query(
+          'UPDATE students SET admission_no = COALESCE(admission_no, $1) WHERE id = $2',
+          [adm.admission_no, stuCheck.rows[0].id]
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('Sync admissions to students warning:', err.message);
+  }
+};
+
 // Comprehensive Dashboard stats endpoint (100% Direct from PostgreSQL)
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
+    await syncAdmissionsAndStudents();
     const [coursesRes, batchesRes, leadsRes, admissionsRes, studentsRes, feesRes, trainersRes] = await Promise.all([
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
       pool.query('SELECT * FROM batches ORDER BY id ASC'),
@@ -44,21 +136,30 @@ app.get('/api/dashboard/stats', async (req, res) => {
           s.id,
           s.student_id_code AS "studentId",
           CONCAT_WS(' ', s.first_name, s.last_name) AS name,
+          s.first_name AS "firstName",
+          s.last_name AS "lastName",
           s.email,
           s.phone,
           s.guardian_name AS guardian,
           s.guardian_phone AS "guardianPhone",
           s.address,
+          TO_CHAR(s.date_of_birth, 'YYYY-MM-DD') AS "dob",
+          s.gender,
+          s.qualification,
+          s.college,
+          s.passing_year AS "passingYear",
+          COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
           s.enrollment_status AS status,
           COALESCE(e.total_fee, 0) AS "feeTotal",
           COALESCE(e.paid_fee, 0) AS "feePaid",
           COALESCE(e.due_fee, 0) AS "feeDue",
-          c.name AS course,
-          b.batch_name AS batch
+          COALESCE(c.name, a.course) AS course,
+          COALESCE(b.batch_name, a.batch) AS batch
         FROM students s
         LEFT JOIN enrollments e ON s.id = e.student_id
         LEFT JOIN courses c ON e.course_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
+        LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
         ORDER BY s.id DESC
       `),
       pool.query('SELECT * FROM fee_payments ORDER BY id DESC'),
@@ -832,26 +933,36 @@ app.delete('/api/admissions/:id', async (req, res) => {
 // ==========================================
 app.get('/api/students', async (req, res) => {
   try {
+    await syncAdmissionsAndStudents();
     const result = await pool.query(`
       SELECT
         s.id,
         s.student_id_code AS "studentId",
         CONCAT_WS(' ', s.first_name, s.last_name) AS name,
+        s.first_name AS "firstName",
+        s.last_name AS "lastName",
         s.email,
         s.phone,
         s.guardian_name AS guardian,
         s.guardian_phone AS "guardianPhone",
         s.address,
+        TO_CHAR(s.date_of_birth, 'YYYY-MM-DD') AS "dob",
+        s.gender,
+        s.qualification,
+        s.college,
+        s.passing_year AS "passingYear",
+        COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
         s.enrollment_status AS status,
         COALESCE(e.total_fee, 0) AS "feeTotal",
         COALESCE(e.paid_fee, 0) AS "feePaid",
         COALESCE(e.due_fee, 0) AS "feeDue",
-        c.name AS course,
-        b.batch_name AS batch
+        COALESCE(c.name, a.course) AS course,
+        COALESCE(b.batch_name, a.batch) AS batch
       FROM students s
       LEFT JOIN enrollments e ON s.id = e.student_id
       LEFT JOIN courses c ON e.course_id = c.id
       LEFT JOIN batches b ON e.batch_id = b.id
+      LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
       ORDER BY s.id DESC
     `);
 
@@ -869,6 +980,268 @@ app.get('/api/students', async (req, res) => {
 
     res.json({ success: true, count: students.length, data: students });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/students/:id', async (req, res) => {
+  try {
+    const paramId = req.params.id;
+    const {
+      name,
+      firstName: inputFirstName,
+      lastName: inputLastName,
+      email,
+      phone,
+      guardian,
+      guardianName,
+      guardianPhone,
+      address,
+      dob,
+      dateOfBirth,
+      gender,
+      qualification,
+      college,
+      passingYear,
+      admissionNo,
+      status,
+      course,
+      batch
+    } = req.body;
+
+    // Backend Validations
+    const effectiveName = (name || `${inputFirstName || ''} ${inputLastName || ''}`).trim();
+    if (!effectiveName || effectiveName.length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Student name is required and must contain at least 2 characters.'
+      });
+    }
+
+    const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return res.status(400).json({
+        success: false,
+        error: 'A valid 10-digit mobile number is required.'
+      });
+    }
+
+    const cleanEmail = email ? String(email).trim() : '';
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid email address.'
+      });
+    }
+
+    const cleanGuardianPhone = guardianPhone ? String(guardianPhone).replace(/\D/g, '').slice(-10) : '';
+    if (guardianPhone && cleanGuardianPhone.length > 0 && cleanGuardianPhone.length < 10) {
+      return res.status(400).json({
+        success: false,
+        error: 'Guardian phone number must be a valid 10-digit number.'
+      });
+    }
+
+    const cleanPassingYear = passingYear ? String(passingYear).trim() : '';
+    if (cleanPassingYear && (!/^(19|20)\d{2}$/.test(cleanPassingYear) || Number(cleanPassingYear) < 1980 || Number(cleanPassingYear) > 2035)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Passing year must be a valid 4-digit year between 1980 and 2035.'
+      });
+    }
+
+    const effectiveDob = (dob || dateOfBirth) ? String(dob || dateOfBirth).split('T')[0] : null;
+    if (effectiveDob) {
+      const birthDate = new Date(effectiveDob);
+      const today = new Date();
+      if (isNaN(birthDate.getTime()) || birthDate > today) {
+        return res.status(400).json({
+          success: false,
+          error: 'Date of birth cannot be in the future.'
+        });
+      }
+    }
+
+    const nameParts = effectiveName.split(' ');
+    const firstName = inputFirstName || nameParts[0];
+    const lastName = inputLastName !== undefined ? inputLastName : (nameParts.slice(1).join(' ') || '');
+    const effectiveGuardian = (guardian || guardianName || '').trim() || null;
+    const effectiveAddress = (address || '').trim() || null;
+    const effectiveGender = (gender || '').trim() || null;
+    const effectiveQualification = (qualification || '').trim() || null;
+    const effectiveCollege = (college || '').trim() || null;
+    const effectiveAdmissionNo = (admissionNo || '').trim() || null;
+    const effectiveStatus = (status || 'Active').trim();
+
+    // Check if student exists by integer ID or student_id_code
+    let checkStu;
+    const isNumeric = /^\d+$/.test(paramId);
+    if (isNumeric) {
+      checkStu = await pool.query(
+        'SELECT * FROM students WHERE id = $1 OR student_id_code = $2',
+        [parseInt(paramId, 10), paramId]
+      );
+    } else {
+      checkStu = await pool.query(
+        'SELECT * FROM students WHERE student_id_code = $1',
+        [paramId]
+      );
+    }
+
+    if (checkStu.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Student record not found.' });
+    }
+
+    const studentDbId = checkStu.rows[0].id;
+    const studentCode = checkStu.rows[0].student_id_code;
+
+    // Update students record
+    await pool.query(
+      `UPDATE students
+       SET
+         first_name = $1,
+         last_name = $2,
+         email = $3,
+         phone = $4,
+         guardian_name = $5,
+         guardian_phone = $6,
+         address = $7,
+         date_of_birth = $8,
+         gender = $9,
+         qualification = $10,
+         college = $11,
+         passing_year = $12,
+         admission_no = $13,
+         enrollment_status = $14
+       WHERE id = $15`,
+      [
+        firstName,
+        lastName,
+        cleanEmail || checkStu.rows[0].email,
+        cleanPhone,
+        effectiveGuardian,
+        cleanGuardianPhone || null,
+        effectiveAddress,
+        effectiveDob,
+        effectiveGender,
+        effectiveQualification,
+        effectiveCollege,
+        cleanPassingYear || null,
+        effectiveAdmissionNo,
+        effectiveStatus,
+        studentDbId
+      ]
+    );
+
+    // Update course/batch in enrollments if provided
+    if (course || batch) {
+      let courseId = null;
+      let batchId = null;
+      if (course) {
+        const cRes = await pool.query('SELECT id FROM courses WHERE name = $1 LIMIT 1', [course]);
+        courseId = cRes.rows[0]?.id || null;
+      }
+      if (batch) {
+        const bRes = await pool.query('SELECT id FROM batches WHERE batch_name = $1 LIMIT 1', [batch]);
+        batchId = bRes.rows[0]?.id || null;
+      }
+
+      const enrCheck = await pool.query('SELECT id FROM enrollments WHERE student_id = $1 LIMIT 1', [studentDbId]);
+      if (enrCheck.rows.length > 0) {
+        await pool.query(
+          `UPDATE enrollments
+           SET course_id = COALESCE($1, course_id),
+               batch_id = COALESCE($2, batch_id)
+           WHERE student_id = $3`,
+          [courseId, batchId, studentDbId]
+        );
+      }
+    }
+
+    // Sync corresponding admission record if exists
+    await pool.query(
+      `UPDATE admissions
+       SET student_name = $1,
+           phone = $2,
+           email = COALESCE(NULLIF($3, ''), email),
+           guardian_name = COALESCE(NULLIF($4, ''), guardian_name),
+           guardian_phone = COALESCE(NULLIF($5, ''), guardian_phone),
+           address = COALESCE(NULLIF($6, ''), address),
+           course = COALESCE(NULLIF($7, ''), course),
+           batch = COALESCE(NULLIF($8, ''), batch)
+       WHERE admission_no = $9
+          OR admission_no = $10
+          OR (phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $11)
+          OR LOWER(student_name) = LOWER($1)`,
+      [
+        effectiveName,
+        cleanPhone,
+        cleanEmail,
+        effectiveGuardian,
+        cleanGuardianPhone,
+        effectiveAddress,
+        course || null,
+        batch || null,
+        effectiveAdmissionNo,
+        studentCode,
+        cleanPhone
+      ]
+    ).catch(() => null);
+
+    // Return the updated student with all joins
+    const updatedResult = await pool.query(`
+      SELECT
+        s.id,
+        s.student_id_code AS "studentId",
+        CONCAT_WS(' ', s.first_name, s.last_name) AS name,
+        s.first_name AS "firstName",
+        s.last_name AS "lastName",
+        s.email,
+        s.phone,
+        s.guardian_name AS guardian,
+        s.guardian_phone AS "guardianPhone",
+        s.address,
+        TO_CHAR(s.date_of_birth, 'YYYY-MM-DD') AS "dob",
+        s.gender,
+        s.qualification,
+        s.college,
+        s.passing_year AS "passingYear",
+        COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
+        s.enrollment_status AS status,
+        COALESCE(e.total_fee, 0) AS "feeTotal",
+        COALESCE(e.paid_fee, 0) AS "feePaid",
+        COALESCE(e.due_fee, 0) AS "feeDue",
+        COALESCE(c.name, a.course) AS course,
+        COALESCE(b.batch_name, a.batch) AS batch
+      FROM students s
+      LEFT JOIN enrollments e ON s.id = e.student_id
+      LEFT JOIN courses c ON e.course_id = c.id
+      LEFT JOIN batches b ON e.batch_id = b.id
+      LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
+      WHERE s.id = $1
+    `, [studentDbId]);
+
+    const updatedRow = updatedResult.rows[0] || {};
+    const updatedStudent = {
+      ...updatedRow,
+      feeStatus:
+        Number(updatedRow.feeTotal) === 0
+          ? 'Not Enrolled'
+          : Number(updatedRow.feeDue) === 0
+            ? 'Paid'
+            : Number(updatedRow.feePaid) > 0
+              ? 'Partial'
+              : 'Overdue'
+    };
+
+    res.json({
+      success: true,
+      message: 'Student details updated successfully',
+      data: updatedStudent,
+      student: updatedStudent
+    });
+  } catch (err) {
+    console.error('Error updating student:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

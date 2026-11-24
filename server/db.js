@@ -159,9 +159,21 @@ const initDb = async (client) => {
         guardian_phone VARCHAR(25),
         address TEXT,
         date_of_birth DATE,
+        gender VARCHAR(20),
+        qualification VARCHAR(100),
+        college VARCHAR(150),
+        passing_year VARCHAR(10),
+        admission_no VARCHAR(50),
         enrollment_status VARCHAR(30) DEFAULT 'Active',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- Ensure columns exist in case table was created with earlier schema
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS qualification VARCHAR(100);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS college VARCHAR(150);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS passing_year VARCHAR(10);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS admission_no VARCHAR(50);
 
       CREATE TABLE IF NOT EXISTS enrollments (
         id SERIAL PRIMARY KEY,

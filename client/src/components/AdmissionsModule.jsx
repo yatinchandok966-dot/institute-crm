@@ -25,6 +25,7 @@ export default function AdmissionsModule({
   onOpenNewAdmission,
   onOpenConfirmationLetter,
   onUpdateAdmissionStatus,
+  onOpenStudentProfile,
   onDeleteAdmission
 }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,9 +206,14 @@ export default function AdmissionsModule({
                           {(adm.studentName || adm.student_name || 'S').charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-slate-900 text-xs truncate" title={adm.studentName || adm.student_name}>
+                          <button
+                            type="button"
+                            onClick={() => onOpenStudentProfile && onOpenStudentProfile(adm)}
+                            className="font-bold text-slate-900 text-xs truncate hover:text-indigo-600 hover:underline text-left cursor-pointer block w-full transition-colors"
+                            title="Open Student Profile"
+                          >
                             {adm.studentName || adm.student_name || 'Student'}
-                          </div>
+                          </button>
                           <div className="text-[10px] text-slate-400 font-mono truncate">
                             {adm.phone || '-'}
                           </div>

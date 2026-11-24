@@ -155,14 +155,15 @@ const studentFeeRows = students
                   <div className="inline-flex items-center gap-1.5 justify-end">
                     <button
                       type="button"
-                      onClick={() => setSelectedStudentForDetails({ student, payments, totalPaid, remaining, totalFees })}
+                      // onClick={() => setSelectedStudentForDetails({ student, payments, totalPaid, remaining, totalFees })}
+                      onClick={() => onOpenReceipt({ student, transactions: payments })}
                       className="px-2.5 py-1.5 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-semibold inline-flex items-center gap-1 shadow-2xs transition-colors"
                       title="View Complete Fee Breakdown & Payment Details"
                     >
                       <Eye className="w-3.5 h-3.5 text-indigo-600" />
                       <span>View</span>
                     </button>
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => onOpenReceipt({ student, transactions: payments })}
                       className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors"
@@ -170,7 +171,7 @@ const studentFeeRows = students
                     >
                       <Printer className="w-3.5 h-3.5" />
                       <span>Print Statement</span>
-                    </button>
+                    </button> */}
                   </div>
                 </td>
 

@@ -97,6 +97,11 @@ CREATE TABLE IF NOT EXISTS students (
     guardian_phone VARCHAR(25),
     address TEXT,
     date_of_birth DATE,
+    gender VARCHAR(20),
+    qualification VARCHAR(100),
+    college VARCHAR(150),
+    passing_year VARCHAR(10),
+    admission_no VARCHAR(50),
     enrollment_status VARCHAR(30) DEFAULT 'Active', -- 'Active', 'Completed', 'Dropped'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

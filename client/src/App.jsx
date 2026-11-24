@@ -841,6 +841,130 @@ export default function App() {
     }).catch(() => null);
   };
 
+  const handleStudentUpdated = async (updatedStudent) => {
+    // 1. Optimistic state update for students AND associated admissions
+    setInstituteData(prev => {
+      const updatedStudents = (prev.students || []).map(s => {
+        const isMatch =
+          (s.id != null && updatedStudent.id != null && String(s.id) === String(updatedStudent.id)) ||
+          (s.studentId && updatedStudent.studentId && s.studentId === updatedStudent.studentId) ||
+          (s.admissionNo && updatedStudent.admissionNo && s.admissionNo === updatedStudent.admissionNo) ||
+          (s.phone && updatedStudent.phone && String(s.phone).replace(/\D/g, '').slice(-10) === String(updatedStudent.phone).replace(/\D/g, '').slice(-10));
+        return isMatch ? { ...s, ...updatedStudent } : s;
+      });
+
+      const updatedAdmissions = (prev.admissions || []).map(a => {
+        const isMatch =
+          (updatedStudent.admissionNo && a.admissionNo === updatedStudent.admissionNo) ||
+          (updatedStudent.phone && a.phone && String(a.phone).replace(/\D/g, '').slice(-10) === String(updatedStudent.phone).replace(/\D/g, '').slice(-10)) ||
+          (a.studentName && updatedStudent.name && a.studentName.toLowerCase() === updatedStudent.name.toLowerCase());
+        if (isMatch) {
+          return {
+            ...a,
+            studentName: updatedStudent.name || a.studentName,
+            phone: updatedStudent.phone || a.phone,
+            email: updatedStudent.email || a.email,
+            guardianName: updatedStudent.guardian || a.guardianName,
+            guardianPhone: updatedStudent.guardianPhone || a.guardianPhone,
+            address: updatedStudent.address || a.address,
+            course: updatedStudent.course || a.course,
+            batch: updatedStudent.batch || a.batch,
+            status: updatedStudent.status || a.status
+          };
+        }
+        return a;
+      });
+
+      return {
+        ...prev,
+        students: updatedStudents,
+        admissions: updatedAdmissions
+      };
+    });
+
+    setStudents(prev =>
+      (prev || []).map(s => {
+        const isMatch =
+          (s.id != null && updatedStudent.id != null && String(s.id) === String(updatedStudent.id)) ||
+          (s.studentId && updatedStudent.studentId && s.studentId === updatedStudent.studentId) ||
+          (s.admissionNo && updatedStudent.admissionNo && s.admissionNo === updatedStudent.admissionNo);
+        return isMatch ? { ...s, ...updatedStudent } : s;
+      })
+    );
+
+    setSelectedStudentForProfile(prev => ({ ...(prev || {}), ...updatedStudent }));
+
+    // 2. Persist to Express backend / PostgreSQL
+    try {
+      const studentId = updatedStudent.id || updatedStudent.studentId;
+      const res = await fetch(`/api/students/${studentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedStudent)
+      });
+      const result = await res.json();
+      if (result && result.success && result.student) {
+        setInstituteData(prev => {
+          const freshStudents = (prev.students || []).map(s => {
+            const isMatch =
+              (s.id != null && result.student.id != null && String(s.id) === String(result.student.id)) ||
+              (s.studentId && result.student.studentId && s.studentId === result.student.studentId) ||
+              (s.admissionNo && result.student.admissionNo && s.admissionNo === result.student.admissionNo);
+            return isMatch ? { ...s, ...result.student } : s;
+          });
+          return {
+            ...prev,
+            students: freshStudents
+          };
+        });
+        setSelectedStudentForProfile(prev => ({ ...(prev || {}), ...result.student }));
+        // Refresh dashboard stats so pipeline, counts, and charts stay in perfect sync
+        fetchDashboardData();
+      } else if (result && !result.success) {
+        throw new Error(result.error || 'Server validation failed');
+      }
+    } catch (err) {
+      console.warn('Backend update error, persisted in local state:', err);
+      if (err.message && !err.message.includes('fetch')) {
+        throw err;
+      }
+    }
+  };
+
+  const handleOpenStudentProfile = (studentOrAdmission) => {
+    if (!studentOrAdmission) return;
+    const cleanP = (studentOrAdmission.phone || '').replace(/\D/g, '').slice(-10);
+    const match = (instituteData.students || []).find(s => {
+      const matchId = studentOrAdmission.id != null && s.id != null && String(s.id) === String(studentOrAdmission.id);
+      const matchCode = studentOrAdmission.studentId && s.studentId === studentOrAdmission.studentId;
+      const matchAdm = studentOrAdmission.admissionNo && (s.admissionNo === studentOrAdmission.admissionNo || s.studentId === studentOrAdmission.admissionNo);
+      const matchPhone = cleanP && s.phone && String(s.phone).replace(/\D/g, '').slice(-10) === cleanP;
+      const matchName = (studentOrAdmission.studentName || studentOrAdmission.name) && s.name && s.name.toLowerCase() === (studentOrAdmission.studentName || studentOrAdmission.name).toLowerCase();
+      return matchId || matchCode || matchAdm || matchPhone || matchName;
+    });
+
+    const target = match || {
+      id: studentOrAdmission.id,
+      studentId: studentOrAdmission.studentId || `STU-${String(studentOrAdmission.admissionNo || '').replace(/\D/g, '') || 'NEW'}`,
+      admissionNo: studentOrAdmission.admissionNo,
+      name: studentOrAdmission.studentName || studentOrAdmission.name,
+      phone: studentOrAdmission.phone,
+      email: studentOrAdmission.email,
+      guardian: studentOrAdmission.guardianName || studentOrAdmission.guardian,
+      guardianPhone: studentOrAdmission.guardianPhone,
+      address: studentOrAdmission.address,
+      course: studentOrAdmission.course,
+      batch: studentOrAdmission.batch,
+      feeTotal: studentOrAdmission.totalCourseFee || studentOrAdmission.feeTotal || 0,
+      feePaid: studentOrAdmission.admissionFeePaid || studentOrAdmission.feePaid || 0,
+      feeDue: studentOrAdmission.feeDue || 0,
+      status: studentOrAdmission.status || 'Active'
+    };
+
+    setSelectedStudentForProfile(target);
+    setActiveTab('students');
+  };
+
   // Render Module Content
   const renderContent = () => {
     switch (activeTab) {
@@ -857,6 +981,7 @@ export default function App() {
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onNavigate={(tab) => setActiveTab(tab)}
             onConvertToAdmission={handleConvertToAdmission}
+            onOpenStudentProfile={handleOpenStudentProfile}
           />
         );
       case "leads":
@@ -888,6 +1013,7 @@ export default function App() {
             onOpenNewAdmission={() => { setLeadForConversion(null); setIsAdmissionModalOpen(true); }}
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onUpdateAdmissionStatus={handleUpdateAdmissionStatus}
+            onOpenStudentProfile={handleOpenStudentProfile}
             onDeleteAdmission={handleDeleteAdmission}
           />
         );
@@ -925,13 +1051,28 @@ export default function App() {
             onTrainerDeleted={handleTrainerDeleted}
           />
         );
-      case 'students':
-        if (selectedStudentForProfile) {
+      case 'students': {
+        const activeStudent = selectedStudentForProfile ? (
+          (instituteData.students || []).find(s => {
+            const cleanP = (selectedStudentForProfile.phone || '').replace(/\D/g, '').slice(-10);
+            return (
+              (s.id != null && selectedStudentForProfile.id != null && String(s.id) === String(selectedStudentForProfile.id)) ||
+              (s.studentId && selectedStudentForProfile.studentId && s.studentId === selectedStudentForProfile.studentId) ||
+              (s.admissionNo && selectedStudentForProfile.admissionNo && s.admissionNo === selectedStudentForProfile.admissionNo) ||
+              (cleanP && s.phone && String(s.phone).replace(/\D/g, '').slice(-10) === cleanP)
+            );
+          }) || selectedStudentForProfile
+        ) : null;
+
+        if (activeStudent) {
           return (
             <StudentProfile
-              student={selectedStudentForProfile}
+              student={activeStudent}
               onBack={() => setSelectedStudentForProfile(null)}
               onOpenPayment={() => setIsPaymentModalOpen(true)}
+              onUpdateStudent={handleStudentUpdated}
+              courses={instituteData.courses}
+              batches={instituteData.batches}
             />
           );
         }
@@ -940,9 +1081,11 @@ export default function App() {
             students={instituteData.students}
             onOpenStudentID={(student) => setSelectedStudentID(student)}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
-            onOpenStudentProfile={(student) => setSelectedStudentForProfile(student)}
+            onOpenStudentProfile={handleOpenStudentProfile}
+            onEditStudent={handleOpenStudentProfile}
           />
         );
+      }
       case 'fees':
         return (
           <FeesModule
@@ -973,6 +1116,7 @@ export default function App() {
             onOpenConfirmationLetter={(adm) => setConfirmedAdmissionLetter(adm)}
             onNavigate={(tab) => setActiveTab(tab)}
             onConvertToAdmission={handleConvertToAdmission}
+            onOpenStudentProfile={handleOpenStudentProfile}
           />
         );
     }

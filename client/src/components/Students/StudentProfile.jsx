@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   UserRound,
@@ -16,18 +16,55 @@ import {
   MessageSquare,
   ClipboardList,
   CheckCircle2,
+  Pencil,
 } from "lucide-react";
+import EditStudentModal from "./EditStudentModal";
 
-export default function StudentProfile({ student, onBack, onOpenPayment }) {
+export default function StudentProfile({
+  student: initialStudent,
+  onBack,
+  onOpenPayment,
+  onUpdateStudent,
+  courses = [],
+  batches = [],
+}) {
   const [activeSection, setActiveSection] = useState("Overview");
+  const [student, setStudent] = useState(initialStudent);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    setStudent(initialStudent);
+  }, [initialStudent]);
 
   if (!student) return null;
+
+  const handleStudentSaved = async (updatedData) => {
+    setStudent(updatedData);
+    if (onUpdateStudent) {
+      await onUpdateStudent(updatedData);
+    }
+  };
 
   // Helper for fields that may not exist yet
   const showValue = (value) => {
     return value !== undefined && value !== null && value !== "" ?
         value
       : "Not added";
+  };
+
+  const formatDob = (val) => {
+    if (!val) return "Not added";
+    try {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      }
+    } catch {}
+    return String(val).split("T")[0] || val;
   };
 
   // Student financial information
@@ -86,9 +123,20 @@ export default function StudentProfile({ student, onBack, onOpenPayment }) {
     </div>
   );
 
-  const SectionCard = ({ title, children }) => (
+  const SectionCard = ({ title, children, onEdit }) => (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-      <h3 className="text-sm font-bold text-slate-900 mb-3">{title}</h3>
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Edit</span>
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -139,20 +187,26 @@ export default function StudentProfile({ student, onBack, onOpenPayment }) {
 
       {/* Profile Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <SectionCard title="Personal Information">
+        <SectionCard
+          title="Personal Information"
+          onEdit={() => setIsEditModalOpen(true)}
+        >
           <DetailItem label="Full Name" value={student.name} icon={User} />
           <DetailItem label="Email Address" value={student.email} icon={Mail} />
           <DetailItem label="Phone Number" value={student.phone} icon={Phone} />
           <DetailItem
             label="Date of Birth"
-            value={student.dob || student.dateOfBirth}
+            value={formatDob(student.dob || student.dateOfBirth)}
             icon={Calendar}
           />
           <DetailItem label="Gender" value={student.gender} icon={UserRound} />
           <DetailItem label="Address" value={student.address} icon={MapPin} />
         </SectionCard>
 
-        <SectionCard title="Education Information">
+        <SectionCard
+          title="Education Information"
+          onEdit={() => setIsEditModalOpen(true)}
+        >
           <DetailItem
             label="Qualification"
             value={student.qualification}
@@ -243,14 +297,17 @@ export default function StudentProfile({ student, onBack, onOpenPayment }) {
   );
 
   const renderPersonal = () => (
-    <SectionCard title="Personal Information">
+    <SectionCard
+      title="Personal Information"
+      onEdit={() => setIsEditModalOpen(true)}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
         <DetailItem label="Student Name" value={student.name} />
         <DetailItem label="Student ID" value={student.studentId} />
         <DetailItem label="Admission Number" value={student.admissionNo} />
         <DetailItem
           label="Date of Birth"
-          value={student.dob || student.dateOfBirth}
+          value={formatDob(student.dob || student.dateOfBirth)}
         />
         <DetailItem label="Gender" value={student.gender} />
         <DetailItem label="Phone" value={student.phone} />
@@ -263,11 +320,16 @@ export default function StudentProfile({ student, onBack, onOpenPayment }) {
   );
 
   const renderEducation = () => (
-    <SectionCard title="Education Information">
+    <SectionCard
+      title="Education Information"
+      onEdit={() => setIsEditModalOpen(true)}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
         <DetailItem label="Qualification" value={student.qualification} />
         <DetailItem label="College / Institution" value={student.college} />
         <DetailItem label="Passing Year" value={student.passingYear} />
+        <DetailItem label="Guardian Name" value={student.guardian} />
+        <DetailItem label="Guardian Phone" value={student.guardianPhone} />
       </div>
     </SectionCard>
   );
@@ -444,6 +506,15 @@ export default function StudentProfile({ student, onBack, onOpenPayment }) {
             >
               {studentStatus}
             </span>
+
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
+              title="Edit Student Profile"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Details</span>
+            </button>
           </div>
         </div>
       </div>
@@ -472,6 +543,16 @@ export default function StudentProfile({ student, onBack, onOpenPayment }) {
 
       {/* Selected Section */}
       {renderSection()}
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        student={student}
+        onSave={handleStudentSaved}
+        courses={courses}
+        batches={batches}
+      />
     </div>
   );
 }
