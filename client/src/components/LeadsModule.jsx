@@ -731,29 +731,29 @@ export default function LeadsModule({
       {/* 5. Professional Leads Table View */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse table-fixed">
+          <table className="w-full min-w-[1240px] text-left text-xs border-collapse table-fixed">
             <colgroup>
-              <col style={{ width: '16%' }} className="w-[16%]" /> {/* 1. Lead Information */}
-              <col style={{ width: '12%' }} className="w-[12%]" /> {/* 2. Contact & Actions */}
-              <col style={{ width: '10%' }} className="w-[10%]" /> {/* 3. Interested Course */}
-              <col style={{ width: '9%' }} className="w-[9%]" />   {/* 4. Source */}
-              <col style={{ width: '11%' }} className="w-[11%]" /> {/* 5. Assigned Counsellor */}
-              <col style={{ width: '8%' }} className="w-[8%]" />   {/* 6. Priority */}
-              <col style={{ width: '11%' }} className="w-[11%]" /> {/* 7. Next Follow-Up */}
-              <col style={{ width: '9%' }} className="w-[9%]" />   {/* 8. Lead Status */}
-              <col style={{ width: '14%' }} className="w-[14%]" /> {/* 9. Actions */}
+              <col style={{ width: '16%' }} className="w-[16%] min-w-[185px]" /> {/* 1. Lead Information */}
+              <col style={{ width: '12%' }} className="w-[12%] min-w-[140px]" /> {/* 2. Contact & Actions */}
+              <col style={{ width: '12%' }} className="w-[12%] min-w-[140px]" /> {/* 3. Interested Course */}
+              <col style={{ width: '9%' }} className="w-[9%] min-w-[105px]" />   {/* 4. Source */}
+              <col style={{ width: '13%' }} className="w-[13%] min-w-[150px]" /> {/* 5. Assigned Counsellor */}
+              <col style={{ width: '8%' }} className="w-[8%] min-w-[95px]" />   {/* 6. Priority */}
+              <col style={{ width: '11%' }} className="w-[11%] min-w-[130px]" /> {/* 7. Next Follow-Up */}
+              <col style={{ width: '9%' }} className="w-[9%] min-w-[110px]" />   {/* 8. Lead Status */}
+              <col style={{ width: '10%' }} className="w-[10%] min-w-[135px]" /> {/* 9. Actions */}
             </colgroup>
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 select-none">
               <tr>
-                <th style={{ width: '16%' }} className="pl-4 pr-3 py-3 text-left whitespace-nowrap">Lead Information</th>
-                <th style={{ width: '12%' }} className="px-3 py-3 text-left whitespace-nowrap">Contact & Actions</th>
-                <th style={{ width: '10%' }} className="px-3 py-3 text-left whitespace-nowrap">Interested Course</th>
-                <th style={{ width: '9%' }} className="px-3 py-3 text-left whitespace-nowrap">Source</th>
-                <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Assigned Counsellor</th>
-                <th style={{ width: '8%' }} className="px-3 py-3 text-left whitespace-nowrap">Priority</th>
-                <th style={{ width: '11%' }} className="px-3 py-3 text-left whitespace-nowrap">Next Follow-Up</th>
-                <th style={{ width: '9%' }} className="px-3 py-3 text-left whitespace-nowrap">Lead Status</th>
-                <th style={{ width: '14%' }} className="pl-3 pr-4 py-3 text-center whitespace-nowrap">Actions</th>
+                <th className="pl-5 pr-3.5 py-3.5 text-left whitespace-nowrap">Lead Information</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Contact & Actions</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Interested Course</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Source</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Assigned Counsellor</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Priority</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Next Follow-Up</th>
+                <th className="px-3.5 py-3.5 text-left whitespace-nowrap">Lead Status</th>
+                <th className="pl-3.5 pr-5 py-3.5 text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -821,7 +821,7 @@ export default function LeadsModule({
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
                       {/* 1. Lead Information */}
-                      <td className="pl-4 pr-3 py-3 align-middle overflow-hidden">
+                      <td className="pl-5 pr-3.5 py-3.5 align-middle overflow-hidden">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                             {(lead.name || 'L').charAt(0).toUpperCase()}
@@ -838,18 +838,18 @@ export default function LeadsModule({
                             {(lead.city || lead.qualification || lead.college) && (
                               <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 truncate">
                                 {lead.city && (
-                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-600 shrink-0">
-                                    <MapPin className="w-2.5 h-2.5 text-slate-400" />
-                                    <span>{lead.city}</span>
-                                  </span>
+                                   <span className="inline-flex items-center gap-0.5 font-medium text-slate-600 shrink-0">
+                                     <MapPin className="w-2.5 h-2.5 text-slate-400" />
+                                     <span>{lead.city}</span>
+                                   </span>
                                 )}
                                 {(lead.qualification || lead.college) && (
-                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-500 truncate" title={[lead.qualification, lead.college].filter(Boolean).join(' • ')}>
-                                    <GraduationCap className="w-3 h-3 text-slate-400 shrink-0" />
-                                    <span className="truncate">
-                                      {[lead.qualification, lead.college].filter(Boolean).join(' • ')}
-                                    </span>
-                                  </span>
+                                   <span className="inline-flex items-center gap-0.5 font-medium text-slate-500 truncate" title={[lead.qualification, lead.college].filter(Boolean).join(' • ')}>
+                                     <GraduationCap className="w-3 h-3 text-slate-400 shrink-0" />
+                                     <span className="truncate">
+                                       {[lead.qualification, lead.college].filter(Boolean).join(' • ')}
+                                     </span>
+                                   </span>
                                 )}
                               </div>
                             )}
@@ -858,7 +858,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 2. Phone & Quick Connect */}
-                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
                         <div className="font-mono text-slate-800 font-bold text-xs tracking-tight">
                           {formatPhoneNumber(lead.phone)}
                         </div>
@@ -891,7 +891,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 3. Interested Course */}
-                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50/80 text-indigo-900 border border-indigo-100 max-w-full truncate shadow-2xs" title={lead.course}>
                           <BookOpen className="w-3 h-3 text-indigo-600 shrink-0" />
                           <span className="truncate">{lead.course}</span>
@@ -899,7 +899,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 4. Lead Source */}
-                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
                         {lead.source?.toLowerCase().includes('qr') ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs max-w-full" title={lead.source}>
                             <QrCode className="w-3 h-3 text-indigo-600 shrink-0" />
@@ -914,7 +914,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 5. Assigned Counsellor */}
-                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border max-w-full truncate ${
                           lead.counselor && lead.counselor !== 'Unassigned'
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
@@ -926,7 +926,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 6. Lead Priority */}
-                      <td className="px-3 py-3 align-middle text-left whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle text-left whitespace-nowrap overflow-hidden">
                         <select
                           value={lead.priority || 'Warm'}
                           onChange={(e) => {
@@ -951,7 +951,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 7. Next Follow-up Date */}
-                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
                         {lead.nextFollowUpDate ? (
                           <div className="space-y-0.5">
                             <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border ${fuStatus.badgeClass}`}>
@@ -973,7 +973,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 8. Lead Status (Pipeline) */}
-                      <td className="px-3 py-3 align-middle whitespace-nowrap overflow-hidden">
+                      <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
                         <select
                           value={lead.status}
                           onChange={(e) => onUpdateLeadStatus(lead.id, e.target.value)}
@@ -986,7 +986,7 @@ export default function LeadsModule({
                       </td>
 
                       {/* 9. Actions: Convert to Admission, Edit, Delete */}
-                      <td className="pl-3 pr-4 py-3 align-middle text-center whitespace-nowrap">
+                      <td className="pl-3.5 pr-5 py-3.5 align-middle text-center whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5 justify-center w-full">
                           {/* Convert to Admission */}
                           <button
