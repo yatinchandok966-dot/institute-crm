@@ -10,7 +10,8 @@ import {
   Users,
   AlertCircle,
   MessageCircle,
-  Clock
+  Clock,
+  PieChart
 } from 'lucide-react';
 
 export default function Dashboard({
@@ -34,6 +35,29 @@ export default function Dashboard({
   const todayFollowUps = leads.filter(lead => lead.followUp && lead.followUp.includes('20 Nov'));
   const defaulterStudents = students.filter(s => s.feeStatus === 'Overdue' || s.feeDue > 0);
   const upcomingBatches = batches.filter(b => b.status === 'Upcoming' || b.status === 'Ongoing');
+
+  // Calculate Course-wise Admissions for Donut Chart
+  const courseAdmissionsData = courses.slice(0, 4).map((course, index) => {
+    const actualCount = admissions.filter(a => a.course === course.name).length;
+    return { 
+      name: course.name, 
+      count: actualCount,
+      color: ['#6366f1', '#10b981', '#f59e0b', '#ec4899'][index % 4] 
+    };
+  });
+  
+  const totalAdmissionsChart = courseAdmissionsData.reduce((acc, curr) => acc + curr.count, 0);
+  let cumulativePercent = 0;
+  
+  // Create the CSS gradient for the Donut Chart
+  const gradientString = totalAdmissionsChart > 0
+    ? courseAdmissionsData.map(item => {
+        const percent = (item.count / totalAdmissionsChart) * 100;
+        const start = cumulativePercent;
+        cumulativePercent += percent;
+        return `${item.color} ${start}% ${cumulativePercent}%`;
+      }).join(', ')
+    : '#e2e8f0 0% 100%';
 
   const maxCollected = Math.max(...revenueTimeline.map(r => Math.max(r.collected, r.target)), 700000);
 
@@ -216,32 +240,46 @@ export default function Dashboard({
 
       {/* ACTIONABLE WIDGETS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Fee Defaulter Alert */}
-        <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 overflow-hidden border border-rose-100">
-          <div className="p-5 border-b border-rose-100/50 bg-rose-50/30 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-rose-100 rounded-lg">
-                 <AlertCircle className="w-4 h-4 text-rose-600" />
-              </div>
-              <h3 className="font-bold text-slate-900">Fee Defaulter Alert</h3>
+        {/* Colorful Donut Chart - Course-wise Admissions */}
+        <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 p-6 border border-slate-100">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="font-bold text-slate-900">Course-wise Admissions</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Distribution of enrolled students</p>
             </div>
-            <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full uppercase tracking-wider">Action Required</span>
+            <div className="p-2 bg-indigo-50 rounded-lg">
+              <PieChart className="w-5 h-5 text-indigo-600" />
+            </div>
           </div>
-          <div className="divide-y divide-slate-100">
-            {defaulterStudents.map((student) => (
-              <div key={student.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{student.name}</h4>
-                  <p className="text-slate-500 text-xs mt-0.5">{student.course}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-rose-600 text-sm">₹{student.feeDue.toLocaleString()} Due</p>
-                  <button className="text-xs text-indigo-600 font-bold hover:text-indigo-800 mt-1 flex items-center gap-1 justify-end">
-                    <MessageCircle className="w-3.5 h-3.5" /> Send Reminder
-                  </button>
-                </div>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+            {/* The Donut Chart */}
+            <div 
+              className="relative w-40 h-40 rounded-full flex items-center justify-center shadow-inner" 
+              style={{ background: `conic-gradient(${gradientString})` }}
+            >
+              {/* Inner white circle for Donut effect */}
+              <div className="absolute w-28 h-28 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
+                <span className="text-2xl font-black text-slate-800">{admissions.length}</span>
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</span>
               </div>
-            ))}
+            </div>
+
+            {/* Legend */}
+            <div className="space-y-3 flex-1 w-full">
+              {courseAdmissionsData.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }}></span>
+                    <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">{item.name}</span>
+                  </div>
+                  <span className="text-xs font-black text-slate-900">{item.count}</span>
+                </div>
+              ))}
+              {courseAdmissionsData.length === 0 && (
+                <p className="text-xs text-slate-400 font-medium italic">No courses added yet</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -259,18 +297,28 @@ export default function Dashboard({
           <div className="divide-y divide-slate-100">
             {todayFollowUps.map((lead) => (
               <div key={lead.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{lead.name}</h4>
-                  <p className="text-slate-500 text-xs mt-0.5">{lead.course}</p>
-                  <p className="text-indigo-600 font-bold text-[11px] mt-1.5 flex items-center gap-1"><Clock className="w-3 h-3"/>{lead.followUp}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-700 font-bold text-sm border border-indigo-200">
+                    {lead.name ? lead.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{lead.name}</h4>
+                    <p className="text-slate-500 text-[11px] mt-0.5 truncate max-w-[150px]">{lead.course}</p>
+                    <p className="text-indigo-600 font-bold text-[10px] mt-1 flex items-center gap-1"><Clock className="w-3 h-3"/>{lead.followUp}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <button onClick={() => onConvertToAdmission(lead)} className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition-colors">
+                  <button onClick={() => onConvertToAdmission(lead)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
                     Convert
                   </button>
                 </div>
               </div>
             ))}
+            {todayFollowUps.length === 0 && (
+              <div className="p-8 text-center text-slate-500 text-sm font-medium">
+                No follow-ups scheduled for today.
+              </div>
+            )}
           </div>
         </div>
       </div>
