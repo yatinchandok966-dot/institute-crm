@@ -125,7 +125,7 @@ export const initialInstituteData = {
     feeCollectionRate: '0%'
   },
   revenueTimeline: [],
-  courses: OFFICIAL_COURSES,
+  courses: [],
   batches: [],
   recentLeads: [],
   admissions: [],

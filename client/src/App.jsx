@@ -25,7 +25,7 @@ import ShareQRModal from "./components/ShareQRModal";
 import PublicInquiryForm from "./components/PublicInquiryForm";
 
 // Deepak : Change mock data to original data
-import { initialInstituteData, OFFICIAL_COURSES } from "./data/constants";
+import { initialInstituteData } from "./data/constants";
 
 const STORAGE_KEY = 'edupulse_institute_crm_v2';
 const TAB_STORAGE_KEY = 'edupulse_crm_active_tab';
@@ -82,10 +82,9 @@ export default function App() {
           let initialCoursesList = [];
           if (existingCourses.length > 0) {
             initialCoursesList = existingCourses.filter(c => !isDeleted(c));
-          } else if (deletedSet.size > 0) {
-            initialCoursesList = [];
           } else {
-            initialCoursesList = OFFICIAL_COURSES;
+            // No local courses saved — start empty; server will populate via fetchDashboardData
+            initialCoursesList = [];
           }
 
           // Fix QR source for Riya if currently Website or missing, and deduplicate by phone/id
@@ -114,7 +113,7 @@ export default function App() {
             admissions: Array.isArray(parsed.admissions) ? parsed.admissions : [],
             students: Array.isArray(parsed.students) ? parsed.students : [],
             courses: initialCoursesList,
-            deletedCourseIds: Array.from(deletedCourseIds),
+            deletedCourseIds: rawDeleted,
             batches: Array.isArray(parsed.batches) ? parsed.batches : initialInstituteData.batches,
             feeTransactions: Array.isArray(parsed.feeTransactions) ? parsed.feeTransactions : [],
             revenueTimeline: Array.isArray(parsed.revenueTimeline) ? parsed.revenueTimeline : [],
