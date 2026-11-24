@@ -304,8 +304,8 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Clean Grouped Vertical Bars with Permanent Data Labels */}
-            <div className="h-56 w-full flex items-end justify-between gap-4 pt-8 px-2">
+            {/* Clean Grouped Vertical Bars without top numbers */}
+            <div className="h-56 w-full flex items-end justify-between gap-4 pt-6 px-2">
               {enrollmentTrend.map((item, idx) => {
                 const leadsHeight = Math.round((item.leads / maxBarVal) * 100);
                 const admHeight = Math.round((item.admissions / maxBarVal) * 100);
@@ -319,26 +319,16 @@ export default function Dashboard({
                   >
                     <div className="w-full flex items-end justify-center gap-1.5 h-full">
                       {/* New Leads Bar */}
-                      <div className="w-1/2 flex flex-col items-center justify-end h-full">
-                        <span className="text-[11px] font-extrabold text-violet-700 mb-1">
-                          {item.leads}
-                        </span>
-                        <div
-                          className="w-full bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-500 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
-                          style={{ height: `${Math.max(leadsHeight, 10)}%` }}
-                        ></div>
-                      </div>
+                      <div
+                        className="w-1/2 bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-500 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
+                        style={{ height: `${Math.max(leadsHeight, 10)}%` }}
+                      ></div>
 
                       {/* Confirmed Admissions Bar */}
-                      <div className="w-1/2 flex flex-col items-center justify-end h-full">
-                        <span className="text-[11px] font-extrabold text-emerald-700 mb-1">
-                          {item.admissions}
-                        </span>
-                        <div
-                          className="w-full bg-gradient-to-t from-emerald-600 via-emerald-500 to-cyan-400 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
-                          style={{ height: `${Math.max(admHeight, 10)}%` }}
-                        ></div>
-                      </div>
+                      <div
+                        className="w-1/2 bg-gradient-to-t from-emerald-600 via-emerald-500 to-cyan-400 rounded-t-md shadow-sm transition-all duration-300 group-hover:brightness-110"
+                        style={{ height: `${Math.max(admHeight, 10)}%` }}
+                      ></div>
                     </div>
 
                     <span className="text-xs font-bold text-slate-700 mt-2">
