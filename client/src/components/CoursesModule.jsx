@@ -17,8 +17,39 @@ import {
   Layers
 } from 'lucide-react';
 
+// Helper function to match courses across variants, acronyms, and codes
+export const isMatchCourse = (studentCourseOrAdm, course) => {
+  if (!studentCourseOrAdm || !course) return false;
+  const target = String(studentCourseOrAdm).trim().toLowerCase();
+  const cName = String(course.name || '').trim().toLowerCase();
+  const cCode = String(course.code || '').trim().toLowerCase();
+
+  if (!target || (!cName && !cCode)) return false;
+  if (target === cName || target === cCode) return true;
+
+  const parenMatch = cName.match(/\(([^)]+)\)/);
+  if (parenMatch && parenMatch[1].trim().toLowerCase() === target) {
+    return true;
+  }
+
+  if (target.length >= 3 && (cName.includes(target) || target.includes(cName))) {
+    return true;
+  }
+
+  const targetTokens = target.split(/[\s,()/-]+/).filter(t => t.length >= 3);
+  const nameTokens = cName.split(/[\s,()/-]+/).filter(t => t.length >= 3);
+  if (targetTokens.some(t => nameTokens.includes(t))) {
+    return true;
+  }
+
+  return false;
+};
+
 export default function CoursesModule({
   courses = [],
+  admissions = [],
+  students = [],
+  trainers = [],
   onOpenNewCourse,
   onEditCourse,
   onDeleteCourse
@@ -26,6 +57,42 @@ export default function CoursesModule({
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseForDetails, setSelectedCourseForDetails] = useState(null);
+
+  const getEnrolledCount = (course) => {
+    if (!course) return 0;
+    const uniqueKeys = new Set();
+
+    // 1. Check admissions pipeline (confirmed or registered admissions)
+    (admissions || []).forEach(a => {
+      if (a && a.status !== 'Cancelled' && a.status !== 'Rejected' && isMatchCourse(a.course, course)) {
+        const key = a.admissionNo || a.admission_no || a.phone || a.email || a.studentName || String(a.id);
+        uniqueKeys.add(key);
+      }
+    });
+
+    // 2. Check students directory
+    (students || []).forEach(s => {
+      if (s && s.status !== 'Inactive' && isMatchCourse(s.course, course)) {
+        const key = s.admissionNo || s.admission_no || s.studentId || s.phone || s.email || s.name || String(s.id);
+        uniqueKeys.add(key);
+      }
+    });
+
+    return Math.max(course.activeStudents || 0, uniqueKeys.size);
+  };
+
+  const getCourseTrainer = (course) => {
+    if (!course) return 'Unassigned';
+    if (course.trainerName && course.trainerName !== 'Unassigned') {
+      return course.trainerName;
+    }
+    const matchingTrainer = (trainers || []).find(t => {
+      if (!t) return false;
+      const assigned = Array.isArray(t.assignedCourses) ? t.assignedCourses : [];
+      return assigned.some(ac => isMatchCourse(ac, course));
+    });
+    return matchingTrainer?.name || course.trainerName || 'Unassigned';
+  };
 
   const categories = ['All', 'Software Development', 'Data & AI', 'Design', 'Marketing', 'Cyber Security'];
 
@@ -144,7 +211,7 @@ export default function CoursesModule({
                     </h3>
                     <p className="text-[11px] text-indigo-600 mt-1 flex items-center gap-1 font-semibold">
                       <User className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Trainer: {course.trainerName || 'Unassigned'}</span>
+                      <span>Trainer: {getCourseTrainer(course)}</span>
                     </p>
                   </div>
 
@@ -156,7 +223,7 @@ export default function CoursesModule({
                     </div>
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Students</span>
-                      <p className="font-bold text-indigo-700 mt-0.5">{course.activeStudents || 0}</p>
+                      <p className="font-bold text-indigo-700 mt-0.5">{getEnrolledCount(course)}</p>
                     </div>
                   </div>
                 </div>
@@ -260,7 +327,7 @@ export default function CoursesModule({
                     <span>Students</span>
                   </div>
                   <p className="text-base font-bold text-indigo-700 mt-1">
-                    {selectedCourseForDetails.activeStudents || 0} Enrolled
+                    {getEnrolledCount(selectedCourseForDetails)} Enrolled
                   </p>
                 </div>
 
@@ -269,8 +336,8 @@ export default function CoursesModule({
                     <User className="w-3.5 h-3.5 text-amber-600" />
                     <span>Trainer</span>
                   </div>
-                  <p className="text-xs font-bold text-slate-900 mt-1 truncate" title={selectedCourseForDetails.trainerName}>
-                    {selectedCourseForDetails.trainerName || 'Unassigned'}
+                  <p className="text-xs font-bold text-slate-900 mt-1 truncate" title={getCourseTrainer(selectedCourseForDetails)}>
+                    {getCourseTrainer(selectedCourseForDetails)}
                   </p>
                 </div>
               </div>

@@ -1,9 +1,34 @@
 import React, { useState } from 'react';
 import { CalendarDays, Plus, Clock, Search, MapPin } from 'lucide-react';
 
-export default function BatchesModule({ batches = [], courses = [], onOpenNewBatch }) {
+export default function BatchesModule({
+  batches = [],
+  courses = [],
+  admissions = [],
+  students = [],
+  onOpenNewBatch
+}) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const getBatchEnrolled = (batch) => {
+    if (!batch) return 0;
+    const bName = (batch.name || '').trim().toLowerCase();
+    const uniqueKeys = new Set();
+    (admissions || []).forEach(a => {
+      const aBatch = (a.batch || '').trim().toLowerCase();
+      if (aBatch && (aBatch === bName || bName.includes(aBatch) || aBatch.includes(bName))) {
+        uniqueKeys.add(a.admissionNo || a.admission_no || a.phone || a.studentName || String(a.id));
+      }
+    });
+    (students || []).forEach(s => {
+      const sBatch = (s.batch || '').trim().toLowerCase();
+      if (sBatch && (sBatch === bName || bName.includes(sBatch) || sBatch.includes(bName))) {
+        uniqueKeys.add(s.admissionNo || s.admission_no || s.studentId || s.phone || s.name || String(s.id));
+      }
+    });
+    return Math.max(batch.enrolled || 0, uniqueKeys.size);
+  };
 
   const filteredBatches = batches.filter(b => {
     const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
@@ -82,8 +107,9 @@ export default function BatchesModule({ batches = [], courses = [], onOpenNewBat
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBatches.map(batch => {
-            const fillPercentage = Math.round(((batch.enrolled || 0) / (batch.capacity || 1)) * 100);
-            const seatsLeft = (batch.capacity || 25) - (batch.enrolled || 0);
+            const currentEnrolled = getBatchEnrolled(batch);
+            const fillPercentage = Math.round((currentEnrolled / (batch.capacity || 1)) * 100);
+            const seatsLeft = (batch.capacity || 25) - currentEnrolled;
 
             return (
               <div
@@ -135,7 +161,7 @@ export default function BatchesModule({ batches = [], courses = [], onOpenNewBat
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-slate-500">Seat Capacity:</span>
                     <span className="text-slate-900">
-                      {batch.enrolled || 0} / {batch.capacity || 25} ({fillPercentage}%)
+                      {currentEnrolled} / {batch.capacity || 25} ({fillPercentage}%)
                     </span>
                   </div>
 

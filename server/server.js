@@ -129,6 +129,34 @@ const syncAdmissionsAndStudents = async () => {
   }
 };
 
+// Helper function to match courses across variants, acronyms, and codes
+function isMatchCourse(targetCourse, course) {
+  if (!targetCourse || !course) return false;
+  const target = String(targetCourse).trim().toLowerCase();
+  const cName = String(course.name || '').trim().toLowerCase();
+  const cCode = String(course.code || '').trim().toLowerCase();
+
+  if (!target || (!cName && !cCode)) return false;
+  if (target === cName || target === cCode) return true;
+
+  const parenMatch = cName.match(/\(([^)]+)\)/);
+  if (parenMatch && parenMatch[1].trim().toLowerCase() === target) {
+    return true;
+  }
+
+  if (target.length >= 3 && (cName.includes(target) || target.includes(cName))) {
+    return true;
+  }
+
+  const targetTokens = target.split(/[\s,()/-]+/).filter(t => t.length >= 3);
+  const nameTokens = cName.split(/[\s,()/-]+/).filter(t => t.length >= 3);
+  if (targetTokens.some(t => nameTokens.includes(t))) {
+    return true;
+  }
+
+  return false;
+}
+
 // Comprehensive Dashboard stats endpoint (100% Direct from PostgreSQL)
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
@@ -173,16 +201,24 @@ app.get('/api/dashboard/stats', async (req, res) => {
       pool.query('SELECT * FROM trainers ORDER BY id ASC')
     ]);
 
-    const courses = coursesRes.rows.map(r => ({
-      id: r.id,
-      name: r.name,
-      code: r.code,
-      category: r.category,
-      durationWeeks: Number(r.duration_weeks),
-      fee: Number(r.fee_amount),
-      description: r.description || '',
-      activeStudents: studentsRes.rows.filter(s => s.course === r.name).length
-    }));
+    const courses = coursesRes.rows.map(r => {
+      const matchStu = studentsRes.rows.filter(s => isMatchCourse(s.course, r));
+      const matchAdm = admissionsRes.rows.filter(a => isMatchCourse(a.course, r) && a.status !== 'Cancelled' && a.status !== 'Rejected');
+      const uniqueKeys = new Set();
+      matchStu.forEach(s => uniqueKeys.add(s.admissionNo || s.phone || s.studentId || String(s.id)));
+      matchAdm.forEach(a => uniqueKeys.add(a.admission_no || a.phone || a.student_name || String(a.id)));
+
+      return {
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        category: r.category,
+        durationWeeks: Number(r.duration_weeks),
+        fee: Number(r.fee_amount),
+        description: r.description || '',
+        activeStudents: uniqueKeys.size
+      };
+    });
 
     const batches = batchesRes.rows.map(r => ({
       id: r.id,
@@ -520,16 +556,37 @@ app.post('/api/leads/:id/calls', async (req, res) => {
 // ==========================================
 app.get('/api/courses', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM courses ORDER BY id ASC');
-    const courses = result.rows.map(r => ({
-      id: r.id,
-      name: r.name,
-      code: r.code,
-      category: r.category,
-      durationWeeks: Number(r.duration_weeks),
-      fee: Number(r.fee_amount),
-      description: r.description || ''
-    }));
+    const [coursesRes, studentsRes, admissionsRes] = await Promise.all([
+      pool.query('SELECT * FROM courses ORDER BY id ASC'),
+      pool.query(`
+        SELECT s.id, s.student_id_code, s.admission_no, s.phone,
+               COALESCE(c.name, a.course) as course
+        FROM students s
+        LEFT JOIN enrollments e ON s.id = e.student_id
+        LEFT JOIN courses c ON e.course_id = c.id
+        LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
+      `),
+      pool.query('SELECT id, admission_no, phone, student_name, course, status FROM admissions')
+    ]);
+
+    const courses = coursesRes.rows.map(r => {
+      const matchStu = studentsRes.rows.filter(s => isMatchCourse(s.course, r));
+      const matchAdm = admissionsRes.rows.filter(a => isMatchCourse(a.course, r) && a.status !== 'Cancelled' && a.status !== 'Rejected');
+      const uniqueKeys = new Set();
+      matchStu.forEach(s => uniqueKeys.add(s.admission_no || s.phone || s.student_id_code || String(s.id)));
+      matchAdm.forEach(a => uniqueKeys.add(a.admission_no || a.phone || a.student_name || String(a.id)));
+
+      return {
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        category: r.category,
+        durationWeeks: Number(r.duration_weeks),
+        fee: Number(r.fee_amount),
+        description: r.description || '',
+        activeStudents: uniqueKeys.size
+      };
+    });
     res.json({ success: true, data: courses });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

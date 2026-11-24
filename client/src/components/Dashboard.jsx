@@ -401,8 +401,8 @@ export default function Dashboard({
             </div>
             <div className="mt-4 space-y-3">
               {courses.slice(0, 5).map((course, i) => {
-                const totalActive = courses.reduce((acc, c) => acc + c.activeStudents, 0);
-                const pct = Math.round((course.activeStudents / totalActive) * 100);
+                const totalActive = courses.reduce((acc, c) => acc + (c.activeStudents || 0), 0);
+                const pct = totalActive > 0 ? Math.round(((course.activeStudents || 0) / totalActive) * 100) : 0;
                 return (
                   <div key={course.id} className="space-y-1 text-xs">
                     <div className="flex justify-between font-semibold text-slate-800">

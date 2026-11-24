@@ -1101,6 +1101,9 @@ export default function App() {
         return (
           <CoursesModule
             courses={instituteData.courses}
+            admissions={instituteData.admissions}
+            students={instituteData.students}
+            trainers={instituteData.trainers}
             onOpenNewCourse={() => {
               setCourseForEdit(null);
               setIsCourseModalOpen(true);
@@ -1117,6 +1120,8 @@ export default function App() {
           <BatchesModule
             batches={instituteData.batches}
             courses={instituteData.courses}
+            admissions={instituteData.admissions}
+            students={instituteData.students}
             onOpenNewBatch={() => setIsBatchModalOpen(true)}
           />
         );
