@@ -896,13 +896,28 @@ export default function App() {
 
     // 2. Persist to Express backend / PostgreSQL
     try {
-      const studentId = updatedStudent.id || updatedStudent.studentId;
+      const studentId = updatedStudent.id || updatedStudent.studentId || updatedStudent.admissionNo;
       const res = await fetch(`/api/students/${studentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedStudent)
       });
-      const result = await res.json();
+
+      const contentType = res.headers.get('content-type') || '';
+      let result;
+      if (contentType.includes('application/json')) {
+        result = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.ok
+            ? 'Unexpected response from server'
+            : (text && text.length < 200 && !text.includes('<!DOCTYPE') && !text.includes('<html')
+                ? text
+                : 'Server is currently offline or unreachable. Please start the backend server.')
+        );
+      }
+
       if (result && result.success && result.student) {
         setInstituteData(prev => {
           const freshStudents = (prev.students || []).map(s => {
@@ -925,9 +940,7 @@ export default function App() {
       }
     } catch (err) {
       console.warn('Backend update error, persisted in local state:', err);
-      if (err.message && !err.message.includes('fetch')) {
-        throw err;
-      }
+      throw err;
     }
   };
 

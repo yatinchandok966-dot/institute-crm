@@ -1073,65 +1073,119 @@ app.put('/api/students/:id', async (req, res) => {
     const effectiveAdmissionNo = (admissionNo || '').trim() || null;
     const effectiveStatus = (status || 'Active').trim();
 
-    // Check if student exists by integer ID or student_id_code
-    let checkStu;
-    const isNumeric = /^\d+$/.test(paramId);
-    if (isNumeric) {
-      checkStu = await pool.query(
-        'SELECT * FROM students WHERE id = $1 OR student_id_code = $2',
-        [parseInt(paramId, 10), paramId]
-      );
-    } else {
-      checkStu = await pool.query(
-        'SELECT * FROM students WHERE student_id_code = $1',
-        [paramId]
-      );
+    // Check if student exists by integer ID, student_id_code, admission_no, or phone
+    let checkStu = { rows: [] };
+    const numId = Number(paramId);
+    const isValidInt = Number.isInteger(numId) && numId > 0 && numId <= 2147483647;
+
+    try {
+      if (isValidInt) {
+        checkStu = await pool.query(
+          'SELECT * FROM students WHERE id = $1 OR student_id_code = $2 OR admission_no = $2',
+          [numId, String(paramId)]
+        );
+      } else {
+        checkStu = await pool.query(
+          `SELECT * FROM students
+           WHERE student_id_code = $1
+              OR admission_no = $1
+              OR (phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)
+           LIMIT 1`,
+          [String(paramId), cleanPhone]
+        );
+      }
+
+      if (checkStu.rows.length === 0 && effectiveAdmissionNo) {
+        checkStu = await pool.query(
+          `SELECT * FROM students
+           WHERE admission_no = $1
+              OR (phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)
+           LIMIT 1`,
+          [effectiveAdmissionNo, cleanPhone]
+        );
+      }
+    } catch (queryErr) {
+      console.warn('Initial student search query error:', queryErr.message);
     }
+
+    let studentDbId;
+    let studentCode;
 
     if (checkStu.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Student record not found.' });
+      // Auto-insert student into PostgreSQL so changes definitely persist in database!
+      const stuCount = await pool.query('SELECT COUNT(*) FROM students').catch(() => ({ rows: [{ count: 0 }] }));
+      const seq = String(Number(stuCount.rows[0].count) + 1).padStart(4, '0');
+      studentCode = req.body.studentId || (String(paramId).startsWith('STU-') ? paramId : `STU-2026-${seq}`);
+
+      const insRes = await pool.query(
+        `INSERT INTO students (
+           student_id_code, first_name, last_name, email, phone,
+           guardian_name, guardian_phone, address, date_of_birth, gender,
+           qualification, college, passing_year, admission_no, enrollment_status
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         RETURNING id, student_id_code`,
+        [
+          studentCode,
+          firstName,
+          lastName,
+          cleanEmail || `${studentCode.toLowerCase()}@institute.local`,
+          cleanPhone,
+          effectiveGuardian,
+          cleanGuardianPhone || null,
+          effectiveAddress,
+          effectiveDob,
+          effectiveGender,
+          effectiveQualification,
+          effectiveCollege,
+          cleanPassingYear || null,
+          effectiveAdmissionNo,
+          effectiveStatus
+        ]
+      );
+      studentDbId = insRes.rows[0]?.id;
+    } else {
+      studentDbId = checkStu.rows[0].id;
+      studentCode = checkStu.rows[0].student_id_code;
+
+      // Update students record
+      await pool.query(
+        `UPDATE students
+         SET
+           first_name = $1,
+           last_name = $2,
+           email = $3,
+           phone = $4,
+           guardian_name = $5,
+           guardian_phone = $6,
+           address = $7,
+           date_of_birth = $8,
+           gender = $9,
+           qualification = $10,
+           college = $11,
+           passing_year = $12,
+           admission_no = $13,
+           enrollment_status = $14
+         WHERE id = $15`,
+        [
+          firstName,
+          lastName,
+          cleanEmail || checkStu.rows[0].email,
+          cleanPhone,
+          effectiveGuardian,
+          cleanGuardianPhone || null,
+          effectiveAddress,
+          effectiveDob,
+          effectiveGender,
+          effectiveQualification,
+          effectiveCollege,
+          cleanPassingYear || null,
+          effectiveAdmissionNo,
+          effectiveStatus,
+          studentDbId
+        ]
+      );
     }
-
-    const studentDbId = checkStu.rows[0].id;
-    const studentCode = checkStu.rows[0].student_id_code;
-
-    // Update students record
-    await pool.query(
-      `UPDATE students
-       SET
-         first_name = $1,
-         last_name = $2,
-         email = $3,
-         phone = $4,
-         guardian_name = $5,
-         guardian_phone = $6,
-         address = $7,
-         date_of_birth = $8,
-         gender = $9,
-         qualification = $10,
-         college = $11,
-         passing_year = $12,
-         admission_no = $13,
-         enrollment_status = $14
-       WHERE id = $15`,
-      [
-        firstName,
-        lastName,
-        cleanEmail || checkStu.rows[0].email,
-        cleanPhone,
-        effectiveGuardian,
-        cleanGuardianPhone || null,
-        effectiveAddress,
-        effectiveDob,
-        effectiveGender,
-        effectiveQualification,
-        effectiveCollege,
-        cleanPassingYear || null,
-        effectiveAdmissionNo,
-        effectiveStatus,
-        studentDbId
-      ]
-    );
 
     // Update course/batch in enrollments if provided
     if (course || batch) {
@@ -1233,6 +1287,76 @@ app.put('/api/students/:id', async (req, res) => {
               ? 'Partial'
               : 'Overdue'
     };
+
+    // Also sync with data_store.json if it exists
+    if (fs.existsSync(DATA_FILE)) {
+      try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+        const fileData = JSON.parse(raw);
+        if (Array.isArray(fileData.students)) {
+          let found = false;
+          fileData.students = fileData.students.map(s => {
+            const matches =
+              String(s.id) === String(paramId) ||
+              String(s.id) === String(studentDbId) ||
+              s.studentId === studentCode ||
+              s.studentId === paramId ||
+              (effectiveAdmissionNo && s.admissionNo === effectiveAdmissionNo) ||
+              (cleanPhone && s.phone && String(s.phone).replace(/\D/g, '').slice(-10) === cleanPhone);
+            if (matches) {
+              found = true;
+              return {
+                ...s,
+                name: effectiveName,
+                firstName,
+                lastName,
+                email: cleanEmail || s.email,
+                phone: cleanPhone,
+                guardian: effectiveGuardian || s.guardian,
+                guardianPhone: cleanGuardianPhone || s.guardianPhone,
+                address: effectiveAddress || s.address,
+                dob: effectiveDob || s.dob,
+                gender: effectiveGender || s.gender,
+                qualification: effectiveQualification || s.qualification,
+                college: effectiveCollege || s.college,
+                passingYear: cleanPassingYear || s.passingYear,
+                admissionNo: effectiveAdmissionNo || s.admissionNo,
+                status: effectiveStatus,
+                course: course || s.course,
+                batch: batch || s.batch
+              };
+            }
+            return s;
+          });
+          if (!found) {
+            fileData.students.unshift({
+              id: studentDbId || Date.now(),
+              studentId: studentCode,
+              name: effectiveName,
+              firstName,
+              lastName,
+              email: cleanEmail,
+              phone: cleanPhone,
+              guardian: effectiveGuardian,
+              guardianPhone: cleanGuardianPhone,
+              address: effectiveAddress,
+              dob: effectiveDob,
+              gender: effectiveGender,
+              qualification: effectiveQualification,
+              college: effectiveCollege,
+              passingYear: cleanPassingYear,
+              admissionNo: effectiveAdmissionNo,
+              status: effectiveStatus,
+              course: course || 'Full Stack Web Development (MERN)',
+              batch: batch || 'General Cohort'
+            });
+          }
+          fs.writeFileSync(DATA_FILE, JSON.stringify(fileData, null, 2));
+        }
+      } catch (fileErr) {
+        console.warn('Could not update data_store.json on student update:', fileErr.message);
+      }
+    }
 
     res.json({
       success: true,
