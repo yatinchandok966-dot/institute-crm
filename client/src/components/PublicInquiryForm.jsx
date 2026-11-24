@@ -101,8 +101,8 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-3 sm:p-4 font-sans">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 sm:p-8 text-center space-y-5 animate-in fade-in duration-200">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-8 text-center space-y-5 animate-in fade-in duration-200">
           <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
             <CheckCircle2 className="w-10 h-10" />
           </div>
@@ -116,7 +116,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             </p>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 text-left space-y-2.5">
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 text-left space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-slate-400">Contact Number:</span>
               <strong className="text-slate-800 font-mono">{formData.phone}</strong>
@@ -127,9 +127,9 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                 <span className="font-semibold text-slate-800 truncate max-w-[200px]">{formData.course}</span>
               </div>
             )}
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 pt-1 border-t border-slate-200/60">
               <span className="text-slate-400 shrink-0">Preferred Timing:</span>
-              <span className="font-semibold text-slate-800 whitespace-nowrap text-right text-[11px] sm:text-xs">{formData.timing}</span>
+              <span className="font-semibold text-slate-800 whitespace-nowrap">{formData.timing}</span>
             </div>
             <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
               <span className="text-slate-400">Assigned Counselor:</span>
@@ -148,7 +148,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                   name: '',
                   phone: '',
                   email: '',
-                  course: initialCourse,
+                  course: '',
                   timing: 'Morning (09:00 AM - 11:30 AM)',
                   qualification: 'College Student (Final Year)',
                   notes: ''
