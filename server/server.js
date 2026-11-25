@@ -467,8 +467,24 @@ app.post('/api/leads', async (req, res) => {
       ).catch(() => null);
 
       if (existing && existing.rows && existing.rows.length > 0) {
-        const r = existing.rows[0];
-        if (!r.interested_course && course) {
+        let r = existing.rows[0];
+        if (source === 'QR Code (Campus Reception)') {
+          const updated = await pool.query(
+            `UPDATE leads
+             SET full_name = COALESCE(NULLIF($1, ''), full_name),
+                 email = COALESCE(NULLIF($2, ''), email),
+                 interested_course = COALESCE(NULLIF($3, ''), interested_course),
+                 lead_source = COALESCE(NULLIF($4, ''), lead_source),
+                 notes = COALESCE(NULLIF($5, ''), notes),
+                 created_date = CURRENT_DATE
+             WHERE id = $6
+             RETURNING *`,
+            [name, email || '', course || '', source, notes || '', r.id]
+          ).catch(() => null);
+          if (updated && updated.rows && updated.rows[0]) {
+            r = updated.rows[0];
+          }
+        } else if (!r.interested_course && course) {
           await pool.query(
             'UPDATE leads SET interested_course = $1, lead_source = COALESCE(lead_source, $2) WHERE id = $3',
             [course, source || 'QR Code (Campus Reception)', r.id]

@@ -27,6 +27,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,6 +56,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
 
     const payload = {
       name: formData.name.trim(),
@@ -75,29 +77,21 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
         body: JSON.stringify(payload)
       });
       const data = await res.json().catch(() => null);
-      if (data && data.success && data.lead && onLeadSubmitted) {
+      if (!res.ok || !data || !data.success) {
+        setSubmitError(data?.message || 'Could not submit inquiry. Please check your connection and try again.');
+        return;
+      }
+      if (data.lead && onLeadSubmitted) {
         onLeadSubmitted({
           ...data.lead,
           source: data.lead.source || 'QR Code (Campus Reception)'
         });
-      } else if (onLeadSubmitted) {
-        onLeadSubmitted({
-          id: Date.now(),
-          ...payload,
-          createdAt: new Date().toISOString().split('T')[0]
-        });
       }
+      setIsSubmitted(true);
     } catch {
-      if (onLeadSubmitted) {
-        onLeadSubmitted({
-          id: Date.now(),
-          ...payload,
-          createdAt: new Date().toISOString().split('T')[0]
-        });
-      }
+      setSubmitError('Network error while submitting inquiry. Please try again.');
     } finally {
       setIsSubmitting(false);
-      setIsSubmitted(true);
     }
   };
 
@@ -238,20 +232,13 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                 <div className="relative flex-1">
                   <input
                     type="tel"
+                    inputMode="numeric"
                     required
                     maxLength={10}
                     value={formData.phone}
                     onChange={(e) => {
-                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(-10);
                       setFormData({ ...formData, phone: digitsOnly });
-                    }}
-                    onKeyDown={(e) => {
-                      if (
-                        !/[0-9]/.test(e.key) &&
-                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
-                      ) {
-                        e.preventDefault();
-                      }
                     }}
                     placeholder="10-digit number (e.g. 9876543210)"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-mono font-medium"
@@ -361,6 +348,12 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
             />
           </div>
+
+          {submitError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium">
+              {submitError}
+            </div>
+          )}
 
           {/* Submit Button */}
           <div className="pt-2">
