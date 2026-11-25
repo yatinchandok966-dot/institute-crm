@@ -61,7 +61,8 @@ const cleanupDuplicateLeads = async () => {
 
 const syncAdmissionsAndStudents = async () => {
   try {
-    const adms = await pool.query('SELECT * FROM admissions');
+    await pool.query('ALTER TABLE admissions ADD COLUMN IF NOT EXISTS student_deleted BOOLEAN DEFAULT FALSE');
+    const adms = await pool.query('SELECT * FROM admissions WHERE COALESCE(student_deleted, FALSE) = FALSE');
     for (const adm of adms.rows) {
       const cleanPhone = adm.phone ? String(adm.phone).replace(/\D/g, '').slice(-10) : '';
       const stuCheck = await pool.query(
@@ -186,7 +187,6 @@ function isMatchCourse(targetCourse, course) {
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
     await cleanupDuplicateLeads();
-    await syncAdmissionsAndStudents();
     const [coursesRes, batchesRes, leadsRes, admissionsRes, studentsRes, feesRes, trainersRes] = await Promise.all([
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
       pool.query('SELECT * FROM batches ORDER BY id ASC'),
@@ -220,7 +220,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN enrollments e ON s.id = e.student_id
         LEFT JOIN courses c ON e.course_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
-        LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
+        LEFT JOIN LATERAL (
+          SELECT admission_no, course, batch
+          FROM admissions
+          WHERE admission_no = s.admission_no
+             OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+          ORDER BY (admission_no = s.admission_no) DESC, id DESC
+          LIMIT 1
+        ) a ON true
         ORDER BY s.id DESC
       `),
       pool.query('SELECT * FROM fee_payments ORDER BY id DESC'),
@@ -1188,7 +1195,6 @@ app.delete('/api/admissions/:id', async (req, res) => {
 // ==========================================
 app.get('/api/students', async (req, res) => {
   try {
-    await syncAdmissionsAndStudents();
     const result = await pool.query(`
       SELECT
         s.id,
@@ -1217,7 +1223,14 @@ app.get('/api/students', async (req, res) => {
       LEFT JOIN enrollments e ON s.id = e.student_id
       LEFT JOIN courses c ON e.course_id = c.id
       LEFT JOIN batches b ON e.batch_id = b.id
-      LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
+      LEFT JOIN LATERAL (
+        SELECT admission_no, course, batch
+        FROM admissions
+        WHERE admission_no = s.admission_no
+           OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+        ORDER BY (admission_no = s.admission_no) DESC, id DESC
+        LIMIT 1
+      ) a ON true
       ORDER BY s.id DESC
     `);
 
@@ -1621,6 +1634,76 @@ app.put('/api/students/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('Error updating student:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/students/:id', async (req, res) => {
+  try {
+    const paramId = req.params.id;
+    const numId = Number(paramId);
+    const isValidInt = Number.isInteger(numId) && numId > 0 && numId <= 2147483647;
+
+    let deletedRows = [];
+    try {
+      await pool.query('ALTER TABLE admissions ADD COLUMN IF NOT EXISTS student_deleted BOOLEAN DEFAULT FALSE');
+
+      let delRes;
+      if (isValidInt) {
+        delRes = await pool.query(
+          'DELETE FROM students WHERE id = $1 OR student_id_code = $2 OR admission_no = $2 RETURNING *',
+          [numId, String(paramId)]
+        );
+      } else {
+        delRes = await pool.query(
+          'DELETE FROM students WHERE student_id_code = $1 OR admission_no = $1 RETURNING *',
+          [String(paramId)]
+        );
+      }
+      deletedRows = delRes.rows || [];
+
+      // Prevent syncAdmissionsAndStudents from re-creating deleted students on next refresh
+      for (const stu of deletedRows) {
+        const cleanStuPhone = stu.phone ? String(stu.phone).replace(/\D/g, '').slice(-10) : '';
+        if (stu.admission_no || cleanStuPhone) {
+          await pool.query(
+            `UPDATE admissions
+             SET student_deleted = TRUE
+             WHERE ($1::text IS NOT NULL AND admission_no = $1)
+                OR ($2::text <> '' AND phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)`,
+            [stu.admission_no || null, cleanStuPhone]
+          );
+        }
+      }
+    } catch (dbErr) {
+      console.error('PostgreSQL student delete error:', dbErr.message);
+      return res.status(500).json({ success: false, error: dbErr.message });
+    }
+
+    if (!process.env.VERCEL && fs.existsSync(DATA_FILE)) {
+      try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.students)) {
+          data.students = data.students.filter(s =>
+            String(s.id) !== String(paramId) &&
+            String(s.studentId) !== String(paramId) &&
+            String(s.admissionNo) !== String(paramId)
+          );
+          fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+        }
+      } catch (fileErr) {
+        console.warn('Could not update data_store.json on student delete:', fileErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      deletedCount: deletedRows.length,
+      message: 'Student deleted successfully'
+    });
+  } catch (err) {
+    console.error('Error deleting student:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

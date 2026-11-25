@@ -108,13 +108,12 @@ export default function TrainersModule({
     return Array.from(set).sort();
   }, [trainers]);
 
-  // Unique courses for filter
+  // Unique courses for filter — only from database courses, not from static trainer data
   const uniqueCourses = useMemo(() => {
     const set = new Set();
     (courses || []).forEach(c => c.name && set.add(c.name));
-    trainers.forEach(t => (t.assignedCourses || []).forEach(c => set.add(c)));
     return Array.from(set).sort();
-  }, [courses, trainers]);
+  }, [courses]);
 
   // Filtered trainers list
   const filteredTrainers = useMemo(() => {

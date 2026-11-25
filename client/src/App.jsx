@@ -353,25 +353,12 @@ export default function App() {
               mergedBatches = localBatches;
             }
 
-            // Smart merge for admissions: server is authoritative when admissions exist
+            // Server is authoritative for admissions & students so DB deletions reflect immediately
             const serverAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
-            const localAdmissions = Array.isArray(prev.admissions) ? prev.admissions : [];
-            let mergedAdmissions = serverAdmissions.length > 0 ? serverAdmissions : localAdmissions;
+            const mergedAdmissions = serverAdmissions;
 
-            // Smart merge for students
             const serverStudents = Array.isArray(result.students) ? result.students : [];
-            const localStudents = Array.isArray(prev.students) ? prev.students : [];
-            let mergedStudents = localStudents;
-            if (serverStudents.length > 0 && localStudents.length === 0) {
-              mergedStudents = serverStudents;
-            } else if (serverStudents.length > 0 && localStudents.length > 0) {
-              const sMap = new Map();
-              localStudents.forEach(s => sMap.set(s.studentId || s.admissionNo || s.id, s));
-              serverStudents.forEach(s => sMap.set(s.studentId || s.admissionNo || s.id, s));
-              mergedStudents = Array.from(sMap.values());
-            } else if (localStudents.length > 0 && serverStudents.length === 0) {
-              mergedStudents = localStudents;
-            }
+            const mergedStudents = serverStudents;
 
             // Smart merge for fee transactions
             const serverFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
@@ -799,6 +786,79 @@ export default function App() {
     fetch(`/api/admissions/${admissionId}`, {
       method: "DELETE",
     }).catch((err) => console.warn("Failed to delete admission from server:", err));
+  };
+
+  const handleDeleteStudent = async (student) => {
+    if (!student) return;
+    const targetId = student.studentId || student.id || student.admissionNo;
+    if (!targetId) return;
+
+    const cleanTargetPhone = student.phone
+      ? String(student.phone).replace(/\D/g, '').slice(-10)
+      : '';
+
+    setInstituteData((prev) => {
+      const updatedStudents = (prev.students || []).filter((s) => {
+        const cleanSPhone = s.phone ? String(s.phone).replace(/\D/g, '').slice(-10) : '';
+        const matches =
+          (student.id != null && s.id != null && String(s.id) === String(student.id)) ||
+          (student.studentId && s.studentId && s.studentId === student.studentId) ||
+          (student.admissionNo && s.admissionNo && s.admissionNo === student.admissionNo) ||
+          (cleanTargetPhone && cleanSPhone && cleanSPhone === cleanTargetPhone);
+        return !matches;
+      });
+
+      const totalRevenue = (prev.feeTransactions || []).reduce(
+        (acc, t) => acc + (Number(t.amount) || 0),
+        0
+      );
+      const totalPending = updatedStudents.reduce(
+        (acc, s) => acc + (Number(s.feeDue) || 0),
+        0
+      );
+
+      const updatedData = {
+        ...prev,
+        students: updatedStudents,
+        stats: {
+          ...prev.stats,
+          totalStudents: updatedStudents.length,
+          pendingFeesAmount: totalPending,
+          collectionRate:
+            totalRevenue + totalPending > 0
+              ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+              : "100%",
+        },
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData));
+      } catch (err) {
+        console.warn("Could not save to localStorage:", err);
+      }
+
+      return updatedData;
+    });
+
+    setSelectedStudentForProfile((prev) => {
+      if (!prev) return null;
+      const isMatch =
+        (student.id != null && prev.id != null && String(prev.id) === String(student.id)) ||
+        (student.studentId && prev.studentId && prev.studentId === student.studentId);
+      return isMatch ? null : prev;
+    });
+
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(targetId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.warn("Failed to delete student from server:", errData.error || res.status);
+      }
+    } catch (err) {
+      console.warn("Failed to delete student from server:", err);
+    }
   };
 
   const handlePaymentRecorded = (newReceipt) => {
@@ -1280,6 +1340,7 @@ export default function App() {
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenStudentProfile={handleOpenStudentProfile}
             onEditStudent={handleOpenStudentProfile}
+            onDeleteStudent={handleDeleteStudent}
           />
         );
       }
