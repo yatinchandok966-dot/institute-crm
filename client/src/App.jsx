@@ -246,12 +246,10 @@ export default function App() {
         const result = await statsRes.json();
         if (result.success) {
           setInstituteData(prev => {
-            // Smart deduplicated merge for leads
+            // Server is authoritative when /api/dashboard/stats succeeds so normal browser always matches Incognito & DB
             const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
-            const localLeads = Array.isArray(prev.recentLeads) ? prev.recentLeads : [];
-            const combined = serverLeads.length > 0 ? [...serverLeads, ...localLeads] : localLeads;
             const leadMap = new Map();
-            combined.forEach(l => {
+            serverLeads.forEach(l => {
               if (!l) return;
               const cleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
               const key = cleanPhone ? `phone_${cleanPhone}` : `id_${l.id}`;
@@ -259,56 +257,17 @@ export default function App() {
                 leadMap.set(key, l);
               }
             });
-            let mergedLeads = Array.from(leadMap.values());
-            if (localLeads.length > 0 && serverLeads.length === 0) {
-              localLeads.forEach(l => {
-                fetch('/api/leads', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(l)
-                }).catch(() => null);
-              });
-            }
-            // Ensure Riya has correct QR source
-            mergedLeads = mergedLeads.map(l => {
+            const mergedLeads = Array.from(leadMap.values()).map(l => {
               if (l && (l.name === 'Riya' || l.id === 1795421032576) && (!l.source || l.source === 'Website')) {
                 return { ...l, source: 'QR Code (Campus Reception)' };
               }
               return l;
             });
 
-            // Smart merge for trainers
-            const serverTrainers = Array.isArray(result.trainers) ? result.trainers : [];
-            const localTrainers = Array.isArray(prev.trainers) ? prev.trainers : [];
-            let mergedTrainers = localTrainers.length > 0 ? localTrainers : (serverTrainers.length > 0 ? serverTrainers : initialInstituteData.trainers);
-            if (serverTrainers.length > 0 && localTrainers.length > 0) {
-              const tMap = new Map();
-              localTrainers.forEach(t => tMap.set(t.employeeId || t.id || t.name, t));
-              serverTrainers.forEach(t => {
-                const key = t.employeeId || t.id || t.name;
-                const existing = tMap.get(key) || {};
-                const assignedCourses = (Array.isArray(t.assignedCourses) && t.assignedCourses.length > 0)
-                  ? t.assignedCourses
-                  : (existing.assignedCourses || []);
-                tMap.set(key, { ...existing, ...t, assignedCourses });
-              });
-              mergedTrainers = Array.from(tMap.values());
-            } else if (localTrainers.length > 0 && serverTrainers.length === 0) {
-              localTrainers.forEach(t => {
-                fetch('/api/trainers', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(t)
-                }).catch(() => null);
-              });
-              mergedTrainers = localTrainers;
-            }
+            const mergedTrainers = Array.isArray(result.trainers) ? result.trainers : [];
 
-            // Smart merge for courses (respects deleted courses)
             const serverCourses = Array.isArray(result.courses) ? result.courses : [];
-            const localCourses = Array.isArray(prev.courses) ? prev.courses : [];
             const deletedSet = new Set((prev.deletedCourseIds || []).map(s => String(s).trim().toLowerCase()));
-
             const isDeleted = (c) => {
               if (!c) return true;
               const cId = String(c.id || '').trim().toLowerCase();
@@ -320,67 +279,12 @@ export default function App() {
                 (cName && deletedSet.has(cName))
               );
             };
+            const mergedCourses = serverCourses.filter(c => c && !isDeleted(c));
 
-            // Server is authoritative for courses — only show what the DB has
-            let mergedCourses;
-            if (serverCourses.length > 0) {
-              // Use server courses only (filtered by locally-deleted ones pending sync)
-              mergedCourses = serverCourses.filter(c => c && !isDeleted(c));
-            } else {
-              // Server returned no courses — keep local as fallback
-              mergedCourses = localCourses.filter(c => c && !isDeleted(c));
-            }
-
-            // Smart merge for batches
-            const serverBatches = Array.isArray(result.batches) ? result.batches : [];
-            const localBatches = Array.isArray(prev.batches) ? prev.batches : [];
-            let mergedBatches = localBatches;
-            if (serverBatches.length > 0 && localBatches.length === 0) {
-              mergedBatches = serverBatches;
-            } else if (serverBatches.length > 0 && localBatches.length > 0) {
-              const bMap = new Map();
-              localBatches.forEach(b => bMap.set(b.id || b.name, b));
-              serverBatches.forEach(b => bMap.set(b.id || b.name, b));
-              mergedBatches = Array.from(bMap.values());
-            } else if (localBatches.length > 0 && serverBatches.length === 0) {
-              localBatches.forEach(b => {
-                fetch('/api/batches', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(b)
-                }).catch(() => null);
-              });
-              mergedBatches = localBatches;
-            }
-
-            // Server is authoritative for admissions & students so DB deletions reflect immediately
-            const serverAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
-            const mergedAdmissions = serverAdmissions;
-
-            const serverStudents = Array.isArray(result.students) ? result.students : [];
-            const mergedStudents = serverStudents;
-
-            // Smart merge for fee transactions
-            const serverFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
-            const localFees = Array.isArray(prev.feeTransactions) ? prev.feeTransactions : [];
-            let mergedFees = localFees;
-            if (serverFees.length > 0 && localFees.length === 0) {
-              mergedFees = serverFees;
-            } else if (serverFees.length > 0 && localFees.length > 0) {
-              const fMap = new Map();
-              localFees.forEach(f => fMap.set(f.receiptNo || f.id, f));
-              serverFees.forEach(f => fMap.set(f.receiptNo || f.id, f));
-              mergedFees = Array.from(fMap.values());
-            } else if (localFees.length > 0 && serverFees.length === 0) {
-              localFees.forEach(f => {
-                fetch('/api/fees', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(f)
-                }).catch(() => null);
-              });
-              mergedFees = localFees;
-            }
+            const mergedBatches = Array.isArray(result.batches) ? result.batches : [];
+            const mergedAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
+            const mergedStudents = Array.isArray(result.students) ? result.students : [];
+            const mergedFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
 
             const totalRev = mergedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
             const totalPend = mergedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
