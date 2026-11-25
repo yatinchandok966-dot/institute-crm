@@ -953,6 +953,53 @@ app.post('/api/admissions', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Student Name and Phone are required' });
     }
 
+    // Prevent duplicate admission/student creation for the same student + phone + course (or admissionNo)
+    const cleanLast10 = String(phone).replace(/\D/g, '').slice(-10);
+    const existingAdmRes = await pool.query(
+      `SELECT * FROM admissions
+       WHERE ($1::text IS NOT NULL AND admission_no = $1)
+          OR (
+            LOWER(TRIM(student_name)) = LOWER(TRIM($2))
+            AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $3
+            AND LOWER(TRIM(course)) = LOWER(TRIM($4))
+            AND created_at > NOW() - INTERVAL '2 minutes'
+          )
+       ORDER BY id DESC LIMIT 1`,
+      [req.body.admissionNo || null, studentName, cleanLast10, course]
+    );
+
+    if (existingAdmRes.rows.length > 0) {
+      const existingRow = existingAdmRes.rows[0];
+      return res.json({
+        success: true,
+        duplicatePrevented: true,
+        admission: {
+          id: existingRow.id,
+          admissionNo: existingRow.admission_no,
+          applicationNo: existingRow.application_no,
+          studentName: existingRow.student_name,
+          phone: existingRow.phone,
+          email: existingRow.email,
+          course: existingRow.course,
+          batch: existingRow.batch,
+          duration: existingRow.duration,
+          admissionDate: existingRow.admission_date,
+          totalCourseFee: Number(existingRow.total_course_fee) || 0,
+          discount: Number(existingRow.discount) || 0,
+          netFee: Number(existingRow.net_fee) || 0,
+          admissionFeePaid: Number(existingRow.admission_fee_paid) || 0,
+          feeDue: Number(existingRow.fee_due) || 0,
+          paymentPlan: existingRow.payment_plan,
+          status: existingRow.status,
+          counselor: existingRow.counselor,
+          notes: existingRow.notes,
+          student_name: existingRow.student_name,
+          admission_no: existingRow.admission_no,
+          application_no: existingRow.application_no
+        }
+      });
+    }
+
     const countRes = await pool.query('SELECT COUNT(*) FROM admissions');
     const nextSeq = String(Number(countRes.rows[0].count) + 1).padStart(4, '0');
     const admissionNo = req.body.admissionNo || `ADM-2026-${nextSeq}`;

@@ -654,10 +654,22 @@ export default function App() {
         return l;
       });
 
-      // 2. Add to students roster if not present
-      const updatedStudents =
-        newStudent ? [newStudent, ...(prev.students || [])] : (prev.students || []);
-      const updatedAdmissions = [safeAdmission, ...(prev.admissions || [])];
+      // 2. Add to students roster if not present (deduplicated by studentId / admissionNo)
+      const existingStudents = prev.students || [];
+      const updatedStudents = (newStudent && !existingStudents.some(s =>
+        (newStudent.studentId && s.studentId === newStudent.studentId) ||
+        (newStudent.admissionNo && s.admissionNo === newStudent.admissionNo)
+      ))
+        ? [newStudent, ...existingStudents]
+        : existingStudents;
+
+      const existingAdmissions = prev.admissions || [];
+      const updatedAdmissions = !existingAdmissions.some(a =>
+        (safeAdmission.id && a.id === safeAdmission.id) ||
+        (safeAdmission.admissionNo && (a.admissionNo === safeAdmission.admissionNo || a.admission_no === safeAdmission.admissionNo))
+      )
+        ? [safeAdmission, ...existingAdmissions]
+        : existingAdmissions;
 
       // 3. Add to fee transactions if an admission fee was collected
       const updatedFees = [...(prev.feeTransactions || [])];
@@ -710,16 +722,18 @@ export default function App() {
     // Show official admission confirmation letter modal
     setConfirmedAdmissionLetter(newAdmission);
 
-    // Persist admission, student and fee record to backend and DB
-    fetch('/api/admissions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...newAdmission,
-        studentId: newStudent?.studentId,
-        admissionFeePaid: newAdmission.admissionFeePaid
-      })
-    }).catch(() => null);
+    // Persist admission, student and fee record to backend only if AdmissionModal didn't already persist it
+    if (!newAdmission._persisted) {
+      fetch('/api/admissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newAdmission,
+          studentId: newStudent?.studentId,
+          admissionFeePaid: newAdmission.admissionFeePaid
+        })
+      }).catch(() => null);
+    }
   };
 
   const handleUpdateAdmissionStatus = (admId, newStatus) => {

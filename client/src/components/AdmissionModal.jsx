@@ -673,7 +673,8 @@ export default function AdmissionModal({
           admissionFeePaid: Number(data.admission.admissionFeePaid ?? data.admission.admission_fee_paid ?? payload.admissionFeePaid),
           feeDue: Number(data.admission.feeDue ?? data.admission.fee_due ?? payload.feeDue),
           paymentPlan: data.admission.paymentPlan || data.admission.payment_plan || payload.paymentPlan,
-          admissionDate: data.admission.admissionDate || data.admission.admission_date || payload.admissionDate
+          admissionDate: data.admission.admissionDate || data.admission.admission_date || payload.admissionDate,
+          _persisted: true
         };
         onAdmissionCreated(normalized, data.student);
       } else {
