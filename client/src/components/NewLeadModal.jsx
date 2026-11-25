@@ -23,8 +23,7 @@ import {
 import {
   LEAD_SOURCES,
   LEAD_PIPELINE_STAGES,
-  LEAD_PRIORITIES,
-  OFFICIAL_COURSES
+  LEAD_PRIORITIES
 } from '../data/constants';
 
 export default function NewLeadModal({
@@ -77,23 +76,30 @@ export default function NewLeadModal({
     return Array.from(set).sort();
   }, [existingLeads, trainers]);
 
-  // Consolidate all real courses from database and official constants
+  // Show ONLY real courses that were actually added to the CRM/database
   const allCourseList = useMemo(() => {
     const map = new Map();
-    (OFFICIAL_COURSES || []).forEach(c => {
-      if (c && c.name) map.set(c.name.trim().toLowerCase(), c);
-    });
     (courses || []).forEach(c => {
       if (!c) return;
       const cName = typeof c === 'string' ? c : c.name;
       if (cName && cName.trim()) {
         const key = cName.trim().toLowerCase();
-        const existing = map.get(key);
-        map.set(key, typeof c === 'object' ? { ...existing, ...c } : (existing || { name: cName }));
+        if (!map.has(key)) {
+          map.set(key, typeof c === 'object' ? c : { name: cName.trim() });
+        }
       }
     });
+
+    // If editing an existing lead, preserve its course so it displays accurately
+    if (leadToEdit?.course && leadToEdit.course.trim()) {
+      const editKey = leadToEdit.course.trim().toLowerCase();
+      if (!map.has(editKey)) {
+        map.set(editKey, { name: leadToEdit.course.trim() });
+      }
+    }
+
     return Array.from(map.values());
-  }, [courses]);
+  }, [courses, leadToEdit]);
 
   const initialForm = {
     name: '',

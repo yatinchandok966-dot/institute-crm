@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GraduationCap, Search, Phone, CreditCard, Pencil, Trash2, AlertTriangle, X } from 'lucide-react';
+import { GraduationCap, Search, Mail, CreditCard, Pencil, Trash2, AlertTriangle, X } from 'lucide-react';
 
 
 export default function StudentsModule({
@@ -13,6 +13,13 @@ export default function StudentsModule({
   const [feeFilter, setFeeFilter] = useState("All");
   const [studentToDelete, setStudentToDelete] = useState(null);
 
+  const getEffectiveFeeStatus = (student) => {
+    if (student.feeStatus === "Paid" || student.feeStatus === "Partial") {
+      return student.feeStatus;
+    }
+    return "Overdue";
+  };
+
   const filteredStudents = students.filter((s) => {
     const matchesSearch =
       (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -23,7 +30,7 @@ export default function StudentsModule({
       (s.course &&
         s.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (s.phone && s.phone.includes(searchQuery));
-    const matchesFee = feeFilter === "All" || s.feeStatus === feeFilter;
+    const matchesFee = feeFilter === "All" || getEffectiveFeeStatus(s) === feeFilter;
     return matchesSearch && matchesFee;
   });
 
@@ -121,8 +128,8 @@ export default function StudentsModule({
                 <th className="px-4 py-3">Student Name & ID</th>
                 <th className="px-4 py-3">Admission #</th>
                 <th className="px-4 py-3">Course & Batch</th>
-                <th className="px-4 py-3">Guardian Contact</th>
-                <th className="px-4 py-3">Attendance</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Total Fee</th>
                 <th className="px-4 py-3">Fee Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -171,15 +178,16 @@ export default function StudentsModule({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-slate-700">{student.guardian}</div>
-                      <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3" />
-                        {student.guardianPhone || "—"}
+                      <div className="text-slate-700 flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[200px]" title={student.email || ''}>
+                          {student.email || "—"}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-bold text-slate-900">
-                        {student.attendance || 100}%
+                        ₹{Number(student.feeTotal || 0).toLocaleString()}
                       </span>
                     </td>
                     <td className="px-4 py-3">
