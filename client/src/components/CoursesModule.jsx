@@ -17,7 +17,7 @@ import {
   Layers
 } from 'lucide-react';
 
-// Helper function to match courses across variants, acronyms, and codes
+// Helper function to match courses acro    ss variants, acronyms, and codes
 export const isMatchCourse = (studentCourseOrAdm, course) => {
   if (!studentCourseOrAdm || !course) return false;
   const target = String(studentCourseOrAdm).trim().toLowerCase();

@@ -61,7 +61,8 @@ const cleanupDuplicateLeads = async () => {
 
 const syncAdmissionsAndStudents = async () => {
   try {
-    const adms = await pool.query('SELECT * FROM admissions');
+    await pool.query('ALTER TABLE admissions ADD COLUMN IF NOT EXISTS student_deleted BOOLEAN DEFAULT FALSE');
+    const adms = await pool.query('SELECT * FROM admissions WHERE COALESCE(student_deleted, FALSE) = FALSE');
     for (const adm of adms.rows) {
       const cleanPhone = adm.phone ? String(adm.phone).replace(/\D/g, '').slice(-10) : '';
       const stuCheck = await pool.query(
@@ -1633,6 +1634,76 @@ app.put('/api/students/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('Error updating student:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/students/:id', async (req, res) => {
+  try {
+    const paramId = req.params.id;
+    const numId = Number(paramId);
+    const isValidInt = Number.isInteger(numId) && numId > 0 && numId <= 2147483647;
+
+    let deletedRows = [];
+    try {
+      await pool.query('ALTER TABLE admissions ADD COLUMN IF NOT EXISTS student_deleted BOOLEAN DEFAULT FALSE');
+
+      let delRes;
+      if (isValidInt) {
+        delRes = await pool.query(
+          'DELETE FROM students WHERE id = $1 OR student_id_code = $2 OR admission_no = $2 RETURNING *',
+          [numId, String(paramId)]
+        );
+      } else {
+        delRes = await pool.query(
+          'DELETE FROM students WHERE student_id_code = $1 OR admission_no = $1 RETURNING *',
+          [String(paramId)]
+        );
+      }
+      deletedRows = delRes.rows || [];
+
+      // Prevent syncAdmissionsAndStudents from re-creating deleted students on next refresh
+      for (const stu of deletedRows) {
+        const cleanStuPhone = stu.phone ? String(stu.phone).replace(/\D/g, '').slice(-10) : '';
+        if (stu.admission_no || cleanStuPhone) {
+          await pool.query(
+            `UPDATE admissions
+             SET student_deleted = TRUE
+             WHERE ($1::text IS NOT NULL AND admission_no = $1)
+                OR ($2::text <> '' AND phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)`,
+            [stu.admission_no || null, cleanStuPhone]
+          );
+        }
+      }
+    } catch (dbErr) {
+      console.error('PostgreSQL student delete error:', dbErr.message);
+      return res.status(500).json({ success: false, error: dbErr.message });
+    }
+
+    if (!process.env.VERCEL && fs.existsSync(DATA_FILE)) {
+      try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.students)) {
+          data.students = data.students.filter(s =>
+            String(s.id) !== String(paramId) &&
+            String(s.studentId) !== String(paramId) &&
+            String(s.admissionNo) !== String(paramId)
+          );
+          fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+        }
+      } catch (fileErr) {
+        console.warn('Could not update data_store.json on student delete:', fileErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      deletedCount: deletedRows.length,
+      message: 'Student deleted successfully'
+    });
+  } catch (err) {
+    console.error('Error deleting student:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
