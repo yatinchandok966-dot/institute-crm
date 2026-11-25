@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar } from 'lucide-react';
+import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar, Check } from 'lucide-react';
 import { OFFICIAL_TRAINERS } from '../data/constants';
 import { COUNTRY_CODES, splitPhoneAndCountryCode, formatPhoneWithCountryCode } from '../utils/phone';
 
@@ -404,6 +404,20 @@ export default function AdmissionModal({
     } else {
       setFormData(prev => ({ ...prev, batch: batchName }));
     }
+  };
+
+  // Helper to pick a single slot for the student from the timetable
+  const handlePickSlot = (slotOrBatch) => {
+    const bName = slotOrBatch.batch || slotOrBatch.name;
+    if (bName) {
+      handleBatchChange({ target: { value: bName } });
+    }
+  };
+
+  const isSlotSelected = (slotOrBatch) => {
+    if (!slotOrBatch || !formData.batch) return false;
+    const bName = slotOrBatch.batch || slotOrBatch.name;
+    return Boolean(bName && formData.batch.trim().toLowerCase() === bName.trim().toLowerCase());
   };
 
   // Handler when user selects Course: auto-syncs duration, fee, and filters
@@ -842,79 +856,18 @@ export default function AdmissionModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <div className="flex items-center justify-between h-5 mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 truncate">Email Address</label>
-                  <span className="text-[10px] text-slate-400 shrink-0 ml-2 font-medium">lowercase only</span>
-                </div>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
-                  placeholder="student@example.com"
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+            <div>
+              <div className="flex items-center justify-between h-5 mb-1.5">
+                <label className="text-xs font-semibold text-slate-700 truncate">Email Address</label>
+                <span className="text-[10px] text-slate-400 shrink-0 ml-2 font-medium">lowercase only</span>
               </div>
-
-              <div>
-                <div className="flex items-center justify-between h-5 mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 truncate">Residential Address</label>
-                </div>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Street / City / Pin Code"
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <div className="flex items-center justify-between h-5 mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 truncate">Parent / Guardian Name</label>
-                </div>
-                <input
-                  type="text"
-                  value={formData.guardianName}
-                  onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
-                  placeholder="e.g. Rajesh Sharma (Father)"
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between h-5 mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 truncate">Guardian Phone Contact</label>
-                  <span className={`text-[10px] font-mono font-bold shrink-0 ml-2 ${(formData.guardianPhone || '').replace(/\D/g, '').length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    {(formData.guardianPhone || '').replace(/\D/g, '').length}/10 digits
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    aria-label="Guardian country code"
-                    value={formData.guardianCountryCode || '+91'}
-                    onChange={(e) => setFormData({ ...formData, guardianCountryCode: e.target.value })}
-                    className="h-10 px-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0"
-                  >
-                    {COUNTRY_CODES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="tel"
-                    maxLength={10}
-                    value={formData.guardianPhone}
-                    onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value.replace(/\D/g, '') })}
-                    placeholder="10-digit number"
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
+                placeholder="student@example.com"
+                className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
             </div>
           </div>
 
@@ -992,7 +945,7 @@ export default function AdmissionModal({
               </div>
             </div>
 
-            {/* Trainer Schedule & Class Timetable Details — Dedicated Clean Card */}
+            {/* Trainer Schedule & Class Timetable Details — Dedicated Single Slot Picker */}
             {selectedTrainerObj && (
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between text-xs">
@@ -1000,54 +953,124 @@ export default function AdmissionModal({
                     <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                     <span>{selectedTrainerObj.name}&apos;s Availability Timetable Slots</span>
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Active Teaching Slots
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                    Pick 1 Slot for Student
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {Array.isArray(selectedTrainerObj.schedule) && selectedTrainerObj.schedule.length > 0 ? (
-                    selectedTrainerObj.schedule.map((slot, idx) => (
-                      <div
-                        key={slot.id || idx}
-                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-start justify-between gap-2"
-                      >
-                        <div className="flex items-start gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1" />
-                          <div>
-                            <span className="font-bold text-slate-900 block leading-tight">{slot.day || 'Mon-Fri'}</span>
-                            <span className="text-[11px] text-indigo-600 font-semibold block leading-tight mt-0.5">{slot.time}</span>
+                    selectedTrainerObj.schedule.map((slot, idx) => {
+                      const selected = isSlotSelected(slot);
+                      return (
+                        <div
+                          key={slot.id || idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handlePickSlot(slot)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handlePickSlot(slot);
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-start justify-between gap-2.5 text-left select-none relative group ${
+                            selected
+                              ? 'bg-indigo-50/80 border-2 border-indigo-600 ring-2 ring-indigo-500/20 shadow-xs'
+                              : 'bg-white border border-slate-200 hover:border-indigo-300 hover:bg-slate-50/80 shadow-2xs'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <div className="mt-0.5 shrink-0">
+                              {selected ? (
+                                <div className="w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-2xs">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </div>
+                              ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-slate-300 group-hover:border-indigo-400 bg-white" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-900 block leading-tight">{slot.day || 'Mon-Fri'}</span>
+                                {selected ? (
+                                  <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded border border-indigo-200 leading-none">
+                                    Selected Slot
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-medium text-slate-400 group-hover:text-indigo-600 transition-colors leading-none">
+                                    Click to pick
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-indigo-600 font-semibold block leading-tight mt-1">{slot.time}</span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            {slot.batch && <span className="block text-[11px] font-bold text-slate-800 leading-tight">{slot.batch}</span>}
+                            {slot.room && (
+                              <span className="text-[10px] text-slate-400 font-mono block leading-tight mt-0.5">
+                                [{slot.room}]{slot.mode ? ` • ${slot.mode}` : ''}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          {slot.batch && <span className="block text-[11px] font-bold text-slate-800 leading-tight">{slot.batch}</span>}
-                          {slot.room && (
-                            <span className="text-[10px] text-slate-400 font-mono block leading-tight mt-0.5">
-                              [{slot.room}]{slot.mode ? ` • ${slot.mode}` : ''}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    trainerAvailableBatches.map((b, idx) => (
-                      <div
-                        key={b.id || idx}
-                        className="bg-white border border-slate-200 p-2.5 rounded-lg text-xs font-medium text-slate-700 shadow-2xs flex items-start justify-between gap-2"
-                      >
-                        <div className="flex items-start gap-2">
-                          <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1" />
-                          <div>
-                            <span className="font-bold text-slate-900 block leading-tight">{b.name}</span>
-                            <span className="text-[11px] text-indigo-600 font-semibold block leading-tight mt-0.5">{b.timing || 'Mon-Fri 09:00 AM - 11:30 AM'}</span>
+                    trainerAvailableBatches.map((b, idx) => {
+                      const selected = isSlotSelected(b);
+                      return (
+                        <div
+                          key={b.id || idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handlePickSlot(b)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handlePickSlot(b);
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-start justify-between gap-2.5 text-left select-none relative group ${
+                            selected
+                              ? 'bg-indigo-50/80 border-2 border-indigo-600 ring-2 ring-indigo-500/20 shadow-xs'
+                              : 'bg-white border border-slate-200 hover:border-indigo-300 hover:bg-slate-50/80 shadow-2xs'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <div className="mt-0.5 shrink-0">
+                              {selected ? (
+                                <div className="w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-2xs">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </div>
+                              ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-slate-300 group-hover:border-indigo-400 bg-white" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-900 block leading-tight">{b.name}</span>
+                                {selected ? (
+                                  <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded border border-indigo-200 leading-none">
+                                    Selected Slot
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-medium text-slate-400 group-hover:text-indigo-600 transition-colors leading-none">
+                                    Click to pick
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-indigo-600 font-semibold block leading-tight mt-1">{b.timing || 'Mon-Fri 09:00 AM - 11:30 AM'}</span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            {b.mode && <span className="block text-[11px] font-bold text-slate-800 leading-tight">{b.mode}</span>}
+                            {b.room && <span className="text-[10px] text-slate-400 font-mono block leading-tight mt-0.5">[{b.room}]</span>}
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          {b.mode && <span className="block text-[11px] font-bold text-slate-800 leading-tight">{b.mode}</span>}
-                          {b.room && <span className="text-[10px] text-slate-400 font-mono block leading-tight mt-0.5">[{b.room}]</span>}
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
