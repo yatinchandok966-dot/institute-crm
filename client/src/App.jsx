@@ -574,11 +574,31 @@ export default function App() {
 
       // 2. Add to students roster if not present (deduplicated by studentId / admissionNo)
       const existingStudents = prev.students || [];
-      const updatedStudents = (newStudent && !existingStudents.some(s =>
-        (newStudent.studentId && s.studentId === newStudent.studentId) ||
-        (newStudent.admissionNo && s.admissionNo === newStudent.admissionNo)
-      ))
-        ? [newStudent, ...existingStudents]
+      
+      // Fallback in case API didn't return student object properly
+      const finalStudent = newStudent || {
+        id: Date.now(),
+        studentId: `STU-${String(safeAdmission.admissionNo || Date.now()).replace(/\D/g, '') || 'NEW'}`,
+        name: safeAdmission.studentName,
+        phone: safeAdmission.phone,
+        email: safeAdmission.email,
+        guardian: safeAdmission.guardianName,
+        guardianPhone: safeAdmission.guardianPhone,
+        course: safeAdmission.course,
+        batch: safeAdmission.batch,
+        feeTotal: safeTotal,
+        feePaid: safePaid,
+        feeDue: safeDue,
+        feeStatus: safeDue === 0 ? 'Paid' : 'Partial',
+        attendance: 100,
+        status: 'Active'
+      };
+
+      const updatedStudents = !existingStudents.some(s =>
+        (finalStudent.studentId && s.studentId === finalStudent.studentId) ||
+        (finalStudent.admissionNo && s.admissionNo === finalStudent.admissionNo)
+      )
+        ? [finalStudent, ...existingStudents]
         : existingStudents;
 
       const existingAdmissions = prev.admissions || [];

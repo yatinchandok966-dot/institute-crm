@@ -151,6 +151,7 @@ const syncAdmissionsAndStudents = async () => {
           );
         }
       } else {
+        const studentId = stuCheck.rows[0].id;
         const nameParts = (adm.student_name || '').trim().split(/\s+/).filter(Boolean);
         const fName = nameParts[0] || '';
         const lName = nameParts.slice(1).join(' ') || '';
@@ -158,10 +159,47 @@ const syncAdmissionsAndStudents = async () => {
           `UPDATE students
            SET admission_no = COALESCE(admission_no, $1),
                first_name = CASE WHEN $3 <> '' THEN $3 ELSE first_name END,
-               last_name = CASE WHEN $3 <> '' THEN $4 ELSE last_name END
+               last_name = CASE WHEN $4 <> '' THEN $4 ELSE last_name END
            WHERE id = $2`,
-          [adm.admission_no, stuCheck.rows[0].id, fName, lName]
+          [adm.admission_no, studentId, fName, lName]
         );
+
+        // FIX: Ensure enrollment exists/updates for existing students as well
+        let courseId = null;
+        let batchId = null;
+        if (adm.course) {
+          const cRes = await pool.query('SELECT id FROM courses WHERE name = $1 LIMIT 1', [adm.course]);
+          courseId = cRes.rows[0]?.id || null;
+        }
+        if (adm.batch) {
+          const bRes = await pool.query('SELECT id FROM batches WHERE batch_name = $1 LIMIT 1', [adm.batch]);
+          batchId = bRes.rows[0]?.id || null;
+        }
+        const totalFee = Number(adm.total_course_fee) || 0;
+        const discount = Number(adm.discount) || 0;
+        const paidFee = Number(adm.admission_fee_paid) || 0;
+        const dueFee = Math.max(0, totalFee - discount - paidFee);
+
+        const enrollCheck = await pool.query('SELECT id FROM enrollments WHERE student_id = $1 LIMIT 1', [studentId]);
+        if (enrollCheck.rows.length > 0) {
+          await pool.query(
+            `UPDATE enrollments SET
+               course_id = COALESCE($1, course_id),
+               batch_id = COALESCE($2, batch_id),
+               total_fee = $3,
+               discount = $4,
+               paid_fee = $5,
+               due_fee = $6
+             WHERE student_id = $7`,
+            [courseId, batchId, totalFee, discount, paidFee, dueFee, studentId]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO enrollments (student_id, course_id, batch_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [studentId, courseId, batchId, totalFee, discount, paidFee, dueFee, adm.admission_date || new Date().toISOString().split('T')[0], dueFee === 0 ? 'Enrolled' : 'Fee Pending']
+          );
+        }
       }
     }
   } catch (err) {
