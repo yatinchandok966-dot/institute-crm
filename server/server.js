@@ -187,7 +187,6 @@ function isMatchCourse(targetCourse, course) {
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
     await cleanupDuplicateLeads();
-    await syncAdmissionsAndStudents();
     const [coursesRes, batchesRes, leadsRes, admissionsRes, studentsRes, feesRes, trainersRes] = await Promise.all([
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
       pool.query('SELECT * FROM batches ORDER BY id ASC'),
@@ -221,7 +220,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN enrollments e ON s.id = e.student_id
         LEFT JOIN courses c ON e.course_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
-        LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
+        LEFT JOIN LATERAL (
+          SELECT admission_no, course, batch
+          FROM admissions
+          WHERE admission_no = s.admission_no
+             OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+          ORDER BY (admission_no = s.admission_no) DESC, id DESC
+          LIMIT 1
+        ) a ON true
         ORDER BY s.id DESC
       `),
       pool.query('SELECT * FROM fee_payments ORDER BY id DESC'),
@@ -1189,7 +1195,6 @@ app.delete('/api/admissions/:id', async (req, res) => {
 // ==========================================
 app.get('/api/students', async (req, res) => {
   try {
-    await syncAdmissionsAndStudents();
     const result = await pool.query(`
       SELECT
         s.id,
@@ -1218,7 +1223,14 @@ app.get('/api/students', async (req, res) => {
       LEFT JOIN enrollments e ON s.id = e.student_id
       LEFT JOIN courses c ON e.course_id = c.id
       LEFT JOIN batches b ON e.batch_id = b.id
-      LEFT JOIN admissions a ON (s.admission_no = a.admission_no OR s.phone = a.phone)
+      LEFT JOIN LATERAL (
+        SELECT admission_no, course, batch
+        FROM admissions
+        WHERE admission_no = s.admission_no
+           OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+        ORDER BY (admission_no = s.admission_no) DESC, id DESC
+        LIMIT 1
+      ) a ON true
       ORDER BY s.id DESC
     `);
 
