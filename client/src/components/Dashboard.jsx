@@ -317,7 +317,7 @@ export default function Dashboard({
         {/* KPI 4: Tuition Fees Collected */}
         <div className="bg-gradient-to-br from-white via-white to-amber-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-6px_rgba(217,119,6,0.14)] hover:shadow-[0_12px_28px_-6px_rgba(217,119,6,0.22)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[168px] relative overflow-hidden">
           <div className="flex justify-between items-center mb-2.5 z-10">
-            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Tuition Fees Collected</h3>
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Fees Collected</h3>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
               <CreditCard className="w-4 h-4 text-white" />
             </div>
