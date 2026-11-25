@@ -13,6 +13,13 @@ export default function StudentsModule({
   const [feeFilter, setFeeFilter] = useState("All");
   const [studentToDelete, setStudentToDelete] = useState(null);
 
+  const getEffectiveFeeStatus = (student) => {
+    if (student.feeStatus === "Paid" || student.feeStatus === "Partial") {
+      return student.feeStatus;
+    }
+    return "Overdue";
+  };
+
   const filteredStudents = students.filter((s) => {
     const matchesSearch =
       (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -23,7 +30,7 @@ export default function StudentsModule({
       (s.course &&
         s.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (s.phone && s.phone.includes(searchQuery));
-    const matchesFee = feeFilter === "All" || s.feeStatus === feeFilter;
+    const matchesFee = feeFilter === "All" || getEffectiveFeeStatus(s) === feeFilter;
     return matchesSearch && matchesFee;
   });
 
