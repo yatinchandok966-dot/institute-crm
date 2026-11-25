@@ -264,8 +264,11 @@ const initDb = async (client) => {
         status VARCHAR(50) DEFAULT 'Admission Confirmed',
         counselor VARCHAR(100) DEFAULT 'Admissions Desk',
         notes TEXT,
+        student_deleted BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE admissions ADD COLUMN IF NOT EXISTS student_deleted BOOLEAN DEFAULT FALSE;
     `);
     console.log('✅ Neon PostgreSQL database schema verified and initialized.');
   } catch (err) {
