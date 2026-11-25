@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { School, CheckCircle2, Send, Phone, Mail, BookOpen, Clock, MapPin, Sparkles } from 'lucide-react';
+import { COUNTRY_CODES, formatPhoneWithCountryCode } from '../utils/phone';
 
 export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCRM }) {
   const initialCourse = (courses && courses.length > 0 && (courses[0]?.name || courses[0])) || '';
   const [formData, setFormData] = useState({
     name: '',
+    countryCode: '+91',
     phone: '',
     email: '',
     course: initialCourse,
@@ -56,7 +58,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
 
     const payload = {
       name: formData.name.trim(),
-      phone: cleanPhone,
+      phone: formatPhoneWithCountryCode(formData.countryCode, cleanPhone),
       email: cleanEmail,
       course: formData.course,
       source: 'QR Code (Campus Reception)',
@@ -146,6 +148,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
               onClick={() => {
                 setFormData({
                   name: '',
+                  countryCode: '+91',
                   phone: '',
                   email: '',
                   course: '',
@@ -219,27 +222,41 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                   {(formData.phone || '').length}/10 digits
                 </span>
               </div>
-              <div className="relative">
-                <input
-                  type="tel"
-                  required
-                  maxLength={10}
-                  value={formData.phone}
-                  onChange={(e) => {
-                    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
-                    setFormData({ ...formData, phone: digitsOnly });
-                  }}
-                  onKeyDown={(e) => {
-                    if (
-                      !/[0-9]/.test(e.key) &&
-                      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
-                  placeholder="10-digit number (e.g. 9876543210)"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-mono font-medium"
-                />
+              <div className="flex gap-2">
+                <select
+                  aria-label="Country code"
+                  value={formData.countryCode || '+91'}
+                  onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                  className="px-2 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0"
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="relative flex-1">
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    value={formData.phone}
+                    onChange={(e) => {
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({ ...formData, phone: digitsOnly });
+                    }}
+                    onKeyDown={(e) => {
+                      if (
+                        !/[0-9]/.test(e.key) &&
+                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="10-digit number (e.g. 9876543210)"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-mono font-medium"
+                  />
+                </div>
               </div>
             </div>
 

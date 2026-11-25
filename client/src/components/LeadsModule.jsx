@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { formatWhatsAppPhone } from '../utils/phone';
 import {
   UserPlus,
   Search,
@@ -297,7 +298,8 @@ export default function LeadsModule({
 
   // WhatsApp quick connect
   const openWhatsApp = (lead) => {
-    const cleanPhone = (lead.phone || '').replace(/[^0-9]/g, '');
+    const cleanPhone = formatWhatsAppPhone(lead.phone);
+    if (!cleanPhone) return;
     const msg = encodeURIComponent(
       `Hello ${lead.name}, this is ${lead.counselor || 'our academic counselor'} from EduPulse Academy regarding your inquiry for ${lead.course}. Would you be free for a short counseling call today?`
     );

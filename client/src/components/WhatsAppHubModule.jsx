@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquareText, Send, Sparkles, UserCheck, CheckCircle2, Phone, Copy, ExternalLink } from 'lucide-react';
+import { formatWhatsAppPhone } from '../utils/phone';
 
 const defaultTemplates = [
   {
@@ -53,7 +54,8 @@ export default function WhatsAppHubModule({ leads = [], students = [], templates
 
   const handleSendWhatsApp = () => {
     if (!selectedRecipient || !selectedRecipient.phone) return;
-    const phone = selectedRecipient.phone.replace(/[^0-9]/g, '');
+    const phone = formatWhatsAppPhone(selectedRecipient.phone);
+    if (!phone) return;
     const encoded = encodeURIComponent(activeMessage);
     window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
   };

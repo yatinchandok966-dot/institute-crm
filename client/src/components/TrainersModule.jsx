@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { formatWhatsAppPhone } from '../utils/phone';
 import {
   Users,
   UserPlus,
@@ -162,7 +163,8 @@ export default function TrainersModule({
   };
 
   const openWhatsApp = (trainer) => {
-    const cleanPhone = (trainer.phone || '').replace(/\D/g, '');
+    const cleanPhone = formatWhatsAppPhone(trainer.phone);
+    if (!cleanPhone) return;
     const msg = encodeURIComponent(`Hello ${trainer.name}, this is from EduPulse Academy administration regarding your schedule.`);
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };

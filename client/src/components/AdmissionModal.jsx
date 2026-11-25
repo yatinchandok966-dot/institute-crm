@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar } from 'lucide-react';
 import { OFFICIAL_TRAINERS } from '../data/constants';
+import { COUNTRY_CODES, splitPhoneAndCountryCode, formatPhoneWithCountryCode } from '../utils/phone';
 
 export default function AdmissionModal({
   isOpen,
@@ -35,9 +36,11 @@ export default function AdmissionModal({
 
   const [formData, setFormData] = useState({
     studentName: '',
+    countryCode: '+91',
     phone: '',
     email: '',
     guardianName: '',
+    guardianCountryCode: '+91',
     guardianPhone: '',
     address: '',
     course: '',
@@ -129,11 +132,14 @@ export default function AdmissionModal({
           ? `${matchedCourse.durationWeeks} Weeks`
           : '16 Weeks';
 
+        const parsedPhone = splitPhoneAndCountryCode(leadToConvert.phone || '');
+
         setFormData(prev => ({
           ...prev,
           leadId: leadToConvert.id,
           studentName: leadToConvert.name || '',
-          phone: leadToConvert.phone || '',
+          countryCode: parsedPhone.countryCode,
+          phone: parsedPhone.localNumber,
           email: leadToConvert.email || '',
           trainer: trainerName,
           batch: batchName,
@@ -183,9 +189,11 @@ export default function AdmissionModal({
           ...prev,
           leadId: null,
           studentName: '',
+          countryCode: '+91',
           phone: '',
           email: '',
           guardianName: '',
+          guardianCountryCode: '+91',
           guardianPhone: '',
           address: '',
           notes: '',
@@ -618,13 +626,18 @@ export default function AdmissionModal({
 
     setIsSubmitting(true);
 
+    const fullPhone = formatPhoneWithCountryCode(formData.countryCode, cleanPhone);
+    const fullGuardianPhone = cleanGuardianPhone
+      ? formatPhoneWithCountryCode(formData.guardianCountryCode, cleanGuardianPhone)
+      : '';
+
     const payload = {
       ...formData,
       studentName: cleanStudentName,
       discount: scholarshipNum,
-      phone: cleanPhone,
+      phone: fullPhone,
       email: cleanEmail,
-      guardianPhone: cleanGuardianPhone,
+      guardianPhone: fullGuardianPhone,
       course: safeCourse,
       batch: safeBatch,
       trainer: safeTrainer,
@@ -802,15 +815,29 @@ export default function AdmissionModal({
                     {(formData.phone || '').replace(/\D/g, '').length}/10 digits
                   </span>
                 </div>
-                <input
-                  type="tel"
-                  required
-                  maxLength={10}
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
-                  placeholder="10-digit number"
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                <div className="flex gap-2">
+                  <select
+                    aria-label="Country code"
+                    value={formData.countryCode || '+91'}
+                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                    className="h-10 px-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0"
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                    placeholder="10-digit number"
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -864,14 +891,28 @@ export default function AdmissionModal({
                     {(formData.guardianPhone || '').replace(/\D/g, '').length}/10 digits
                   </span>
                 </div>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  value={formData.guardianPhone}
-                  onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value.replace(/\D/g, '') })}
-                  placeholder="10-digit number"
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                <div className="flex gap-2">
+                  <select
+                    aria-label="Guardian country code"
+                    value={formData.guardianCountryCode || '+91'}
+                    onChange={(e) => setFormData({ ...formData, guardianCountryCode: e.target.value })}
+                    className="h-10 px-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0"
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={formData.guardianPhone}
+                    onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value.replace(/\D/g, '') })}
+                    placeholder="10-digit number"
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
