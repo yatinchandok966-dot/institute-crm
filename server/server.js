@@ -19,14 +19,22 @@ app.use(cors());
 app.use(express.json());
 
 // Health and DB status
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let dbConnected = isConnected;
+  try {
+    await pool.query('SELECT 1');
+    dbConnected = true;
+  } catch (err) {
+    dbConnected = false;
+  }
+
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
     database: {
       engine: 'PostgreSQL',
-      connected: isConnected,
-      mode: isConnected ? 'PostgreSQL Live' : 'Disconnected'
+      connected: dbConnected,
+      mode: dbConnected ? 'PostgreSQL Live' : 'Disconnected'
     }
   });
 });

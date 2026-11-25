@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatWhatsAppPhone } from '../utils/phone';
 import {
   UserCheck,
   Search,
@@ -62,7 +63,7 @@ export default function AdmissionsModule({
 
   const openWhatsApp = (adm) => {
     if (!adm) return;
-    const cleanPhone = String(adm.phone || '').replace(/[^0-9]/g, '');
+    const cleanPhone = formatWhatsAppPhone(adm.phone);
     const sName = adm.studentName || adm.student_name || 'Student';
     const aNo = adm.admissionNo || adm.admission_no || 'ADM';
     const cName = adm.course || 'Course';

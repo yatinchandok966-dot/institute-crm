@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { COUNTRY_CODES, splitPhoneAndCountryCode, formatPhoneWithCountryCode } from '../utils/phone';
 import {
   X,
   UserPlus,
@@ -96,6 +97,7 @@ export default function NewLeadModal({
 
   const initialForm = {
     name: '',
+    countryCode: '+91',
     phone: '',
     email: '',
     city: '',
@@ -116,9 +118,11 @@ export default function NewLeadModal({
 
   useEffect(() => {
     if (leadToEdit) {
+      const parsedPhone = splitPhoneAndCountryCode(leadToEdit.phone || '');
       setFormData({
         name: leadToEdit.name || '',
-        phone: leadToEdit.phone || '',
+        countryCode: parsedPhone.countryCode,
+        phone: parsedPhone.localNumber,
         email: leadToEdit.email || '',
         city: leadToEdit.city || '',
         qualification: leadToEdit.qualification || '',
@@ -216,7 +220,7 @@ export default function NewLeadModal({
 
     const payload = {
       ...formData,
-      phone: cleanPhone,
+      phone: formatPhoneWithCountryCode(formData.countryCode, cleanPhone),
       email: cleanEmail,
       course: formData.course.trim() || 'General Inquiry',
       counselor: formData.counselor.trim() || 'Unassigned',
@@ -347,28 +351,42 @@ export default function NewLeadModal({
                     {(formData.phone || '').length}/10 digits
                   </span>
                 </div>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    value={formData.phone}
-                    onChange={(e) => {
-                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setFormData({ ...formData, phone: digitsOnly });
-                    }}
-                    onKeyDown={(e) => {
-                      if (
-                        !/[0-9]/.test(e.key) &&
-                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
-                      ) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder="10-digit number (e.g. 9876543210)"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-medium"
-                  />
+                <div className="flex gap-2">
+                  <select
+                    aria-label="Country code"
+                    value={formData.countryCode || '+91'}
+                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                    className="px-2 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0"
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="relative flex-1">
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="tel"
+                      required
+                      maxLength={10}
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData({ ...formData, phone: digitsOnly });
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          !/[0-9]/.test(e.key) &&
+                          !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
+                      placeholder="10-digit number (e.g. 9876543210)"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-medium"
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, Printer, MessageSquare, Copy, School, Download, ShieldCheck } from 'lucide-react';
+import { formatWhatsAppPhone } from '../utils/phone';
 
 export default function AdmissionConfirmationModal({ admission, onClose }) {
   const [copied, setCopied] = useState(false);
@@ -24,7 +25,8 @@ Counselor: ${admission.counselor}
 Welcome to EduPulse Academy!`;
 
   const handleWhatsApp = () => {
-    const cleanPhone = admission.phone.replace(/[^0-9]/g, '');
+    const cleanPhone = formatWhatsAppPhone(admission.phone);
+    if (!cleanPhone) return;
     const encoded = encodeURIComponent(confirmationMessage);
     window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
   };

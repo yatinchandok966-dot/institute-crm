@@ -321,26 +321,15 @@ export default function App() {
               );
             };
 
-            const cMap = new Map();
-            // Server courses first (filtered by deleted)
-            serverCourses.forEach(c => {
-              if (c && !isDeleted(c)) {
-                const key = String(c.code || c.name || c.id).trim().toLowerCase();
-                cMap.set(key, c);
-              }
-            });
-            // Merge in local courses (preserve any added/edited, also filtered by deleted)
-            localCourses.forEach(c => {
-              if (c && !isDeleted(c)) {
-                const key = String(c.code || c.name || c.id).trim().toLowerCase();
-                if (!cMap.has(key)) {
-                  cMap.set(key, c);
-                } else {
-                  cMap.set(key, { ...cMap.get(key), ...c });
-                }
-              }
-            });
-            const mergedCourses = Array.from(cMap.values());
+            // Server is authoritative for courses — only show what the DB has
+            let mergedCourses;
+            if (serverCourses.length > 0) {
+              // Use server courses only (filtered by locally-deleted ones pending sync)
+              mergedCourses = serverCourses.filter(c => c && !isDeleted(c));
+            } else {
+              // Server returned no courses — keep local as fallback
+              mergedCourses = localCourses.filter(c => c && !isDeleted(c));
+            }
 
             // Smart merge for batches
             const serverBatches = Array.isArray(result.batches) ? result.batches : [];
