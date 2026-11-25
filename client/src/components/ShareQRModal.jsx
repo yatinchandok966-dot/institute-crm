@@ -34,8 +34,8 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
   // High-res QR code URL using standard public QR generator API with high error correction
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(publicInquiryUrl)}&margin=10`;
 
-  // Clear, accurate admission message requested by user
-  const admissionCaption = `🎓 *Here's our official QR code! Scan & get admission in our academy:*\n\n👉 Apply directly here: ${publicInquiryUrl}\n\n✨ Scan with any phone camera or WhatsApp scanner to submit your application in 30 seconds!`;
+  // Clear, accurate admission message requested by user (Shares ONLY link, no scanner image)
+  const admissionCaption = `🎓 *Here's our official admission link! Apply & get admission in our academy:*\n\n👉 Apply directly here: ${publicInquiryUrl}\n\n✨ Fill the form in 30 seconds to book your demo seat & receive the course syllabus!`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicInquiryUrl);
@@ -173,57 +173,35 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
     }
   };
 
-  // Single Share Handler: Shares the scanner QR card image with admission message
-  const handleShareQRCode = async () => {
+  // Single Share Handler: Shares ONLY the inquiry link & invitation message (NO scanner image)
+  const handleShareLink = async () => {
     try {
       setSharing(true);
-      let cardBlob = await generatePaytmQRCardBlob();
-      if (!cardBlob) {
-        cardBlob = await getQrBlob();
-      }
 
-      const qrFile = new File([cardBlob], 'EduPulse-Academy-QR.png', { type: 'image/png' });
-
-      // Copy the text caption to clipboard so that on Windows Desktop (where WhatsApp drops the share text),
-      // the user can simply press Ctrl+V in WhatsApp's caption box to get the exact Paytm look!
+      // Copy admission caption and link to clipboard
       try {
         await navigator.clipboard.writeText(admissionCaption);
         setShareSuccessToast(true);
-        setTimeout(() => setShareSuccessToast(false), 4000);
+        setTimeout(() => setShareSuccessToast(false), 3000);
       } catch (clipErr) {
-        console.warn('Could not copy caption to clipboard:', clipErr);
+        console.warn('Could not copy link to clipboard:', clipErr);
       }
 
-      // Try native share with the scanner card file
-      if (navigator.canShare && navigator.canShare({ files: [qrFile] })) {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile && navigator.share) {
         await navigator.share({
-          title: 'EduPulse Academy - QR Admission',
-          text: admissionCaption,
-          files: [qrFile]
-        });
-      } else if (navigator.share) {
-        await navigator.share({
-          title: 'EduPulse Academy - QR Admission',
+          title: 'EduPulse Academy - Inquiry Link',
           text: admissionCaption,
           url: publicInquiryUrl
         });
       } else {
-        // Fallback for browsers without share API: download QR card and open WhatsApp
-        const url = URL.createObjectURL(cardBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'EduPulse-Academy-QR.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
+        // Direct WhatsApp share with inquiry link & message (NO scanner image)
         const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(admissionCaption)}`;
         window.open(waUrl, '_blank');
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        console.warn('Share error:', err);
+        console.warn('Share error, opening WhatsApp:', err);
         const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(admissionCaption)}`;
         window.open(waUrl, '_blank');
       }
@@ -617,27 +595,27 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   </div>
                 </div>
 
-                {/* Only ONE Primary Share Button */}
+                {/* Only ONE Primary Share Button: Shares Link only (NO scanner image) */}
                 <div className="pt-1 space-y-2.5">
                   <button
-                    onClick={handleShareQRCode}
+                    onClick={handleShareLink}
                     disabled={sharing}
                     className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer"
-                    title="Share QR scanner card with admission message"
+                    title="Share direct inquiry link and admission message"
                   >
                     <Share2 className="w-4 h-4" />
-                    <span>{sharing ? 'Sharing Scanner...' : 'Share QR Code'}</span>
+                    <span>{sharing ? 'Opening WhatsApp / Share...' : 'Share Link'}</span>
                   </button>
 
                   {shareSuccessToast && (
                     <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-[11px] font-medium flex items-center gap-2 animate-in fade-in duration-200">
                       <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span><strong>Caption copied!</strong> If WhatsApp opens with an empty caption box on PC, press <strong>Ctrl + V</strong> to paste it under the image card.</span>
+                      <span><strong>Link & invitation copied!</strong> Opening WhatsApp with your inquiry link.</span>
                     </div>
                   )}
 
                   <p className="text-[10.5px] text-slate-500 text-center leading-relaxed">
-                    Shares scanner card with: <span className="text-indigo-700 font-semibold">"Here's our official QR Code! Scan & get admission in our academy"</span>
+                    Shares direct link with: <span className="text-indigo-700 font-semibold">"Here's our official admission link! Apply & get admission in our academy"</span>
                   </p>
 
                   <div className="flex items-center gap-2 pt-1">
