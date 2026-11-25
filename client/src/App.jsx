@@ -241,10 +241,16 @@ export default function App() {
   const fetchDashboardData = async () => {
     setIsRefreshing(true);
     try {
-      const [statsRes, healthRes] = await Promise.all([
-        fetch("/api/dashboard/stats").catch(() => null),
-        fetch("/api/health").catch(() => null),
+      let [statsRes, healthRes] = await Promise.all([
+        fetch("/api/dashboard/stats", { cache: "no-store" }).catch(() => null),
+        fetch("/api/health", { cache: "no-store" }).catch(() => null),
       ]);
+
+      // Retry once if cold start caused a transient failure
+      if (!statsRes || !statsRes.ok) {
+        await new Promise((r) => setTimeout(r, 600));
+        statsRes = await fetch("/api/dashboard/stats", { cache: "no-store" }).catch(() => null);
+      }
 
       if (healthRes && healthRes.ok) {
         const health = await healthRes.json();
@@ -257,7 +263,7 @@ export default function App() {
           setInstituteData(prev => {
             // Server is authoritative when /api/dashboard/stats succeeds so normal browser always matches Incognito & DB (strictly excludes already admitted students)
             const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
-            const allAdmissions = (Array.isArray(result.admissions) && result.admissions.length > 0) ? result.admissions : (prev.admissions || []);
+            const allAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
             const admittedPhones = new Set(allAdmissions.map(a => String(a.phone || '').replace(/\D/g, '').slice(-10)).filter(Boolean));
             const admittedNames = new Set(allAdmissions.map(a => (a.studentName || a.student_name || '').trim().toLowerCase()).filter(Boolean));
             const leadMap = new Map();

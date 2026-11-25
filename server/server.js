@@ -1113,13 +1113,12 @@ app.post('/api/admissions', async (req, res) => {
     }
 
     // 5. Remove converted lead from leads table so it never appears in the leads pipeline again
-    const cleanLast10 = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
     if (cleanLast10 || studentName) {
       await pool.query(
         `DELETE FROM leads
-         WHERE (phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $1)
-            OR (full_name IS NOT NULL AND LOWER(TRIM(full_name)) = LOWER(TRIM($2)))`,
-        [cleanLast10, studentName]
+         WHERE ($1 <> '' AND phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $1)
+            OR ($1 = '' AND $2 <> '' AND full_name IS NOT NULL AND LOWER(TRIM(full_name)) = LOWER(TRIM($2)))`,
+        [cleanLast10 || '', studentName || '']
       ).catch(e => console.warn('Lead removal error upon admission:', e.message));
     }
 
