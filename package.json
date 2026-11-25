@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cd client && npm install && npm run build",
-    "start": "npm --prefix server start",
+    "build": "node init && cd client && npm install && npm run build",
+    "start": "node init && npm --prefix server start",
     "server": "npm --prefix server start",
     "client": "npm --prefix client run dev"
   },
