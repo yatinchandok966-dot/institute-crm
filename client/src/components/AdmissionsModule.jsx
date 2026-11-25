@@ -278,14 +278,6 @@ export default function AdmissionsModule({
                     <td className="px-3.5 py-3 align-middle text-right whitespace-nowrap overflow-hidden">
                       <div className="inline-flex items-center gap-1.5 justify-end">
                         <button
-                          onClick={() => onOpenConfirmationLetter(adm)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px] border border-slate-200 transition-colors shadow-2xs cursor-pointer"
-                          title="View Official Admission Letter & Details"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>Letter</span>
-                        </button>
-                        <button
                           onClick={() => openWhatsApp(adm)}
                           className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors shadow-2xs cursor-pointer"
                           title="Send WhatsApp Confirmation"
