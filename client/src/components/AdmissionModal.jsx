@@ -59,22 +59,30 @@ export default function AdmissionModal({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTrainerDropdownOpen, setIsTrainerDropdownOpen] = useState(false);
   const [isBatchDropdownOpen, setIsBatchDropdownOpen] = useState(false);
+  const trainerDropdownRef = useRef(null);
   const batchDropdownRef = useRef(null);
 
   useEffect(() => {
-    if (!isBatchDropdownOpen) return;
+    if (!isTrainerDropdownOpen && !isBatchDropdownOpen) return;
     const handleClickOutside = (e) => {
+      if (trainerDropdownRef.current && !trainerDropdownRef.current.contains(e.target)) {
+        setIsTrainerDropdownOpen(false);
+      }
       if (batchDropdownRef.current && !batchDropdownRef.current.contains(e.target)) {
         setIsBatchDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isBatchDropdownOpen]);
+  }, [isTrainerDropdownOpen, isBatchDropdownOpen]);
 
   useEffect(() => {
-    if (!isOpen) setIsBatchDropdownOpen(false);
+    if (!isOpen) {
+      setIsTrainerDropdownOpen(false);
+      setIsBatchDropdownOpen(false);
+    }
   }, [isOpen]);
 
   // When modal opens or lead is passed for conversion, pre-fill all student details
@@ -901,31 +909,86 @@ export default function AdmissionModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* 1. Trainer Selection (FIRST) */}
-              <div>
+              <div ref={trainerDropdownRef} className="relative">
                 <div className="flex items-center justify-between h-5 mb-1.5">
                   <label className="text-xs font-semibold text-slate-700 truncate">
                     Assigned Trainer / Faculty <span className="text-rose-500">*</span>
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-2">All registered instructors</span>
                 </div>
-                <select
-                  value={formData.trainer}
-                  onChange={handleTrainerChange}
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Select Trainer / Faculty</option>
-                  {effectiveTrainers.map((t, i) => {
-                    const tName = typeof t === 'string' ? t : (t?.name || `Trainer ${i + 1}`);
-                    const tEmp = t?.employeeId ? ` (${t.employeeId})` : '';
-                    const rawRole = (tName === 'Deepika') ? 'Technical Trainer' : (t?.role || 'Technical Trainer');
-                    const tRole = ` • ${rawRole}`;
-                    return (
-                      <option key={t?.id || t?.employeeId || tName || i} value={tName}>
-                        {tName}{tEmp}{tRole}
-                      </option>
-                    );
-                  })}
-                </select>
+                {(() => {
+                  const selectedT = effectiveTrainers.find(
+                    (t) => (typeof t === 'string' ? t : t?.name) === formData.trainer
+                  );
+                  const selectedTName = typeof selectedT === 'string' ? selectedT : selectedT?.name;
+                  const selectedTEmp = selectedT?.employeeId ? ` (${selectedT.employeeId})` : '';
+                  const selectedTRole = selectedTName
+                    ? ` • ${(selectedTName === 'Deepika') ? 'Technical Trainer' : (selectedT?.role || 'Technical Trainer')}`
+                    : '';
+                  const selectedLabel = selectedTName
+                    ? `${selectedTName}${selectedTEmp}${selectedTRole}`
+                    : 'Select Trainer / Faculty';
+
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsTrainerDropdownOpen((prev) => !prev);
+                          setIsBatchDropdownOpen(false);
+                        }}
+                        className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left"
+                      >
+                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                          <UserCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span className="truncate">{selectedLabel}</span>
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isTrainerDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isTrainerDropdownOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1">
+                          {effectiveTrainers.length > 0 ? (
+                            effectiveTrainers.map((t, i) => {
+                              const tName = typeof t === 'string' ? t : (t?.name || `Trainer ${i + 1}`);
+                              const tEmp = t?.employeeId ? `${t.employeeId}` : '';
+                              const rawRole = (tName === 'Deepika') ? 'Technical Trainer' : (t?.role || 'Technical Trainer');
+                              const isSelected = formData.trainer === tName;
+                              return (
+                                <button
+                                  key={t?.id || t?.employeeId || tName || i}
+                                  type="button"
+                                  onClick={() => {
+                                    handleTrainerChange({ target: { value: tName } });
+                                    setIsTrainerDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-xs transition-colors flex items-start gap-2 whitespace-normal break-words ${
+                                    isSelected
+                                      ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                                      : 'text-slate-700 hover:bg-slate-50 font-medium'
+                                  }`}
+                                >
+                                  <UserCheck className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`} />
+                                  <span className="leading-snug flex-1 min-w-0">
+                                    <span className="font-semibold text-slate-900 block">{tName}</span>
+                                    <span className="text-[11px] text-slate-500 block">
+                                      {tEmp ? `${tEmp} • ${rawRole}` : rawRole}
+                                    </span>
+                                  </span>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 mt-0.5 shrink-0" />}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="px-3 py-2 text-xs text-slate-500">
+                              No trainers available
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* 2. Trainer Availability Schedule & Allotted Batch (SECOND) */}
