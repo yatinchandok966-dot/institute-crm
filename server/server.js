@@ -282,7 +282,23 @@ app.get('/api/dashboard/stats', async (req, res) => {
         ) a ON true
         ORDER BY s.id DESC
       `),
-      pool.query('SELECT * FROM fee_payments ORDER BY id DESC'),
+      pool.query(`
+        SELECT 
+          f.id, 
+          f.receipt_no, 
+          f.amount, 
+          f.payment_mode, 
+          f.payment_date, 
+          f.received_by,
+          s.student_id_code AS "studentId", 
+          CONCAT_WS(' ', s.first_name, s.last_name) AS "studentName",
+          c.name AS "course"
+        FROM fee_payments f
+        LEFT JOIN enrollments e ON f.enrollment_id = e.id
+        LEFT JOIN students s ON e.student_id = s.id
+        LEFT JOIN courses c ON e.course_id = c.id
+        ORDER BY f.id DESC
+      `),
       pool.query('SELECT * FROM trainers ORDER BY id ASC')
     ]);
 
@@ -387,9 +403,9 @@ app.get('/api/dashboard/stats', async (req, res) => {
     const feeTransactions = feesRes.rows.map(f => ({
       id: f.id,
       receiptNo: f.receipt_no,
-      studentName: 'Registered Student',
-      studentId: 'STU',
-      course: 'Tuition Fee',
+      studentName: f.studentName || 'Registered Student',
+      studentId: f.studentId || 'STU',
+      course: f.course || 'Tuition Fee',
       amount: Number(f.amount),
       mode: f.payment_mode,
       date: f.payment_date,
@@ -1821,23 +1837,27 @@ app.post('/api/fees', async (req, res) => {
     const rcpSeq = String(Number(countRes.rows[0].count) + 1).padStart(4, '0');
     const rNo = receiptNo || `RCP-2026-${rcpSeq}`;
 
+    let enrollmentId = null;
+    if (studentId) {
+      const stuRes = await pool.query(
+        'SELECT e.id FROM students s LEFT JOIN enrollments e ON s.id = e.student_id WHERE s.student_id_code = $1 LIMIT 1', 
+        [studentId]
+      );
+      enrollmentId = stuRes.rows[0]?.id || null;
+    }
+
     const result = await pool.query(
-      `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by, enrollment_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [rNo, numAmount, mode || 'UPI', collectedBy || 'Finance Desk']
+      [rNo, numAmount, mode || 'UPI', collectedBy || 'Finance Desk', enrollmentId]
     );
 
-    // Update enrollment if studentId matches
-    if (studentId) {
-      const stuRes = await pool.query('SELECT id FROM students WHERE student_id_code = $1', [studentId]);
-      const sId = stuRes.rows[0]?.id;
-      if (sId) {
-        await pool.query(
-          'UPDATE enrollments SET paid_fee = paid_fee + $1, due_fee = GREATEST(0, due_fee - $1) WHERE student_id = $2',
-          [numAmount, sId]
-        );
-      }
+    if (enrollmentId) {
+      await pool.query(
+        'UPDATE enrollments SET paid_fee = paid_fee + $1, due_fee = GREATEST(0, due_fee - $1) WHERE id = $2',
+        [numAmount, enrollmentId]
+      );
     }
 
     res.status(201).json({ success: true, receipt: result.rows[0] });
