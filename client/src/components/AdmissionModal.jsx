@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar, Check } from 'lucide-react';
+import { X, CheckCircle2, UserCheck, Calculator, ShieldCheck, Clock, Calendar, Check, ChevronDown } from 'lucide-react';
 import { OFFICIAL_TRAINERS } from '../data/constants';
 import { COUNTRY_CODES, splitPhoneAndCountryCode, formatPhoneWithCountryCode } from '../utils/phone';
 
@@ -59,6 +59,23 @@ export default function AdmissionModal({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBatchDropdownOpen, setIsBatchDropdownOpen] = useState(false);
+  const batchDropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!isBatchDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (batchDropdownRef.current && !batchDropdownRef.current.contains(e.target)) {
+        setIsBatchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isBatchDropdownOpen]);
+
+  useEffect(() => {
+    if (!isOpen) setIsBatchDropdownOpen(false);
+  }, [isOpen]);
 
   // When modal opens or lead is passed for conversion, pre-fill all student details
   useEffect(() => {
@@ -912,7 +929,7 @@ export default function AdmissionModal({
               </div>
 
               {/* 2. Trainer Availability Schedule & Allotted Batch (SECOND) */}
-              <div>
+              <div ref={batchDropdownRef} className="relative">
                 <div className="flex items-center justify-between h-5 mb-1.5">
                   <label className="text-xs font-semibold text-slate-700 truncate">
                     Trainer Availability Schedule & Batch <span className="text-rose-500">*</span>
@@ -921,27 +938,76 @@ export default function AdmissionModal({
                     {trainerAvailableBatches.length} {trainerAvailableBatches.length === 1 ? 'Slot' : 'Slots'} Available
                   </span>
                 </div>
-                <select
-                  value={formData.batch}
-                  onChange={handleBatchChange}
-                  className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  {(trainerAvailableBatches && trainerAvailableBatches.length > 0) ? (
-                    trainerAvailableBatches.map((b, i) => {
-                      const bName = typeof b === 'string' ? b : (b?.name || `Batch ${i + 1}`);
-                      const bTiming = b?.timing || 'Mon-Fri 09:00 AM - 11:30 AM';
-                      const bRoom = b?.room ? ` [${b.room}]` : '';
-                      const bMode = b?.mode ? ` (${b.mode})` : '';
-                      return (
-                        <option key={b?.id || bName || i} value={bName}>
-                          📅 {bTiming} — {bName}{bMode}{bRoom}
-                        </option>
-                      );
-                    })
-                  ) : (
-                    <option value="">No batches available for this trainer</option>
-                  )}
-                </select>
+                {(() => {
+                  const selectedBatchObj = (trainerAvailableBatches || []).find(
+                    (b) => (typeof b === 'string' ? b : b?.name) === formData.batch
+                  );
+                  const selectedLabel = selectedBatchObj
+                    ? (typeof selectedBatchObj === 'string'
+                        ? selectedBatchObj
+                        : `${selectedBatchObj.timing || 'Mon-Fri 09:00 AM - 11:30 AM'} — ${selectedBatchObj.name}`)
+                    : (trainerAvailableBatches && trainerAvailableBatches.length > 0
+                        ? 'Select availability slot...'
+                        : 'No batches available for this trainer');
+
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIsBatchDropdownOpen((prev) => !prev)}
+                        className="w-full h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs font-semibold flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left"
+                      >
+                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span className="truncate">{selectedLabel}</span>
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isBatchDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isBatchDropdownOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1">
+                          {(trainerAvailableBatches && trainerAvailableBatches.length > 0) ? (
+                            trainerAvailableBatches.map((b, i) => {
+                              const bName = typeof b === 'string' ? b : (b?.name || `Batch ${i + 1}`);
+                              const bTiming = b?.timing || 'Mon-Fri 09:00 AM - 11:30 AM';
+                              const bRoom = b?.room ? ` [${b.room}]` : '';
+                              const bMode = b?.mode ? ` (${b.mode})` : '';
+                              const isSelected = formData.batch === bName;
+                              return (
+                                <button
+                                  key={b?.id || bName || i}
+                                  type="button"
+                                  onClick={() => {
+                                    handleBatchChange({ target: { value: bName } });
+                                    setIsBatchDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-xs transition-colors flex items-start gap-2 whitespace-normal break-words ${
+                                    isSelected
+                                      ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                                      : 'text-slate-700 hover:bg-slate-50 font-medium'
+                                  }`}
+                                >
+                                  <Calendar className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`} />
+                                  <span className="leading-snug flex-1 min-w-0">
+                                    <span className="font-semibold text-slate-900 block">{bName}</span>
+                                    <span className="text-[11px] text-slate-500 block">
+                                      {bTiming}{bMode}{bRoom}
+                                    </span>
+                                  </span>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 mt-0.5 shrink-0" />}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="px-3 py-2 text-xs text-slate-500">
+                              No batches available for this trainer
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
