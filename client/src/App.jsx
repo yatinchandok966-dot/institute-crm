@@ -353,25 +353,12 @@ export default function App() {
               mergedBatches = localBatches;
             }
 
-            // Smart merge for admissions: server is authoritative when admissions exist
+            // Server is authoritative for admissions & students so DB deletions reflect immediately
             const serverAdmissions = Array.isArray(result.admissions) ? result.admissions : [];
-            const localAdmissions = Array.isArray(prev.admissions) ? prev.admissions : [];
-            let mergedAdmissions = serverAdmissions.length > 0 ? serverAdmissions : localAdmissions;
+            const mergedAdmissions = serverAdmissions;
 
-            // Smart merge for students
             const serverStudents = Array.isArray(result.students) ? result.students : [];
-            const localStudents = Array.isArray(prev.students) ? prev.students : [];
-            let mergedStudents = localStudents;
-            if (serverStudents.length > 0 && localStudents.length === 0) {
-              mergedStudents = serverStudents;
-            } else if (serverStudents.length > 0 && localStudents.length > 0) {
-              const sMap = new Map();
-              localStudents.forEach(s => sMap.set(s.studentId || s.admissionNo || s.id, s));
-              serverStudents.forEach(s => sMap.set(s.studentId || s.admissionNo || s.id, s));
-              mergedStudents = Array.from(sMap.values());
-            } else if (localStudents.length > 0 && serverStudents.length === 0) {
-              mergedStudents = localStudents;
-            }
+            const mergedStudents = serverStudents;
 
             // Smart merge for fee transactions
             const serverFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
