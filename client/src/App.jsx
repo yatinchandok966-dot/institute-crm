@@ -87,13 +87,22 @@ export default function App() {
             initialCoursesList = [];
           }
 
-          // Fix QR source for Riya if currently Website or missing, and deduplicate by phone/id
+          // Fix QR source for Riya if currently Website or missing, and deduplicate by phone/id (exclude already admitted students)
           const rawParsedLeads = Array.isArray(parsed.recentLeads) ? parsed.recentLeads : [];
+          const savedAdmissions = Array.isArray(parsed.admissions) ? parsed.admissions : [];
+          const savedAdmPhones = new Set(savedAdmissions.map(a => String(a.phone || '').replace(/\D/g, '').slice(-10)).filter(Boolean));
+          const savedAdmNames = new Set(savedAdmissions.map(a => (a.studentName || a.student_name || '').trim().toLowerCase()).filter(Boolean));
+
           const seenInitPhones = new Set();
           const deduplicatedLeads = [];
           for (const l of rawParsedLeads) {
             if (!l) continue;
+            if (l.status === 'Lead Confirmed (Admitted)' || l.status === 'Admitted' || l.status === 'Converted') continue;
             const cleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
+            if (cleanPhone && savedAdmPhones.has(cleanPhone)) continue;
+            const cleanName = (l.name || '').trim().toLowerCase();
+            if (cleanName && savedAdmNames.has(cleanName)) continue;
+
             const key = cleanPhone ? `phone_${cleanPhone}` : `id_${l.id}`;
             if (!seenInitPhones.has(key)) {
               seenInitPhones.add(key);
@@ -246,12 +255,20 @@ export default function App() {
         const result = await statsRes.json();
         if (result.success) {
           setInstituteData(prev => {
-            // Server is authoritative when /api/dashboard/stats succeeds so normal browser always matches Incognito & DB
+            // Server is authoritative when /api/dashboard/stats succeeds so normal browser always matches Incognito & DB (strictly excludes already admitted students)
             const serverLeads = Array.isArray(result.recentLeads) ? result.recentLeads : [];
+            const allAdmissions = (Array.isArray(result.admissions) && result.admissions.length > 0) ? result.admissions : (prev.admissions || []);
+            const admittedPhones = new Set(allAdmissions.map(a => String(a.phone || '').replace(/\D/g, '').slice(-10)).filter(Boolean));
+            const admittedNames = new Set(allAdmissions.map(a => (a.studentName || a.student_name || '').trim().toLowerCase()).filter(Boolean));
             const leadMap = new Map();
             serverLeads.forEach(l => {
               if (!l) return;
+              if (l.status === 'Lead Confirmed (Admitted)' || l.status === 'Admitted' || l.status === 'Converted') return;
               const cleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
+              if (cleanPhone && admittedPhones.has(cleanPhone)) return;
+              const cleanName = (l.name || '').trim().toLowerCase();
+              if (cleanName && admittedNames.has(cleanName)) return;
+
               const key = cleanPhone ? `phone_${cleanPhone}` : `id_${l.id}`;
               if (!leadMap.has(key)) {
                 leadMap.set(key, l);
@@ -534,15 +551,19 @@ export default function App() {
     };
 
     setInstituteData((prev) => {
-      // 1. Mark corresponding lead as converted
-      const updatedLeads = (prev.recentLeads || []).map((l) => {
-        if (
-          l.id === safeAdmission.leadId ||
-          l.name === safeAdmission.studentName
-        ) {
-          return { ...l, status: "Lead Confirmed (Admitted)" };
-        }
-        return l;
+      // 1. Remove the converted lead completely from recentLeads so it is never shown on the Leads page
+      const leadPhone = String(safeAdmission.phone || '').replace(/\D/g, '').slice(-10);
+      const targetLeadId = safeAdmission.leadId || leadForConversion?.id;
+      const targetLeadName = (safeAdmission.studentName || leadForConversion?.name || '').trim().toLowerCase();
+
+      const updatedLeads = (prev.recentLeads || []).filter((l) => {
+        if (!l) return false;
+        if (targetLeadId && l.id === targetLeadId) return false;
+        if (leadForConversion && (l.id === leadForConversion.id || l.name === leadForConversion.name)) return false;
+        const lCleanPhone = String(l.phone || '').replace(/\D/g, '').slice(-10);
+        if (leadPhone && lCleanPhone && leadPhone === lCleanPhone) return false;
+        if (l.name && targetLeadName && l.name.trim().toLowerCase() === targetLeadName) return false;
+        return true;
       });
 
       // 2. Add to students roster if not present (deduplicated by studentId / admissionNo)
@@ -609,9 +630,24 @@ export default function App() {
       };
     });
 
+    // Delete the converted lead from server so it never returns on dashboard refresh
+    const leadIdToDelete = safeAdmission.leadId || leadForConversion?.id;
+    if (leadIdToDelete) {
+      fetch(`/api/leads/${leadIdToDelete}`, { method: 'DELETE' }).catch(() => null);
+    }
+    const leadPhoneToDelete = String(safeAdmission.phone || leadForConversion?.phone || '').replace(/\D/g, '').slice(-10);
+    if (leadPhoneToDelete) {
+      fetch(`/api/leads/by-phone/${leadPhoneToDelete}`, { method: 'DELETE' }).catch(() => null);
+    }
+
     setLeadForConversion(null);
+    setIsAdmissionModalOpen(false);
+
+    // Directly move to Admissions page as requested by user
+    handleTabChange('admissions');
+
     // Show official admission confirmation letter modal
-    setConfirmedAdmissionLetter(newAdmission);
+    setConfirmedAdmissionLetter(safeAdmission);
 
     // Persist admission, student and fee record to backend only if AdmissionModal didn't already persist it
     if (!newAdmission._persisted) {
@@ -1144,6 +1180,7 @@ export default function App() {
         return (
           <LeadsModule
             leads={instituteData.recentLeads}
+            admissions={instituteData.admissions}
             courses={instituteData.courses}
             trainers={instituteData.trainers}
             onOpenShareQR={() => setIsShareQROpen(true)}

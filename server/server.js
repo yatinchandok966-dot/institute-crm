@@ -54,6 +54,20 @@ const cleanupDuplicateLeads = async () => {
       AND phone IS NOT NULL
       AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) >= 10
     `);
+
+    // Strictly remove any leads that have already been converted into confirmed admissions
+    await pool.query(`
+      DELETE FROM leads
+      WHERE (
+        phone IS NOT NULL AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) >= 10 AND
+        RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) IN (
+          SELECT RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10)
+          FROM admissions
+          WHERE phone IS NOT NULL AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) >= 10
+        )
+      )
+      OR lead_status IN ('Lead Confirmed (Admitted)', 'Admitted', 'Converted')
+    `).catch(() => null);
   } catch (err) {
     console.warn('Cleanup duplicate leads warning:', err.message);
   }
@@ -605,6 +619,21 @@ app.delete('/api/leads/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/leads/by-phone/:phone', async (req, res) => {
+  try {
+    const cleanPhone = String(req.params.phone || '').replace(/\D/g, '').slice(-10);
+    if (cleanPhone) {
+      await pool.query(
+        `DELETE FROM leads WHERE RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $1`,
+        [cleanPhone]
+      );
+    }
+    res.json({ success: true, message: 'Lead deleted by phone successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/leads/bulk', async (req, res) => {
   try {
     const { leads: incomingLeads } = req.body;
@@ -1081,6 +1110,17 @@ app.post('/api/admissions', async (req, res) => {
          ON CONFLICT (receipt_no) DO NOTHING`,
         [enrollmentId, receiptNo, numPaid, 'UPI / Bank', counselor || 'Admissions Desk', 'ADMISSION-PAYMENT']
       );
+    }
+
+    // 5. Remove converted lead from leads table so it never appears in the leads pipeline again
+    const cleanLast10 = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+    if (cleanLast10 || studentName) {
+      await pool.query(
+        `DELETE FROM leads
+         WHERE (phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $1)
+            OR (full_name IS NOT NULL AND LOWER(TRIM(full_name)) = LOWER(TRIM($2)))`,
+        [cleanLast10, studentName]
+      ).catch(e => console.warn('Lead removal error upon admission:', e.message));
     }
 
     const admRow = admResult.rows[0];

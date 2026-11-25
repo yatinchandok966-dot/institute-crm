@@ -53,6 +53,7 @@ import ImportLeadsModal from './ImportLeadsModal';
 
 export default function LeadsModule({
   leads = [],
+  admissions = [],
   courses = [],
   trainers = [],
   onOpenShareQR,
@@ -145,13 +146,45 @@ export default function LeadsModule({
     }
   };
 
+  // Admitted student identifiers to strictly exclude confirmed admissions from Leads page
+  const admittedPhoneSet = useMemo(() => {
+    const s = new Set();
+    (admissions || []).forEach(a => {
+      const p = String(a.phone || '').replace(/\D/g, '').slice(-10);
+      if (p) s.add(p);
+    });
+    return s;
+  }, [admissions]);
+
+  const admittedNameSet = useMemo(() => {
+    const s = new Set();
+    (admissions || []).forEach(a => {
+      const n = (a.studentName || a.student_name || '').trim().toLowerCase();
+      if (n) s.add(n);
+    });
+    return s;
+  }, [admissions]);
+
+  // Clean unadmitted leads list (confirmed admissions are never shown on the Leads page)
+  const unadmittedLeads = useMemo(() => {
+    return leads.filter((l) => {
+      if (!l) return false;
+      const cleanP = String(l.phone || '').replace(/\D/g, '').slice(-10);
+      const cleanN = (l.name || '').trim().toLowerCase();
+      if (l.status === 'Lead Confirmed (Admitted)' || l.status === 'Admitted' || l.status === 'Converted') return false;
+      if (cleanP && admittedPhoneSet.has(cleanP)) return false;
+      if (cleanN && admittedNameSet.has(cleanN)) return false;
+      return true;
+    });
+  }, [leads, admittedPhoneSet, admittedNameSet]);
+
   // Follow-up reminder statistics
   const followUpStats = useMemo(() => {
     let overdue = 0;
     let today = 0;
     let upcoming = 0;
 
-    leads.forEach((l) => {
+    unadmittedLeads.forEach((l) => {
       const status = getFollowUpStatus(l.nextFollowUpDate);
       if (status.type === 'overdue') overdue++;
       if (status.type === 'today') today++;
@@ -159,15 +192,15 @@ export default function LeadsModule({
     });
 
     return { overdue, today, upcoming };
-  }, [leads, todayStr]);
+  }, [unadmittedLeads, todayStr]);
 
   // Dynamic unique courses from real courses and real leads (no fake defaults)
   const uniqueCourses = useMemo(() => {
     const set = new Set();
     (courses || []).forEach(c => c.name && set.add(c.name));
-    leads.forEach(l => l.course && set.add(l.course));
+    unadmittedLeads.forEach(l => l.course && set.add(l.course));
     return Array.from(set).sort();
-  }, [courses, leads]);
+  }, [courses, unadmittedLeads]);
 
   // Dynamic unique counsellors from staff and actual leads (strictly exclude technical trainers)
   const uniqueCounselors = useMemo(() => {
@@ -192,7 +225,7 @@ export default function LeadsModule({
       }
     });
 
-    leads.forEach(l => {
+    unadmittedLeads.forEach(l => {
       if (l.counselor && l.counselor !== 'Unassigned') {
         const cTrim = l.counselor.trim();
         if (!technicalTrainerNames.has(cTrim.toLowerCase())) {
@@ -201,11 +234,11 @@ export default function LeadsModule({
       }
     });
     return Array.from(set).sort();
-  }, [leads, trainers]);
+  }, [unadmittedLeads, trainers]);
 
   // Filtered Leads (with automatic deduplication by phone number)
   const filteredLeads = useMemo(() => {
-    const rawList = leads.filter((lead) => {
+    const rawList = unadmittedLeads.filter((lead) => {
       // 1. Text Search across Name, Phone, Email, City, Qualification, College, Course, Counselor
       const q = searchQuery.toLowerCase().trim();
       let matchesSearch = true;
@@ -286,7 +319,7 @@ export default function LeadsModule({
       return true;
     });
   }, [
-    leads,
+    unadmittedLeads,
     searchQuery,
     sourceFilter,
     statusFilter,
