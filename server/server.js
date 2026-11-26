@@ -76,6 +76,7 @@ const cleanupDuplicateLeads = async () => {
 const syncAdmissionsAndStudents = async () => {
   try {
     await pool.query('ALTER TABLE admissions ADD COLUMN IF NOT EXISTS student_deleted BOOLEAN DEFAULT FALSE');
+    await pool.query('ALTER TABLE students ADD COLUMN IF NOT EXISTS course VARCHAR(150)');
     const adms = await pool.query('SELECT * FROM admissions WHERE COALESCE(student_deleted, FALSE) = FALSE');
     for (const adm of adms.rows) {
       const cleanPhone = adm.phone ? String(adm.phone).replace(/\D/g, '').slice(-10) : '';
@@ -98,9 +99,9 @@ const syncAdmissionsAndStudents = async () => {
         const insRes = await pool.query(
           `INSERT INTO students (
              student_id_code, first_name, last_name, email, phone,
-             guardian_name, guardian_phone, address, admission_no, enrollment_status
+             guardian_name, guardian_phone, address, admission_no, course, enrollment_status
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
            ON CONFLICT DO NOTHING
            RETURNING id`,
           [
@@ -113,6 +114,7 @@ const syncAdmissionsAndStudents = async () => {
             adm.guardian_phone || '',
             adm.address || '',
             adm.admission_no,
+            adm.course || null,
             'Active'
           ]
         );
@@ -159,9 +161,10 @@ const syncAdmissionsAndStudents = async () => {
           `UPDATE students
            SET admission_no = COALESCE(admission_no, $1),
                first_name = CASE WHEN $3 <> '' THEN $3 ELSE first_name END,
-               last_name = CASE WHEN $4 <> '' THEN $4 ELSE last_name END
+               last_name = CASE WHEN $4 <> '' THEN $4 ELSE last_name END,
+               course = COALESCE(NULLIF(course, ''), NULLIF($5, ''))
            WHERE id = $2`,
-          [adm.admission_no, studentId, fName, lName]
+          [adm.admission_no, studentId, fName, lName, adm.course || '']
         );
 
         // FIX: Ensure enrollment exists/updates for existing students as well
@@ -231,6 +234,23 @@ const syncAdmissionsAndStudents = async () => {
       ) sub
       WHERE e.id = sub.eid
     `).catch(e => console.warn('Backfill batch_id warning:', e.message));
+
+    // Backfill students.course where NULL/empty from courses or admissions
+    await pool.query(`
+      UPDATE students s
+      SET course = sub.resolved_course
+      FROM (
+        SELECT s2.id AS sid, COALESCE(c.name, a.course) AS resolved_course
+        FROM students s2
+        LEFT JOIN enrollments e ON e.student_id = s2.id
+        LEFT JOIN courses c ON e.course_id = c.id
+        LEFT JOIN admissions a ON (s2.admission_no = a.admission_no OR (s2.phone IS NOT NULL AND s2.phone <> '' AND s2.phone = a.phone))
+        WHERE (s2.course IS NULL OR TRIM(s2.course) = '')
+          AND COALESCE(c.name, a.course) IS NOT NULL
+          AND TRIM(COALESCE(c.name, a.course)) <> ''
+      ) sub
+      WHERE s.id = sub.sid
+    `).catch(e => console.warn('Backfill students.course warning:', e.message));
   } catch (err) {
     console.warn('Sync admissions to students warning:', err.message);
   }
@@ -300,7 +320,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             GREATEST(0, COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) - COALESCE(e.paid_fee, a.admission_fee_paid, 0)),
             0
           ) AS "feeDue",
-          COALESCE(c.name, a.course) AS course,
+          COALESCE(NULLIF(s.course, ''), c.name, a.course) AS course,
           COALESCE(b.batch_name, a.batch) AS batch
         FROM students s
         LEFT JOIN enrollments e ON s.id = e.student_id
@@ -317,7 +337,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN LATERAL (
           SELECT fee_amount
           FROM courses
-          WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(c.name, a.course)))
+          WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(NULLIF(s.course, ''), c.name, a.course)))
           LIMIT 1
         ) ac ON true
         ORDER BY s.id DESC
@@ -790,7 +810,7 @@ app.get('/api/courses', async (req, res) => {
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
       pool.query(`
         SELECT s.id, s.student_id_code, s.admission_no, s.phone,
-               COALESCE(c.name, a.course) as course
+               COALESCE(NULLIF(s.course, ''), c.name, a.course) as course
         FROM students s
         LEFT JOIN enrollments e ON s.id = e.student_id
         LEFT JOIN courses c ON e.course_id = c.id
@@ -1174,11 +1194,11 @@ app.post('/api/admissions', async (req, res) => {
     const lastName = nameParts.slice(1).join(' ') || '';
 
     const stuResult = await pool.query(
-      `INSERT INTO students (student_id_code, first_name, last_name, email, phone, guardian_name, guardian_phone, address, enrollment_status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO students (student_id_code, first_name, last_name, email, phone, guardian_name, guardian_phone, address, admission_no, course, enrollment_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (student_id_code) DO NOTHING
        RETURNING id`,
-      [studentIdCode, firstName, lastName, email, phone, guardianName, guardianPhone, address, 'Active']
+      [studentIdCode, firstName, lastName, email, phone, guardianName, guardianPhone, address, admissionNo, course || null, 'Active']
     );
 
     const studentDbId = stuResult.rows[0]?.id;
@@ -1382,7 +1402,7 @@ app.get('/api/students', async (req, res) => {
           GREATEST(0, COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) - COALESCE(e.paid_fee, a.admission_fee_paid, 0)),
           0
         ) AS "feeDue",
-        COALESCE(c.name, a.course) AS course,
+        COALESCE(NULLIF(s.course, ''), c.name, a.course) AS course,
         COALESCE(b.batch_name, a.batch) AS batch
       FROM students s
       LEFT JOIN enrollments e ON s.id = e.student_id
@@ -1399,7 +1419,7 @@ app.get('/api/students', async (req, res) => {
       LEFT JOIN LATERAL (
         SELECT fee_amount
         FROM courses
-        WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(c.name, a.course)))
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(NULLIF(s.course, ''), c.name, a.course)))
         LIMIT 1
       ) ac ON true
       ORDER BY s.id DESC
@@ -1550,6 +1570,8 @@ app.put('/api/students/:id', async (req, res) => {
     let studentDbId;
     let studentCode;
 
+    const effectiveCourse = (course || '').trim() || null;
+
     if (checkStu.rows.length === 0) {
       // Auto-insert student into PostgreSQL so changes definitely persist in database!
       const stuCount = await pool.query('SELECT COUNT(*) FROM students').catch(() => ({ rows: [{ count: 0 }] }));
@@ -1560,9 +1582,9 @@ app.put('/api/students/:id', async (req, res) => {
         `INSERT INTO students (
            student_id_code, first_name, last_name, email, phone,
            guardian_name, guardian_phone, address, date_of_birth, gender,
-           qualification, college, passing_year, admission_no, enrollment_status
+           qualification, college, passing_year, admission_no, course, enrollment_status
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          RETURNING id, student_id_code`,
         [
           studentCode,
@@ -1579,6 +1601,7 @@ app.put('/api/students/:id', async (req, res) => {
           effectiveCollege,
           cleanPassingYear || null,
           effectiveAdmissionNo,
+          effectiveCourse,
           effectiveStatus
         ]
       );
@@ -1604,8 +1627,9 @@ app.put('/api/students/:id', async (req, res) => {
            college = $11,
            passing_year = $12,
            admission_no = $13,
-           enrollment_status = $14
-         WHERE id = $15`,
+           course = COALESCE($14, course),
+           enrollment_status = $15
+         WHERE id = $16`,
         [
           firstName,
           lastName,
@@ -1620,6 +1644,7 @@ app.put('/api/students/:id', async (req, res) => {
           effectiveCollege,
           cleanPassingYear || null,
           effectiveAdmissionNo,
+          effectiveCourse,
           effectiveStatus,
           studentDbId
         ]
@@ -1704,7 +1729,7 @@ app.put('/api/students/:id', async (req, res) => {
         COALESCE(e.total_fee, 0) AS "feeTotal",
         COALESCE(e.paid_fee, 0) AS "feePaid",
         COALESCE(e.due_fee, 0) AS "feeDue",
-        COALESCE(c.name, a.course) AS course,
+        COALESCE(NULLIF(s.course, ''), c.name, a.course) AS course,
         COALESCE(b.batch_name, a.batch) AS batch
       FROM students s
       LEFT JOIN enrollments e ON s.id = e.student_id
