@@ -87,7 +87,17 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(publicInquiryUrl)}&margin=10`;
 
   // Clear, accurate admission message requested by user (Shares ONLY link, no scanner image)
-  const admissionCaption = `🎓 *Here's our official admission link! Apply & get admission in our academy:*\n\n👉 Apply directly here: ${publicInquiryUrl}\n\n✨ Fill the form in 30 seconds to book your demo seat & receive the course syllabus!`;
+  const admissionCaption = `Thank you for your interest in our academy.
+
+Please scan the attached QR code or use the link below to fill out our admission enquiry form:
+
+${publicInquiryUrl}
+
+Once you submit the form, our admissions team will contact you with the course syllabus and help you book a demo session.
+
+Regards,
+Admissions Team
+EduPulse`;
 
   const showToast = (message) => {
     setShareSuccessToast(message);
@@ -163,7 +173,17 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       }
       case 'gmail': {
         const subject = `🎓 EduPulse Academy - Course Inquiry & Admission Link`;
-        const body = `Hello,\n\nHere is our official course inquiry and admission registration link:\n\n${publicInquiryUrl}\n\nPlease click the link to submit your application and book a free demo session.\n\n✨ Fill the form in 30 seconds to book your demo seat & receive the course syllabus!\n\nBest regards,\nEduPulse Academy Admissions Desk`;
+        const body = `Thank you for your interest in our academy.
+
+Please scan the attached QR code or use the link below to fill out our admission enquiry form:
+
+${publicInquiryUrl}
+
+Once you submit the form, our admissions team will contact you with the course syllabus and help you book a demo session.
+
+Regards,
+Admissions Team
+EduPulse`;
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.open(gmailUrl, '_blank', 'noopener,noreferrer');
         showToast('Opening Gmail with pre-filled admission link...');
@@ -773,7 +793,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
               </div>
 
               {/* Bottom Quick Action: Copy Full Invitation Text */}
-              <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-2">
+              {/* <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-2">
                 <button
                   onClick={handleCopyFullMessage}
                   className="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer truncate"
@@ -798,7 +818,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
                   <span>Back</span>
                 </button>
-              </div>
+              </div> */}
             </div>
           ) : activeTab === 'qr' ? (
             /* ========================================================
@@ -1029,7 +1049,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
         {/* Footer */}
         <div className={`${isShareSheetOpen ? 'px-4 py-2.5' : 'px-6 py-3'} bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500`}>
-          <span>Target Destination: <strong>Leads & Inquiries Table</strong></span>
+          {/* <span>Target Destination: <strong>Leads & Inquiries Table</strong></span> */}
           <div className="flex items-center gap-2">
             {isShareSheetOpen && (
               <button
