@@ -54,7 +54,6 @@ export default function CoursesModule({
   onEditCourse,
   onDeleteCourse
 }) {
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseForDetails, setSelectedCourseForDetails] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
@@ -95,15 +94,12 @@ export default function CoursesModule({
     return matchingTrainer?.name || course.trainerName || 'Unassigned';
   };
 
-  const categories = ['All', 'Software Development', 'Data & AI', 'Design', 'Marketing', 'Cyber Security'];
-
   const filteredCourses = courses.filter(c => {
-    const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
     const matchesSearch =
       (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.trainerName || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
   return (
@@ -137,21 +133,6 @@ export default function CoursesModule({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
           />
-        </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap text-xs transition-colors ${
-                selectedCategory === cat
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
         </div>
       </div>
 
