@@ -12,43 +12,57 @@ import {
   Info,
   Share2,
   Download,
-  ImageIcon
+  ImageIcon,
+  ArrowLeft,
+  CheckCheck
 } from 'lucide-react';
 
-// Authentic Social & Messaging Platform Icons
-const WhatsAppIcon = ({ className = "w-4 h-4" }) => (
+// Official Brand Icons for Sharing Platforms
+const WhatsAppIcon = ({ className = "w-6 h-6 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.588-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.075-2.079-.499-1.614-.668-2.671-2.316-2.753-2.427-.08-.109-.652-.868-.652-1.656 0-.787.411-1.174.557-1.332.144-.158.314-.198.42-.198.106 0 .211.002.304.007.1.005.234-.038.365.279.136.327.464 1.132.505 1.215.041.083.069.181.012.294-.055.114-.083.186-.166.282-.083.097-.175.216-.25.29-.083.082-.17.171-.073.338.098.166.435.718.934 1.162.641.572 1.182.748 1.349.831.166.083.264.072.362-.041.099-.114.422-.491.536-.66.113-.169.227-.141.381-.084.155.056.985.464 1.155.549.17.085.283.127.325.197.042.071.042.41-.102.815z" />
+    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 21.95l4.908-1.353C8.414 21.492 10.155 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.625 0-3.136-.454-4.43-1.241l-.318-.194-2.909.803.805-2.836-.211-.336C4.1 14.939 3.6 13.511 3.6 12c0-4.632 3.768-8.4 8.4-8.4 4.633 0 8.4 3.768 8.4 8.4 0 4.633-3.767 8.05-8.4 8.05z" />
   </svg>
 );
 
-const LinkedInIcon = ({ className = "w-4 h-4" }) => (
+const LinkedInIcon = ({ className = "w-6 h-6 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.27a1.64 1.64 0 0 0-1.66 1.63 1.64 1.64 0 0 0 1.66 1.64 1.64 1.64 0 0 0 1.65-1.64c0-.9-.74-1.63-1.65-1.63Z" />
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.79v8.37H6.46V10.9M7.86 6.5a1.63 1.63 0 0 0-1.63 1.63c0 .9.73 1.63 1.63 1.63.9 0 1.63-.73 1.63-1.63 0-.9-.73-1.63-1.63-1.63Z" />
   </svg>
 );
 
-const InstagramIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
+const InstagramIcon = ({ className = "w-6 h-6 text-white" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
   </svg>
 );
 
-const FacebookIcon = ({ className = "w-4 h-4" }) => (
+const FacebookIcon = ({ className = "w-6 h-6 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.82 0-1.611.233-1.916.634-.305.402-.305 1.08-.305 2.128v1.222h4.524l-.619 3.667h-3.905v7.98H9.101z" />
   </svg>
 );
 
-const TwitterXIcon = ({ className = "w-4 h-4" }) => (
+const TwitterIcon = ({ className = "w-5 h-5 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
   </svg>
 );
 
-const GmailIcon = ({ className = "w-4 h-4" }) => (
+const GmailIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M22 6.5l-10 7.5L2 6.5V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6.5z" />
+    <path fill="#34A853" d="M22 6.5V5a2 2 0 0 0-2-2h-3l-5 4-5-4H4a2 2 0 0 0-2 2v1.5l10 7.5 10-7.5z" />
+    <path fill="#EA4335" d="M12 14l10-7.5L20 5l-8 6-8-6-2 1.5L12 14z" />
+    <path fill="#FBBC05" d="M2 6.5V19a2 2 0 0 0 2 2h2V8.5L2 6.5z" />
+  </svg>
+);
+
+const TelegramIcon = ({ className = "w-6 h-6 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.272H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
   </svg>
 );
 
@@ -56,7 +70,10 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
   const [copied, setCopied] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [shareToast, setShareToast] = useState(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareSuccessToast, setShareSuccessToast] = useState(null);
+  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [copiedFullMessage, setCopiedFullMessage] = useState(false);
   const [activeTab, setActiveTab] = useState('qr'); // 'qr' | 'standee'
   const printRef = useRef(null);
 
@@ -72,10 +89,25 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
   // Clear, accurate admission message requested by user (Shares ONLY link, no scanner image)
   const admissionCaption = `🎓 *Here's our official admission link! Apply & get admission in our academy:*\n\n👉 Apply directly here: ${publicInquiryUrl}\n\n✨ Fill the form in 30 seconds to book your demo seat & receive the course syllabus!`;
 
+  const showToast = (message) => {
+    setShareSuccessToast(message);
+    setTimeout(() => {
+      setShareSuccessToast(null);
+    }, 3500);
+  };
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicInquiryUrl);
     setCopied(true);
+    showToast('Inquiry link copied to clipboard!');
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleCopyFullMessage = () => {
+    navigator.clipboard.writeText(admissionCaption);
+    setCopiedFullMessage(true);
+    showToast('Full invitation message & link copied to clipboard!');
+    setTimeout(() => setCopiedFullMessage(false), 2500);
   };
 
   const getQrBlob = async () => {
@@ -84,8 +116,159 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
     return await res.blob();
   };
 
+  // Platform Share Handler: shares the direct link and invitation message across any selected platform
+  const handlePlatformShare = async (platformId) => {
+    switch (platformId) {
+      case 'whatsapp': {
+        try {
+          await navigator.clipboard.writeText(admissionCaption);
+        } catch (_) {}
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(admissionCaption)}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening WhatsApp with inquiry link and invitation message...');
+        break;
+      }
+      case 'linkedin': {
+        try {
+          await navigator.clipboard.writeText(admissionCaption);
+        } catch (_) {}
+        const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicInquiryUrl)}`;
+        window.open(linkedInUrl, '_blank', 'noopener,noreferrer');
+        showToast('Link & message copied! Opening LinkedIn share...');
+        break;
+      }
+      case 'instagram': {
+        try {
+          await navigator.clipboard.writeText(admissionCaption);
+        } catch (_) {}
+        window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+        showToast('Admission link copied! Opening Instagram to paste in DM, Bio, or Story...');
+        break;
+      }
+      case 'facebook': {
+        try {
+          await navigator.clipboard.writeText(publicInquiryUrl);
+        } catch (_) {}
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicInquiryUrl)}&quote=${encodeURIComponent(admissionCaption)}`;
+        window.open(fbUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening Facebook to share inquiry link...');
+        break;
+      }
+      case 'twitter': {
+        const tweetText = `🎓 Here's our official admission link! Apply & get admission in EduPulse Academy:`;
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(publicInquiryUrl)}&hashtags=Education,Admissions,EduPulse`;
+        window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening X (Twitter) tweet intent...');
+        break;
+      }
+      case 'gmail': {
+        const subject = `🎓 EduPulse Academy - Course Inquiry & Admission Link`;
+        const body = `Hello,\n\nHere is our official course inquiry and admission registration link:\n\n${publicInquiryUrl}\n\nPlease click the link to submit your application and book a free demo session.\n\n✨ Fill the form in 30 seconds to book your demo seat & receive the course syllabus!\n\nBest regards,\nEduPulse Academy Admissions Desk`;
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening Gmail with pre-filled admission link...');
+        break;
+      }
+      case 'telegram': {
+        const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(publicInquiryUrl)}&text=${encodeURIComponent(admissionCaption)}`;
+        window.open(tgUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening Telegram with inquiry link...');
+        break;
+      }
+      case 'system': {
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'EduPulse Academy - Course Inquiry & Admission Link',
+              text: admissionCaption,
+              url: publicInquiryUrl
+            });
+            showToast('Shared via device share sheet');
+          } catch (e) {
+            if (e.name !== 'AbortError') {
+              handleCopyLink();
+            }
+          }
+        } else {
+          handleCopyLink();
+          showToast('Inquiry link copied to clipboard!');
+        }
+        break;
+      }
+      default:
+        handleCopyLink();
+    }
+  };
+
+  // Supported Platforms List with Official Brand Styling matching reference image
+  const sharePlatforms = [
+    {
+      id: 'whatsapp',
+      name: 'WhatsApp',
+      subtitle: 'Direct Chat',
+      bg: 'bg-[#25D366]',
+      hoverBg: 'hover:bg-[#20ba5a]',
+      icon: <WhatsAppIcon className="w-6 h-6 text-white" />
+    },
+    {
+      id: 'linkedin',
+      name: 'LinkedIn',
+      subtitle: 'Feed / Post',
+      bg: 'bg-[#0A66C2]',
+      hoverBg: 'hover:bg-[#095196]',
+      icon: <LinkedInIcon className="w-6 h-6 text-white" />
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram',
+      subtitle: 'DM / Story',
+      bg: 'bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]',
+      hoverBg: 'hover:opacity-90',
+      icon: <InstagramIcon className="w-6 h-6 text-white" />
+    },
+    {
+      id: 'facebook',
+      name: 'Facebook',
+      subtitle: 'Social Feed',
+      bg: 'bg-[#1877F2]',
+      hoverBg: 'hover:bg-[#166fe5]',
+      icon: <FacebookIcon className="w-6 h-6 text-white" />
+    },
+    {
+      id: 'twitter',
+      name: 'X (Twitter)',
+      subtitle: 'Tweet',
+      bg: 'bg-slate-900',
+      hoverBg: 'hover:bg-black',
+      icon: <TwitterIcon className="w-5 h-5 text-white" />
+    },
+    {
+      id: 'gmail',
+      name: 'Gmail',
+      subtitle: 'Google Mail',
+      bg: 'bg-white border border-slate-200 shadow-2xs',
+      hoverBg: 'hover:bg-slate-50',
+      icon: <GmailIcon className="w-6 h-6" />
+    },
+    {
+      id: 'telegram',
+      name: 'Telegram',
+      subtitle: 'Messenger',
+      bg: 'bg-[#229ED9]',
+      hoverBg: 'hover:bg-[#1e8ec3]',
+      icon: <TelegramIcon className="w-6 h-6 text-white" />
+    },
+    {
+      id: 'system',
+      name: 'Device Share',
+      subtitle: 'Windows / OS',
+      bg: 'bg-indigo-600',
+      hoverBg: 'hover:bg-indigo-700',
+      icon: <Share2 className="w-5 h-5 text-white" />
+    }
+  ];
+
   // Generate a Paytm-style clean branded QR card image with clear admission text on the card itself
-  // Using blob URL prevents any CORS or cache-tainting issues
   const generatePaytmQRCardBlob = async () => {
     try {
       const qrBlob = await getQrBlob();
@@ -150,7 +333,6 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
               ctx.beginPath();
               ctx.roundRect(145, 226, 350, 350, 20);
               ctx.fill();
-              ctx.stroke();
             } else {
               ctx.fillRect(145, 226, 350, 350);
               ctx.strokeRect(145, 226, 350, 350);
@@ -182,7 +364,6 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
             ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.fillText('EduPulse CRM • Admissions Desk', canvas.width / 2, 695);
 
-            // Generous 165px of bottom whitespace ensures WhatsApp timestamp never covers text
             URL.revokeObjectURL(objectUrl);
 
             canvas.toBlob((blob) => {
@@ -206,117 +387,6 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       console.warn('Failed to load blob for canvas:', err);
       return null;
     }
-  };
-
-  // Multi-Platform Share Handler: Shares link & invitation to WhatsApp, LinkedIn, Instagram, Facebook, Twitter, Gmail
-  const handlePlatformShare = async (platform) => {
-    // 1. Copy link and invitation message to clipboard for seamless sharing
-    try {
-      await navigator.clipboard.writeText(admissionCaption);
-    } catch (clipErr) {
-      console.warn('Could not copy link to clipboard:', clipErr);
-    }
-
-    const encodedUrl = encodeURIComponent(publicInquiryUrl);
-    const encodedCaption = encodeURIComponent(admissionCaption);
-    const emailSubject = encodeURIComponent("EduPulse Academy - Student Course Inquiry & Admission Link");
-
-    switch (platform) {
-      case 'whatsapp': {
-        const waUrl = `https://api.whatsapp.com/send?text=${encodedCaption}`;
-        window.open(waUrl, '_blank', 'noopener,noreferrer');
-        setShareToast({
-          platform: 'WhatsApp',
-          text: 'Opening WhatsApp with inquiry link and admission invite!'
-        });
-        break;
-      }
-
-      case 'linkedin': {
-        const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
-        window.open(liUrl, '_blank', 'noopener,noreferrer,width=650,height=600');
-        setShareToast({
-          platform: 'LinkedIn',
-          text: 'Opening LinkedIn! Invitation message copied to clipboard for your post.'
-        });
-        break;
-      }
-
-      case 'instagram': {
-        // Instagram does not offer a public URL parameter for pre-filling posts or DMs from web.
-        // We copy the full link and invitation to clipboard and open Instagram Direct / Web.
-        const igUrl = 'https://www.instagram.com/direct/inbox/';
-        window.open(igUrl, '_blank', 'noopener,noreferrer');
-        setShareToast({
-          platform: 'Instagram',
-          text: 'Link & invite copied to clipboard! Opening Instagram to paste in DM or Story.'
-        });
-        break;
-      }
-
-      case 'facebook': {
-        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodeURIComponent("Here's our official admission link! Apply & get admission in our academy")}`;
-        window.open(fbUrl, '_blank', 'noopener,noreferrer,width=650,height=550');
-        setShareToast({
-          platform: 'Facebook',
-          text: 'Opening Facebook share dialog with your inquiry link!'
-        });
-        break;
-      }
-
-      case 'twitter': {
-        const tweetText = `🎓 Here's our official admission link! Apply & get admission in our academy:\n\n${publicInquiryUrl}\n\n#admission #courses #education #edupulse`;
-        const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-        window.open(twUrl, '_blank', 'noopener,noreferrer,width=650,height=480');
-        setShareToast({
-          platform: 'Twitter (X)',
-          text: 'Opening Twitter / X composer with your inquiry link!'
-        });
-        break;
-      }
-
-      case 'gmail': {
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${emailSubject}&body=${encodedCaption}`;
-        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-        setShareToast({
-          platform: 'Gmail',
-          text: 'Opening Gmail with pre-filled admission inquiry email!'
-        });
-        break;
-      }
-
-      case 'more':
-      default: {
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (isMobile && navigator.share) {
-          try {
-            await navigator.share({
-              title: 'EduPulse Academy - Inquiry Link',
-              text: admissionCaption,
-              url: publicInquiryUrl
-            });
-            setShareToast({
-              platform: 'Device Share',
-              text: 'Inquiry link shared successfully!'
-            });
-          } catch (err) {
-            if (err.name !== 'AbortError') {
-              window.open(`https://api.whatsapp.com/send?text=${encodedCaption}`, '_blank');
-            }
-          }
-        } else {
-          setShareToast({
-            platform: 'Clipboard',
-            text: 'Inquiry link & admission invite copied to clipboard!'
-          });
-        }
-        break;
-      }
-    }
-
-    setTimeout(() => {
-      setShareToast(null);
-    }, 4000);
   };
 
   const handleDownloadQR = async () => {
@@ -548,61 +618,194 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh] relative">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
-              <QrCode className="w-5 h-5" />
+              {isShareSheetOpen ? <Share2 className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Share Student Inquiry QR Code
+                {isShareSheetOpen ? 'Share Admission Link' : 'Share Student Inquiry QR Code'}
               </h2>
               <p className="text-xs text-slate-500">
-                Digital registration form for campus front-desk, posters, and WhatsApp
+                {isShareSheetOpen
+                  ? 'Share official admission registration link across all platforms'
+                  : 'Digital registration form for campus front-desk, posters, and WhatsApp'}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {isShareSheetOpen && (
+              <button
+                onClick={() => setIsShareSheetOpen(false)}
+                className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                title="Back to QR Code"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to QR</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200 bg-white px-6">
-          <button
-            onClick={() => setActiveTab('qr')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'qr'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Smartphone className="w-4 h-4" />
-            <span>QR Code & Share Link</span>
-          </button>
+        {/* Global Toast Notification */}
+        {shareSuccessToast && (
+          <div className="mx-6 mt-4 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+            <CheckCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="flex-1">{shareSuccessToast}</span>
+          </div>
+        )}
 
-          <button
-            onClick={() => setActiveTab('standee')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'standee'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print Front-Desk Standee (A4)</span>
-          </button>
-        </div>
+        {/* Tab Switcher (Only visible when not in sub-share-sheet view) */}
+        {!isShareSheetOpen && (
+          <div className="flex border-b border-slate-200 bg-white px-6">
+            <button
+              onClick={() => setActiveTab('qr')}
+              className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'qr'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>QR Code & Share Link</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('standee')}
+              className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'standee'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Front-Desk Standee (A4)</span>
+            </button>
+          </div>
+        )}
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {activeTab === 'qr' && (
+          {/* ========================================================
+              VIEW 1: SHARE SHEET (Requested by User like 2nd reference image)
+              ======================================================== */}
+          {isShareSheetOpen ? (
+            <div className="space-y-5 animate-in fade-in duration-150">
+              {/* Item Preview Card (Matches reference image 2 top card) */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs font-black text-lg">
+                    🎓
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-bold text-slate-900 truncate">
+                      EduPulse Academy - Course Inquiry & Admission Link
+                    </h3>
+                    <p className="text-[11px] font-mono text-indigo-600 truncate mt-0.5" title={publicInquiryUrl}>
+                      {publicInquiryUrl}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCopyLink}
+                  className="shrink-0 p-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg border border-slate-200 bg-white shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                  title="Copy direct admission link"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span className="text-emerald-700 text-[11px]">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span className="text-[11px]">Copy Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Section Heading: "Share using" (Reference image layout) */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    Share using
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Shares direct link & official invite
+                  </span>
+                </div>
+
+                {/* Platforms Grid (WhatsApp, LinkedIn, Instagram, Facebook, Twitter, Gmail, Telegram, Device Share) */}
+                <div className="grid grid-cols-4 sm:grid-cols-4 gap-3.5 sm:gap-4">
+                  {sharePlatforms.map((platform) => (
+                    <button
+                      key={platform.id}
+                      onClick={() => handlePlatformShare(platform.id)}
+                      className="group flex flex-col items-center text-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer active:scale-95"
+                    >
+                      {/* Brand Logo Container */}
+                      <div
+                        className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-xs transition-transform duration-200 group-hover:scale-108 group-hover:shadow-md ${platform.bg} ${platform.hoverBg}`}
+                      >
+                        {platform.icon}
+                      </div>
+
+                      {/* Label */}
+                      <span className="text-xs font-semibold text-slate-800 mt-2 truncate w-full group-hover:text-indigo-600 transition-colors">
+                        {platform.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 truncate w-full mt-0.5">
+                        {platform.subtitle}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Quick Action: Copy Full Invitation Text */}
+              <div className="pt-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button
+                  onClick={handleCopyFullMessage}
+                  className="w-full sm:w-auto flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  {copiedFullMessage ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span className="text-emerald-700">Full Invitation Message Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-slate-600" />
+                      <span>Copy Full Invitation Message & Link</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setIsShareSheetOpen(false)}
+                  className="w-full sm:w-auto py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Back to QR Code</span>
+                </button>
+              </div>
+            </div>
+          ) : activeTab === 'qr' ? (
+            /* ========================================================
+               VIEW 2: QR CODE & SHARE LINK (Standard Modal View)
+               ======================================================== */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               {/* Left Side: Branded Admission QR Card Preview */}
               <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center shadow-2xs">
@@ -704,142 +907,55 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   </div>
                 </div>
 
-                {/* Multi-Platform Sharing: WhatsApp, LinkedIn, Instagram, Facebook, Twitter, Gmail */}
+                {/* Primary Share Button: Opens the platform Share Sheet requested by user */}
                 <div className="pt-1 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-800">
-                      Share Link on Every Platform:
-                    </label>
-                    <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                      1-Click Direct Share
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {/* 1. WhatsApp */}
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformShare('whatsapp')}
-                      className="flex items-center gap-2.5 p-2 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 hover:border-emerald-300 active:scale-[0.98] transition-all text-left group cursor-pointer shadow-2xs"
-                      title="Share link directly to WhatsApp"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-[#25D366] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <WhatsAppIcon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold text-slate-800 group-hover:text-emerald-700 leading-tight">WhatsApp</div>
-                        <div className="text-[9.5px] text-slate-500 truncate">Chat & Status</div>
-                      </div>
-                    </button>
-
-                    {/* 2. LinkedIn */}
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformShare('linkedin')}
-                      className="flex items-center gap-2.5 p-2 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-100 hover:border-sky-300 active:scale-[0.98] transition-all text-left group cursor-pointer shadow-2xs"
-                      title="Share link directly to LinkedIn"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-[#0A66C2] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <LinkedInIcon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold text-slate-800 group-hover:text-[#0A66C2] leading-tight">LinkedIn</div>
-                        <div className="text-[9.5px] text-slate-500 truncate">Post & Network</div>
-                      </div>
-                    </button>
-
-                    {/* 3. Instagram */}
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformShare('instagram')}
-                      className="flex items-center gap-2.5 p-2 rounded-xl border border-pink-200 bg-pink-50/70 hover:bg-pink-100 hover:border-pink-300 active:scale-[0.98] transition-all text-left group cursor-pointer shadow-2xs"
-                      title="Share link via Instagram DM or Story"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#FD1D1D] via-[#E1306C] to-[#C13584] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <InstagramIcon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold text-slate-800 group-hover:text-pink-700 leading-tight">Instagram</div>
-                        <div className="text-[9.5px] text-slate-500 truncate">DM & Story</div>
-                      </div>
-                    </button>
-
-                    {/* 4. Facebook */}
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformShare('facebook')}
-                      className="flex items-center gap-2.5 p-2 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 hover:border-blue-300 active:scale-[0.98] transition-all text-left group cursor-pointer shadow-2xs"
-                      title="Share link directly to Facebook"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-[#1877F2] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <FacebookIcon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold text-slate-800 group-hover:text-[#1877F2] leading-tight">Facebook</div>
-                        <div className="text-[9.5px] text-slate-500 truncate">Feed & Groups</div>
-                      </div>
-                    </button>
-
-                    {/* 5. Twitter (X) */}
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformShare('twitter')}
-                      className="flex items-center gap-2.5 p-2 rounded-xl border border-slate-300 bg-slate-100/70 hover:bg-slate-200 hover:border-slate-400 active:scale-[0.98] transition-all text-left group cursor-pointer shadow-2xs"
-                      title="Share link on Twitter / X"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-[#000000] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <TwitterXIcon className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold text-slate-800 group-hover:text-black leading-tight">Twitter (X)</div>
-                        <div className="text-[9.5px] text-slate-500 truncate">Tweet Link</div>
-                      </div>
-                    </button>
-
-                    {/* 6. Gmail */}
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformShare('gmail')}
-                      className="flex items-center gap-2.5 p-2 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 hover:border-rose-300 active:scale-[0.98] transition-all text-left group cursor-pointer shadow-2xs"
-                      title="Send link via Gmail"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-[#EA4335] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <GmailIcon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold text-slate-800 group-hover:text-[#EA4335] leading-tight">Gmail</div>
-                        <div className="text-[9.5px] text-slate-500 truncate">Email Invite</div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Universal Share Sheet / More Apps Button */}
                   <button
-                    type="button"
-                    onClick={() => handlePlatformShare('more')}
-                    className="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 active:scale-[0.99] text-slate-700 rounded-lg text-[11px] font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border border-slate-200 shadow-2xs"
-                    title="Open device share sheet or copy invite for other apps"
+                    onClick={() => setIsShareSheetOpen(true)}
+                    className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer"
+                    title="Share direct inquiry link across WhatsApp, LinkedIn, Instagram, Facebook, Twitter, Gmail"
                   >
-                    <Share2 className="w-3.5 h-3.5 text-slate-600" />
-                    <span>More Apps / Device Share Sheet (Telegram, SMS, etc.)</span>
+                    <Share2 className="w-4 h-4" />
+                    <span>Share Link</span>
                   </button>
 
-                  {/* Dynamic Feedback Toast */}
-                  {shareToast && (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center gap-2 animate-in fade-in duration-200 shadow-2xs">
-                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span><strong>{shareToast.platform}:</strong> {shareToast.text}</span>
-                    </div>
-                  )}
-
-                  <p className="text-[10px] text-slate-500 text-center leading-relaxed pt-0.5">
+                  <p className="text-[10.5px] text-slate-500 text-center leading-relaxed">
                     Shares direct link with: <span className="text-indigo-700 font-semibold">"Here's our official admission link! Apply & get admission in our academy"</span>
                   </p>
+
+                  {/* Quick-Access Platform Icons right on modal for instant 1-click sharing */}
+                  <div className="pt-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Quick Share to:
+                      </span>
+                      <button
+                        onClick={() => setIsShareSheetOpen(true)}
+                        className="text-[10.5px] text-indigo-600 font-bold hover:underline cursor-pointer"
+                      >
+                        View all platforms &rarr;
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1.5">
+                      {sharePlatforms.slice(0, 6).map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => handlePlatformShare(p.id)}
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-2xs transition-all hover:scale-110 active:scale-95 cursor-pointer ${p.bg} ${p.hoverBg}`}
+                          title={`Share directly to ${p.name}`}
+                        >
+                          <div className="scale-75">
+                            {p.icon}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       onClick={handleOpenPreview}
-                      className="flex-1 py-2 px-3 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                      className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
                       <span>Live Preview</span>
@@ -847,7 +963,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
                     <button
                       onClick={handlePrintStandee}
-                      className="flex-1 py-2 px-3 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                      className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5 text-slate-600" />
                       <span>Print Standee</span>
@@ -867,9 +983,10 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                 </div>
               </div>
             </div>
-          )}
-
-          {activeTab === 'standee' && (
+          ) : (
+            /* ========================================================
+               VIEW 3: FRONT-DESK STANDEE PREVIEW & PRINT
+               ======================================================== */
             <div className="space-y-4">
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center max-w-md mx-auto shadow-xs">
                 <div className="flex items-center justify-center gap-2 mb-2">
@@ -915,12 +1032,22 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
         {/* Footer */}
         <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>Target Destination: <strong>Leads & Inquiries Table</strong></span>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            {isShareSheetOpen && (
+              <button
+                onClick={() => setIsShareSheetOpen(false)}
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer"
+              >
+                Back
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
