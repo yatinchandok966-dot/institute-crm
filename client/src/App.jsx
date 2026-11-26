@@ -1303,6 +1303,7 @@ export default function App() {
         return (
           <StudentsModule
             students={instituteData.students}
+            courses={instituteData.courses}
             onOpenStudentID={(student) => setSelectedStudentID(student)}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenStudentProfile={handleOpenStudentProfile}

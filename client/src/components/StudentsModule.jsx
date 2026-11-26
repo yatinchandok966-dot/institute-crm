@@ -4,6 +4,7 @@ import { GraduationCap, Search, Mail, CreditCard, Pencil, Trash2, AlertTriangle,
 
 export default function StudentsModule({
   students = [],
+  courses = [],
   onOpenPayment,
   onOpenStudentProfile, // Change By Deepak 
   onEditStudent,
@@ -187,7 +188,18 @@ export default function StudentsModule({
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-bold text-slate-900">
-                        ₹{Number(student.feeTotal || 0).toLocaleString()}
+                        ₹{(
+                          Number(student.feeTotal) > 0
+                            ? Number(student.feeTotal)
+                            : Number(
+                                (courses || []).find(
+                                  (c) =>
+                                    c.name &&
+                                    student.course &&
+                                    c.name.trim().toLowerCase() === student.course.trim().toLowerCase()
+                                )?.fee || 0
+                              )
+                        ).toLocaleString()}
                       </span>
                     </td>
                     <td className="px-4 py-3">

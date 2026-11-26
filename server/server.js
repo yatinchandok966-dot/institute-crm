@@ -263,9 +263,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
           s.passing_year AS "passingYear",
           COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
           s.enrollment_status AS status,
-          COALESCE(e.total_fee, 0) AS "feeTotal",
-          COALESCE(e.paid_fee, 0) AS "feePaid",
-          COALESCE(e.due_fee, 0) AS "feeDue",
+          COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) AS "feeTotal",
+          COALESCE(e.paid_fee, a.admission_fee_paid, 0) AS "feePaid",
+          COALESCE(
+            e.due_fee,
+            a.fee_due,
+            GREATEST(0, COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) - COALESCE(e.paid_fee, a.admission_fee_paid, 0)),
+            0
+          ) AS "feeDue",
           COALESCE(c.name, a.course) AS course,
           COALESCE(b.batch_name, a.batch) AS batch
         FROM students s
@@ -273,13 +278,19 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN courses c ON e.course_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
         LEFT JOIN LATERAL (
-          SELECT admission_no, course, batch
+          SELECT admission_no, course, batch, total_course_fee, admission_fee_paid, fee_due
           FROM admissions
           WHERE admission_no = s.admission_no
              OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
           ORDER BY (admission_no = s.admission_no) DESC, id DESC
           LIMIT 1
         ) a ON true
+        LEFT JOIN LATERAL (
+          SELECT fee_amount
+          FROM courses
+          WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(c.name, a.course)))
+          LIMIT 1
+        ) ac ON true
         ORDER BY s.id DESC
       `),
       pool.query(`
@@ -1323,9 +1334,14 @@ app.get('/api/students', async (req, res) => {
         s.passing_year AS "passingYear",
         COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
         s.enrollment_status AS status,
-        COALESCE(e.total_fee, 0) AS "feeTotal",
-        COALESCE(e.paid_fee, 0) AS "feePaid",
-        COALESCE(e.due_fee, 0) AS "feeDue",
+        COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) AS "feeTotal",
+        COALESCE(e.paid_fee, a.admission_fee_paid, 0) AS "feePaid",
+        COALESCE(
+          e.due_fee,
+          a.fee_due,
+          GREATEST(0, COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) - COALESCE(e.paid_fee, a.admission_fee_paid, 0)),
+          0
+        ) AS "feeDue",
         COALESCE(c.name, a.course) AS course,
         COALESCE(b.batch_name, a.batch) AS batch
       FROM students s
@@ -1333,13 +1349,19 @@ app.get('/api/students', async (req, res) => {
       LEFT JOIN courses c ON e.course_id = c.id
       LEFT JOIN batches b ON e.batch_id = b.id
       LEFT JOIN LATERAL (
-        SELECT admission_no, course, batch
+        SELECT admission_no, course, batch, total_course_fee, admission_fee_paid, fee_due
         FROM admissions
         WHERE admission_no = s.admission_no
            OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
         ORDER BY (admission_no = s.admission_no) DESC, id DESC
         LIMIT 1
       ) a ON true
+      LEFT JOIN LATERAL (
+        SELECT fee_amount
+        FROM courses
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(c.name, a.course)))
+        LIMIT 1
+      ) ac ON true
       ORDER BY s.id DESC
     `);
 
