@@ -81,9 +81,9 @@ export default function Dashboard({
     ? `${Math.round((confirmedAdmissionsCount / (totalLeadsCount + confirmedAdmissionsCount)) * 100)}% conv.`
     : '0% conv.';
 
-  // Real-time Fee Calculations from transactions & students
-  const liveCollected = feeTransactions.length > 0
-    ? feeTransactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0)
+  // Real-time Fee Calculations from active students & stats
+  const liveCollected = studentsList.length > 0
+    ? studentsList.reduce((sum, st) => sum + Number(st.feePaid ?? st.fee_paid ?? 0), 0)
     : Number(stats.monthlyRevenue || 0);
 
   const livePending = studentsList.length > 0
@@ -371,12 +371,12 @@ export default function Dashboard({
 
             <div className="h-56 w-full flex items-end justify-between gap-4 pt-8 px-2">
               {enrollmentTrend.map((item, idx) => {
-                const leadsHeight = item.leads > 0 ? Math.round((item.leads / maxBarVal) * 100) : 6;
-                const admHeight = item.admissions > 0 ? Math.round((item.admissions / maxBarVal) * 100) : 6;
                 const leadsSharePct = total6MoLeads > 0 ? Math.round((item.leads / total6MoLeads) * 100) : 0;
                 const convPct = (item.leads + item.admissions) > 0
                   ? Math.round((item.admissions / (item.leads + item.admissions)) * 100)
                   : 0;
+                const leadsHeight = leadsSharePct > 0 ? Math.max(leadsSharePct, 6) : 6;
+                const admHeight = convPct > 0 ? Math.max(convPct, 6) : 6;
 
                 return (
                   <div

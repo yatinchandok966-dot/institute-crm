@@ -255,8 +255,9 @@ export default function ImportLeadsModal({
     reader.readAsText(uploadedFile);
   };
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     setIsProcessing(true);
+    setValidationErrors([]);
     const leadsToImport = parsedRows
       .filter(row => row.isValid)
       .filter(row => !skipDuplicates || !row.isDuplicate)
@@ -285,9 +286,14 @@ export default function ImportLeadsModal({
         callHistory: []
       }));
 
-    onImportLeads(leadsToImport);
-    setIsProcessing(false);
-    onClose();
+    try {
+      await onImportLeads(leadsToImport);
+      onClose();
+    } catch (err) {
+      setValidationErrors([err?.message || 'Failed to save imported leads to database. Please try again.']);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const duplicateCount = parsedRows.filter(r => r.isDuplicate).length;
