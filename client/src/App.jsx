@@ -313,7 +313,7 @@ export default function App() {
             const totalStuds = mergedStudents.length;
             const totalAdms = mergedAdmissions.length;
             const totalLds = mergedLeads.length;
-            const convRate = totalLds > 0 ? `${Math.round((totalAdms / totalLds) * 100)}%` : '0%';
+            const convRate = (totalLds + totalAdms) > 0 ? `${Math.round((totalAdms / (totalLds + totalAdms)) * 100)}%` : '0%';
             const collRate = (totalRev + totalPend > 0)
               ? `${Math.round((totalRev / (totalRev + totalPend)) * 100)}%`
               : '100%';
@@ -648,8 +648,8 @@ export default function App() {
           monthlyRevenue: totalRevenue,
           pendingFees: totalPending,
           leadConversionRate:
-            updatedLeads.length > 0 ?
-              `${Math.round((updatedAdmissions.length / updatedLeads.length) * 100)}%`
+            updatedLeads.length + updatedAdmissions.length > 0 ?
+              `${Math.round((updatedAdmissions.length / (updatedLeads.length + updatedAdmissions.length)) * 100)}%`
             : "0%",
         },
       };
@@ -729,8 +729,8 @@ export default function App() {
           ...prev.stats,
           confirmedAdmissions: updatedAdmissions.length,
           conversionRate:
-            (prev.recentLeads || []).length > 0
-              ? `${Math.round((updatedAdmissions.length / prev.recentLeads.length) * 100)}%`
+            (prev.recentLeads || []).length + updatedAdmissions.length > 0
+              ? `${Math.round((updatedAdmissions.length / ((prev.recentLeads || []).length + updatedAdmissions.length)) * 100)}%`
               : "0%",
           collectionRate:
             totalRevenue + totalPending > 0
@@ -1302,6 +1302,7 @@ export default function App() {
         return (
           <StudentsModule
             students={instituteData.students}
+            courses={instituteData.courses}
             onOpenStudentID={(student) => setSelectedStudentID(student)}
             onOpenPayment={() => setIsPaymentModalOpen(true)}
             onOpenStudentProfile={handleOpenStudentProfile}

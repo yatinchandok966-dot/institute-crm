@@ -77,8 +77,8 @@ export default function Dashboard({
     ? admissionsList.length
     : Number(stats.confirmedAdmissions || 0);
 
-  const conversionPct = totalLeadsCount > 0
-    ? `${Math.round((confirmedAdmissionsCount / totalLeadsCount) * 100)}% conv.`
+  const conversionPct = (totalLeadsCount + confirmedAdmissionsCount) > 0
+    ? `${Math.round((confirmedAdmissionsCount / (totalLeadsCount + confirmedAdmissionsCount)) * 100)}% conv.`
     : '0% conv.';
 
   // Real-time Fee Calculations from transactions & students
@@ -150,7 +150,9 @@ export default function Dashboard({
   const maxBarVal = Math.max(...enrollmentTrend.map(d => Math.max(d.leads, d.admissions)), 1);
   const total6MoLeads = enrollmentTrend.reduce((s, d) => s + d.leads, 0);
   const total6MoAdm = enrollmentTrend.reduce((s, d) => s + d.admissions, 0);
-  const avgConvRate = total6MoLeads > 0 ? Math.round((total6MoAdm / total6MoLeads) * 100) : 0;
+  const avgConvRate = (total6MoLeads + total6MoAdm) > 0
+    ? Math.round((total6MoAdm / (total6MoLeads + total6MoAdm)) * 100)
+    : 0;
 
   // 4. REAL-TIME ENROLLED STUDENTS BY PROGRAM
   const programCounts = coursesList.map((course, index) => {
@@ -372,7 +374,9 @@ export default function Dashboard({
                 const leadsHeight = item.leads > 0 ? Math.round((item.leads / maxBarVal) * 100) : 6;
                 const admHeight = item.admissions > 0 ? Math.round((item.admissions / maxBarVal) * 100) : 6;
                 const leadsSharePct = total6MoLeads > 0 ? Math.round((item.leads / total6MoLeads) * 100) : 0;
-                const convPct = item.leads > 0 ? Math.round((item.admissions / item.leads) * 100) : 0;
+                const convPct = (item.leads + item.admissions) > 0
+                  ? Math.round((item.admissions / (item.leads + item.admissions)) * 100)
+                  : 0;
 
                 return (
                   <div

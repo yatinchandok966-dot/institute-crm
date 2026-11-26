@@ -202,6 +202,35 @@ const syncAdmissionsAndStudents = async () => {
         }
       }
     }
+
+    // Backfill: fix enrollments that have NULL course_id/batch_id
+    await pool.query(`
+      UPDATE enrollments e
+      SET course_id = sub.cid
+      FROM (
+        SELECT e2.id AS eid, c.id AS cid
+        FROM enrollments e2
+        JOIN students s ON e2.student_id = s.id
+        JOIN admissions a ON (s.admission_no = a.admission_no OR (s.phone IS NOT NULL AND s.phone <> '' AND s.phone = a.phone))
+        JOIN courses c ON LOWER(TRIM(c.name)) = LOWER(TRIM(a.course))
+        WHERE e2.course_id IS NULL
+      ) sub
+      WHERE e.id = sub.eid
+    `).catch(e => console.warn('Backfill course_id warning:', e.message));
+
+    await pool.query(`
+      UPDATE enrollments e
+      SET batch_id = sub.bid
+      FROM (
+        SELECT e2.id AS eid, b.id AS bid
+        FROM enrollments e2
+        JOIN students s ON e2.student_id = s.id
+        JOIN admissions a ON (s.admission_no = a.admission_no OR (s.phone IS NOT NULL AND s.phone <> '' AND s.phone = a.phone))
+        JOIN batches b ON LOWER(TRIM(b.batch_name)) = LOWER(TRIM(a.batch))
+        WHERE e2.batch_id IS NULL
+      ) sub
+      WHERE e.id = sub.eid
+    `).catch(e => console.warn('Backfill batch_id warning:', e.message));
   } catch (err) {
     console.warn('Sync admissions to students warning:', err.message);
   }
@@ -243,7 +272,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
       pool.query('SELECT * FROM batches ORDER BY id ASC'),
       pool.query('SELECT * FROM leads ORDER BY id DESC'),
-      pool.query('SELECT * FROM admissions ORDER BY id DESC'),
+      pool.query('SELECT * FROM admissions WHERE student_deleted IS NOT TRUE ORDER BY id DESC'),
       pool.query(`
         SELECT
           s.id,
@@ -263,9 +292,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
           s.passing_year AS "passingYear",
           COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
           s.enrollment_status AS status,
-          COALESCE(e.total_fee, 0) AS "feeTotal",
-          COALESCE(e.paid_fee, 0) AS "feePaid",
-          COALESCE(e.due_fee, 0) AS "feeDue",
+          COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) AS "feeTotal",
+          COALESCE(e.paid_fee, a.admission_fee_paid, 0) AS "feePaid",
+          COALESCE(
+            e.due_fee,
+            a.fee_due,
+            GREATEST(0, COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) - COALESCE(e.paid_fee, a.admission_fee_paid, 0)),
+            0
+          ) AS "feeDue",
           COALESCE(c.name, a.course) AS course,
           COALESCE(b.batch_name, a.batch) AS batch
         FROM students s
@@ -273,16 +307,38 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN courses c ON e.course_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
         LEFT JOIN LATERAL (
-          SELECT admission_no, course, batch
+          SELECT admission_no, course, batch, total_course_fee, admission_fee_paid, fee_due
           FROM admissions
           WHERE admission_no = s.admission_no
              OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
           ORDER BY (admission_no = s.admission_no) DESC, id DESC
           LIMIT 1
         ) a ON true
+        LEFT JOIN LATERAL (
+          SELECT fee_amount
+          FROM courses
+          WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(c.name, a.course)))
+          LIMIT 1
+        ) ac ON true
         ORDER BY s.id DESC
       `),
-      pool.query('SELECT * FROM fee_payments ORDER BY id DESC'),
+      pool.query(`
+        SELECT 
+          f.id, 
+          f.receipt_no, 
+          f.amount, 
+          f.payment_mode, 
+          f.payment_date, 
+          f.received_by,
+          s.student_id_code AS "studentId", 
+          CONCAT_WS(' ', s.first_name, s.last_name) AS "studentName",
+          c.name AS "course"
+        FROM fee_payments f
+        LEFT JOIN enrollments e ON f.enrollment_id = e.id
+        LEFT JOIN students s ON e.student_id = s.id
+        LEFT JOIN courses c ON e.course_id = c.id
+        ORDER BY f.id DESC
+      `),
       pool.query('SELECT * FROM trainers ORDER BY id ASC')
     ]);
 
@@ -387,9 +443,9 @@ app.get('/api/dashboard/stats', async (req, res) => {
     const feeTransactions = feesRes.rows.map(f => ({
       id: f.id,
       receiptNo: f.receipt_no,
-      studentName: 'Registered Student',
-      studentId: 'STU',
-      course: 'Tuition Fee',
+      studentName: f.studentName || 'Registered Student',
+      studentId: f.studentId || 'STU',
+      course: f.course || 'Tuition Fee',
       amount: Number(f.amount),
       mode: f.payment_mode,
       date: f.payment_date,
@@ -421,7 +477,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     const totalStudents = students.length;
     const totalLeads = recentLeads.length;
     const totalAdmissions = admissions.length;
-    const convRate = totalLeads > 0 ? `${Math.round((totalAdmissions / totalLeads) * 100)}%` : '0%';
+    const convRate = (totalLeads + totalAdmissions) > 0 ? `${Math.round((totalAdmissions / (totalLeads + totalAdmissions)) * 100)}%` : '0%';
     const collectionRate = (totalRevenue + totalPending > 0)
       ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
       : '100%';
@@ -1128,11 +1184,22 @@ app.post('/api/admissions', async (req, res) => {
     const studentDbId = stuResult.rows[0]?.id;
     let enrollmentId = null;
     if (studentDbId) {
-      // 3. Insert enrollment
+      // 3. Resolve course_id and batch_id from names
+      let courseId = null;
+      let batchId = null;
+      if (course) {
+        const cRes = await pool.query('SELECT id FROM courses WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1', [course]);
+        courseId = cRes.rows[0]?.id || null;
+      }
+      if (batch) {
+        const bRes = await pool.query('SELECT id FROM batches WHERE LOWER(TRIM(batch_name)) = LOWER(TRIM($1)) LIMIT 1', [batch]);
+        batchId = bRes.rows[0]?.id || null;
+      }
+      // 4. Insert enrollment with course_id and batch_id
       const enrollResult = await pool.query(
-        `INSERT INTO enrollments (student_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [studentDbId, numTotalFee, numDiscount, numPaid, numDue, admissionDate, numDue === 0 ? 'Enrolled' : 'Fee Pending']
+        `INSERT INTO enrollments (student_id, course_id, batch_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+        [studentDbId, courseId, batchId, numTotalFee, numDiscount, numPaid, numDue, admissionDate, numDue === 0 ? 'Enrolled' : 'Fee Pending']
       );
       enrollmentId = enrollResult.rows[0]?.id;
     }
@@ -1307,9 +1374,14 @@ app.get('/api/students', async (req, res) => {
         s.passing_year AS "passingYear",
         COALESCE(s.admission_no, a.admission_no) AS "admissionNo",
         s.enrollment_status AS status,
-        COALESCE(e.total_fee, 0) AS "feeTotal",
-        COALESCE(e.paid_fee, 0) AS "feePaid",
-        COALESCE(e.due_fee, 0) AS "feeDue",
+        COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) AS "feeTotal",
+        COALESCE(e.paid_fee, a.admission_fee_paid, 0) AS "feePaid",
+        COALESCE(
+          e.due_fee,
+          a.fee_due,
+          GREATEST(0, COALESCE(NULLIF(e.total_fee, 0), NULLIF(c.fee_amount, 0), NULLIF(ac.fee_amount, 0), NULLIF(a.total_course_fee, 0), 0) - COALESCE(e.paid_fee, a.admission_fee_paid, 0)),
+          0
+        ) AS "feeDue",
         COALESCE(c.name, a.course) AS course,
         COALESCE(b.batch_name, a.batch) AS batch
       FROM students s
@@ -1317,13 +1389,19 @@ app.get('/api/students', async (req, res) => {
       LEFT JOIN courses c ON e.course_id = c.id
       LEFT JOIN batches b ON e.batch_id = b.id
       LEFT JOIN LATERAL (
-        SELECT admission_no, course, batch
+        SELECT admission_no, course, batch, total_course_fee, admission_fee_paid, fee_due
         FROM admissions
         WHERE admission_no = s.admission_no
            OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
         ORDER BY (admission_no = s.admission_no) DESC, id DESC
         LIMIT 1
       ) a ON true
+      LEFT JOIN LATERAL (
+        SELECT fee_amount
+        FROM courses
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(COALESCE(c.name, a.course)))
+        LIMIT 1
+      ) ac ON true
       ORDER BY s.id DESC
     `);
 
@@ -1821,23 +1899,27 @@ app.post('/api/fees', async (req, res) => {
     const rcpSeq = String(Number(countRes.rows[0].count) + 1).padStart(4, '0');
     const rNo = receiptNo || `RCP-2026-${rcpSeq}`;
 
+    let enrollmentId = null;
+    if (studentId) {
+      const stuRes = await pool.query(
+        'SELECT e.id FROM students s LEFT JOIN enrollments e ON s.id = e.student_id WHERE s.student_id_code = $1 LIMIT 1', 
+        [studentId]
+      );
+      enrollmentId = stuRes.rows[0]?.id || null;
+    }
+
     const result = await pool.query(
-      `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO fee_payments (receipt_no, amount, payment_mode, received_by, enrollment_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [rNo, numAmount, mode || 'UPI', collectedBy || 'Finance Desk']
+      [rNo, numAmount, mode || 'UPI', collectedBy || 'Finance Desk', enrollmentId]
     );
 
-    // Update enrollment if studentId matches
-    if (studentId) {
-      const stuRes = await pool.query('SELECT id FROM students WHERE student_id_code = $1', [studentId]);
-      const sId = stuRes.rows[0]?.id;
-      if (sId) {
-        await pool.query(
-          'UPDATE enrollments SET paid_fee = paid_fee + $1, due_fee = GREATEST(0, due_fee - $1) WHERE student_id = $2',
-          [numAmount, sId]
-        );
-      }
+    if (enrollmentId) {
+      await pool.query(
+        'UPDATE enrollments SET paid_fee = paid_fee + $1, due_fee = GREATEST(0, due_fee - $1) WHERE id = $2',
+        [numAmount, enrollmentId]
+      );
     }
 
     res.status(201).json({ success: true, receipt: result.rows[0] });
