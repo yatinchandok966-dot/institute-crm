@@ -81,9 +81,9 @@ export default function Dashboard({
     ? `${Math.round((confirmedAdmissionsCount / (totalLeadsCount + confirmedAdmissionsCount)) * 100)}% conv.`
     : '0% conv.';
 
-  // Real-time Fee Calculations from transactions & students
-  const liveCollected = feeTransactions.length > 0
-    ? feeTransactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0)
+  // Real-time Fee Calculations from active students & stats
+  const liveCollected = studentsList.length > 0
+    ? studentsList.reduce((sum, st) => sum + Number(st.feePaid ?? st.fee_paid ?? 0), 0)
     : Number(stats.monthlyRevenue || 0);
 
   const livePending = studentsList.length > 0
