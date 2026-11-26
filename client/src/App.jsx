@@ -724,6 +724,17 @@ export default function App() {
     if (!admissionId) return;
 
     setInstituteData((prev) => {
+      const targetAdm = (prev.admissions || []).find(
+        (a) =>
+          String(a.id) === String(admissionId) ||
+          String(a.admissionNo) === String(admissionId) ||
+          String(a.admission_no) === String(admissionId)
+      );
+      const targetAdmNo = targetAdm?.admissionNo || targetAdm?.admission_no || String(admissionId);
+      const targetPhone = targetAdm?.phone
+        ? String(targetAdm.phone).replace(/\D/g, '').slice(-10)
+        : '';
+
       const updatedAdmissions = (prev.admissions || []).filter(
         (a) =>
           String(a.id) !== String(admissionId) &&
@@ -731,11 +742,23 @@ export default function App() {
           String(a.admission_no) !== String(admissionId)
       );
 
-      const totalRevenue = (prev.students || []).reduce(
+      const updatedStudents = (prev.students || []).filter((s) => {
+        const sAdmNo = s.admissionNo || s.admission_no;
+        if (sAdmNo && targetAdmNo && String(sAdmNo) === String(targetAdmNo)) {
+          return false;
+        }
+        const sPhone = s.phone ? String(s.phone).replace(/\D/g, '').slice(-10) : '';
+        if (!sAdmNo && targetPhone && sPhone && sPhone === targetPhone) {
+          return false;
+        }
+        return true;
+      });
+
+      const totalRevenue = updatedStudents.reduce(
         (acc, s) => acc + (Number(s.feePaid) || 0),
         0
       );
-      const totalPending = (prev.students || []).reduce(
+      const totalPending = updatedStudents.reduce(
         (acc, s) => acc + (Number(s.feeDue) || 0),
         0
       );
@@ -743,9 +766,12 @@ export default function App() {
       const updatedData = {
         ...prev,
         admissions: updatedAdmissions,
+        students: updatedStudents,
         stats: {
           ...prev.stats,
           confirmedAdmissions: updatedAdmissions.length,
+          totalRevenue,
+          pendingFees: totalPending,
           conversionRate:
             (prev.recentLeads || []).length + updatedAdmissions.length > 0
               ? `${Math.round((updatedAdmissions.length / ((prev.recentLeads || []).length + updatedAdmissions.length)) * 100)}%`

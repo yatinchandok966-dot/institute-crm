@@ -326,11 +326,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
         LEFT JOIN enrollments e ON s.id = e.student_id
         LEFT JOIN courses c ON e.course_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
-        LEFT JOIN LATERAL (
+        INNER JOIN LATERAL (
           SELECT admission_no, course, batch, total_course_fee, admission_fee_paid, fee_due
           FROM admissions
-          WHERE admission_no = s.admission_no
-             OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+          WHERE COALESCE(student_deleted, FALSE) = FALSE
+            AND (
+              admission_no = s.admission_no
+              OR (s.admission_no IS NULL AND s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+            )
           ORDER BY (admission_no = s.admission_no) DESC, id DESC
           LIMIT 1
         ) a ON true
@@ -1154,7 +1157,7 @@ app.delete('/api/batches/:id', async (req, res) => {
 // ==========================================
 app.get('/api/admissions', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM admissions ORDER BY id DESC');
+    const result = await pool.query('SELECT * FROM admissions WHERE COALESCE(student_deleted, FALSE) = FALSE ORDER BY id DESC');
     const formatted = result.rows.map(r => ({
       id: r.id,
       admissionNo: r.admission_no,
@@ -1261,8 +1264,8 @@ app.post('/api/admissions', async (req, res) => {
       });
     }
 
-    const countRes = await pool.query('SELECT COUNT(*) FROM admissions');
-    const nextSeq = String(Number(countRes.rows[0].count) + 1).padStart(4, '0');
+    const countRes = await pool.query('SELECT COALESCE(MAX(id), 0) AS max_id FROM admissions');
+    const nextSeq = String(Number(countRes.rows[0].max_id) + 1).padStart(4, '0');
     const admissionNo = req.body.admissionNo || `ADM-2026-${nextSeq}`;
     const applicationNo = req.body.applicationNo || `APP-2026-${nextSeq}`;
 
@@ -1281,8 +1284,8 @@ app.post('/api/admissions', async (req, res) => {
     );
 
     // 2. Insert into students table
-    const stuCountRes = await pool.query('SELECT COUNT(*) FROM students');
-    const stuSeq = String(Number(stuCountRes.rows[0].count) + 1).padStart(4, '0');
+    const stuCountRes = await pool.query('SELECT COALESCE(MAX(id), 0) AS max_id FROM students');
+    const stuSeq = String(Number(stuCountRes.rows[0].max_id) + 1).padStart(4, '0');
     const studentIdCode = req.body.studentId || `STU-2026-${stuSeq}`;
     const nameParts = studentName.trim().split(' ');
     const firstName = nameParts[0];
@@ -1431,11 +1434,35 @@ app.delete('/api/admissions/:id', async (req, res) => {
     const { id } = req.params;
     const isNum = !isNaN(Number(id));
 
+    let deletedAdmissions = [];
     try {
+      let delAdmRes;
       if (isNum) {
-        await pool.query('DELETE FROM admissions WHERE id = $1 OR admission_no = $2', [Number(id), String(id)]);
+        delAdmRes = await pool.query(
+          'DELETE FROM admissions WHERE id = $1 OR admission_no = $2 RETURNING id, admission_no, phone',
+          [Number(id), String(id)]
+        );
       } else {
-        await pool.query('DELETE FROM admissions WHERE admission_no = $1', [String(id)]);
+        delAdmRes = await pool.query(
+          'DELETE FROM admissions WHERE admission_no = $1 RETURNING id, admission_no, phone',
+          [String(id)]
+        );
+      }
+      deletedAdmissions = delAdmRes.rows || [];
+
+      // Keep Students Directory in sync: remove linked student & enrollment rows for deleted admissions
+      for (const adm of deletedAdmissions) {
+        const cleanAdmPhone = adm.phone ? String(adm.phone).replace(/\D/g, '').slice(-10) : '';
+        const stuRes = await pool.query(
+          `SELECT id FROM students
+           WHERE ($1::text IS NOT NULL AND admission_no = $1)
+              OR ($2::text <> '' AND admission_no IS NULL AND phone IS NOT NULL AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)`,
+          [adm.admission_no || null, cleanAdmPhone]
+        );
+        for (const stu of stuRes.rows) {
+          await pool.query('DELETE FROM enrollments WHERE student_id = $1', [stu.id]);
+          await pool.query('DELETE FROM students WHERE id = $1', [stu.id]);
+        }
       }
     } catch (dbErr) {
       console.warn('PostgreSQL admission delete warning:', dbErr.message);
@@ -1503,11 +1530,14 @@ app.get('/api/students', async (req, res) => {
       LEFT JOIN enrollments e ON s.id = e.student_id
       LEFT JOIN courses c ON e.course_id = c.id
       LEFT JOIN batches b ON e.batch_id = b.id
-      LEFT JOIN LATERAL (
+      INNER JOIN LATERAL (
         SELECT admission_no, course, batch, total_course_fee, admission_fee_paid, fee_due
         FROM admissions
-        WHERE admission_no = s.admission_no
-           OR (s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+        WHERE COALESCE(student_deleted, FALSE) = FALSE
+          AND (
+            admission_no = s.admission_no
+            OR (s.admission_no IS NULL AND s.phone IS NOT NULL AND s.phone <> '' AND phone = s.phone)
+          )
         ORDER BY (admission_no = s.admission_no) DESC, id DESC
         LIMIT 1
       ) a ON true
