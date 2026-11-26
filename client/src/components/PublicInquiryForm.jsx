@@ -1,6 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { School, CheckCircle2, Send, Phone, Mail, BookOpen, Clock, MapPin, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { School, CheckCircle2, Send, Check, ChevronDown } from 'lucide-react';
 import { COUNTRY_CODES, formatPhoneWithCountryCode } from '../utils/phone';
+
+const TIMING_OPTIONS = [
+  { value: 'Morning (09:00 AM - 11:30 AM)', label: 'Morning (09:00 AM - 11:30 AM)' },
+  { value: 'Evening (06:30 PM - 08:30 PM)', label: 'Evening (06:30 PM - 08:30 PM)' },
+  { value: 'Weekend (Sat-Sun 10:00 AM - 02:00 PM)', label: 'Weekend (Sat-Sun 10:00 AM - 02:00 PM)' }
+];
+
+const QUALIFICATION_OPTIONS = [
+  { value: 'College Student (Final Year / Pre-final)', label: 'College Student (Final Year / Pre-final)' },
+  { value: 'Working Professional (Looking to Upskill)', label: 'Working Professional (Looking to Upskill)' },
+  { value: 'Recent Graduate / Fresher Seeking Job', label: 'Recent Graduate / Fresher Seeking Job' },
+  { value: 'Career Switcher / Non-IT Transition', label: 'Career Switcher / Non-IT Transition' }
+];
+
+function CustomSelect({ id, value, options, placeholder = 'Select an option', isOpen, onToggle, onSelect, className = '', menuClassName = '' }) {
+  const selected = options.find((opt) => opt.value === value);
+  return (
+    <div className={`relative ${className}`} data-custom-select={id}>
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        aria-expanded={isOpen}
+        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-medium flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-left"
+      >
+        <span className={`truncate ${selected ? 'text-slate-900' : 'text-slate-400'}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className={`absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1 ${menuClassName}`}>
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onSelect(opt.value)}
+                className={`w-full px-3 py-2 text-left text-xs transition-colors flex items-center justify-between gap-2 whitespace-normal break-words ${
+                  isSelected
+                    ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50 font-medium'
+                }`}
+              >
+                <span className="leading-snug flex-1 min-w-0">{opt.label}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCRM }) {
   const initialCourse = (courses && courses.length > 0 && (courses[0]?.name || courses[0])) || '';
@@ -28,6 +83,33 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const formContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!openDropdown) return;
+    const handleOutside = (e) => {
+      const target = e.target;
+      if (target && !target.closest(`[data-custom-select="${openDropdown}"]`)) {
+        setOpenDropdown(null);
+      }
+    };
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setOpenDropdown(null);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [openDropdown]);
+
+  const toggleDropdown = (id) => {
+    setOpenDropdown((prev) => (prev === id ? null : id));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -188,9 +270,9 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
   return (
     <div className="min-h-screen bg-slate-100 py-8 px-4 font-sans flex flex-col items-center justify-center">
       {/* Main Google-Forms Style Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xl w-full overflow-hidden">
+      <div ref={formContainerRef} className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xl w-full">
         {/* Top Header Card */}
-        <div className="p-6 md:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white relative">
+        <div className="p-6 md:p-8 rounded-t-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white relative">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
               <School className="w-6 h-6" />
@@ -240,18 +322,19 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                 </span>
               </div>
               <div className="flex gap-2">
-                <select
-                  aria-label="Country code"
+                <CustomSelect
+                  id="countryCode"
                   value={formData.countryCode || '+91'}
-                  onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                  className="px-2 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0"
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  options={COUNTRY_CODES.map((c) => ({ value: c.code, label: c.label }))}
+                  isOpen={openDropdown === 'countryCode'}
+                  onToggle={toggleDropdown}
+                  onSelect={(val) => {
+                    setFormData({ ...formData, countryCode: val });
+                    setOpenDropdown(null);
+                  }}
+                  className="w-28 shrink-0"
+                  menuClassName="min-w-[130px]"
+                />
                 <div className="relative flex-1">
                   <input
                     type="tel"
@@ -301,18 +384,21 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
               Select Program of Interest <span className="text-rose-500">*</span>
             </label>
             {courses && courses.length > 0 ? (
-              <select
+              <CustomSelect
+                id="course"
                 value={formData.course}
-                onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-semibold"
-                required
-              >
-                {courses.map((c) => (
-                  <option key={c.id || c.name} value={c.name}>
-                    {c.name} {c.durationWeeks ? `(${c.durationWeeks} Weeks)` : ''}
-                  </option>
-                ))}
-              </select>
+                options={courses.map((c) => ({
+                  value: c.name,
+                  label: `${c.name}${c.durationWeeks ? ` (${c.durationWeeks} Weeks)` : ''}`
+                }))}
+                placeholder="Select Program of Interest"
+                isOpen={openDropdown === 'course'}
+                onToggle={toggleDropdown}
+                onSelect={(val) => {
+                  setFormData({ ...formData, course: val });
+                  setOpenDropdown(null);
+                }}
+              />
             ) : (
               <input
                 type="text"
@@ -330,15 +416,17 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             <label className="block font-bold text-slate-800 text-xs">
               Preferred Timing
             </label>
-            <select
+            <CustomSelect
+              id="timing"
               value={formData.timing}
-              onChange={(e) => setFormData({ ...formData, timing: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-            >
-              <option value="Morning (09:00 AM - 11:30 AM)">Morning (09:00 AM - 11:30 AM)</option>
-              <option value="Evening (06:30 PM - 08:30 PM)">Evening (06:30 PM - 08:30 PM)</option>
-              <option value="Weekend (Sat-Sun 10:00 AM - 02:00 PM)">Weekend (Sat-Sun 10:00 AM - 02:00 PM)</option>
-            </select>
+              options={TIMING_OPTIONS}
+              isOpen={openDropdown === 'timing'}
+              onToggle={toggleDropdown}
+              onSelect={(val) => {
+                setFormData({ ...formData, timing: val });
+                setOpenDropdown(null);
+              }}
+            />
           </div>
 
           {/* Current Status */}
@@ -346,16 +434,17 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
             <label className="block font-bold text-slate-800 text-xs">
               Current Educational / Professional Background
             </label>
-            <select
+            <CustomSelect
+              id="qualification"
               value={formData.qualification}
-              onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-            >
-              <option value="College Student (Final Year / Pre-final)">College Student (Final Year / Pre-final)</option>
-              <option value="Working Professional (Looking to Upskill)">Working Professional (Looking to Upskill)</option>
-              <option value="Recent Graduate / Fresher Seeking Job">Recent Graduate / Fresher Seeking Job</option>
-              <option value="Career Switcher / Non-IT Transition">Career Switcher / Non-IT Transition</option>
-            </select>
+              options={QUALIFICATION_OPTIONS}
+              isOpen={openDropdown === 'qualification'}
+              onToggle={toggleDropdown}
+              onSelect={(val) => {
+                setFormData({ ...formData, qualification: val });
+                setOpenDropdown(null);
+              }}
+            />
           </div>
 
           {/* Any specific questions */}
