@@ -492,7 +492,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
       joiningDate: t.joining_date
     }));
 
-    const totalRevenue = feeTransactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+    const totalRevenue = students.reduce((acc, s) => acc + Number(s.feePaid || 0), 0);
     const totalPending = students.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
     const totalStudents = students.length;
     const totalLeads = recentLeads.length;
