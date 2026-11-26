@@ -448,7 +448,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     const totalStudents = students.length;
     const totalLeads = recentLeads.length;
     const totalAdmissions = admissions.length;
-    const convRate = totalLeads > 0 ? `${Math.round((totalAdmissions / totalLeads) * 100)}%` : '0%';
+    const convRate = (totalLeads + totalAdmissions) > 0 ? `${Math.round((totalAdmissions / (totalLeads + totalAdmissions)) * 100)}%` : '0%';
     const collectionRate = (totalRevenue + totalPending > 0)
       ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
       : '100%';
