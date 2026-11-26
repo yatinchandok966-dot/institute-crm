@@ -198,14 +198,13 @@ export default function App() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const paramTab = params.get('tab');
-      if (paramTab && VALID_TABS.includes(paramTab) && paramTab !== activeTab) {
-        setSelectedStudentForProfile(null);
-        setActiveTab(paramTab);
-      }
+      const targetTab = (paramTab && VALID_TABS.includes(paramTab)) ? paramTab : 'dashboard';
+      setSelectedStudentForProfile(null);
+      setActiveTab(targetTab);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeTab]);
+  }, []);
 
   // Modal states
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
@@ -1387,6 +1386,11 @@ export default function App() {
 
   const handleTabChange = (tab) => {
     if (!VALID_TABS.includes(tab)) return;
+    if (typeof window !== 'undefined' && window.location.hash !== '#inquire' && tab !== activeTab) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.pushState({ tab }, '', url);
+    }
     setSelectedStudentForProfile(null);
     setActiveTab(tab);
   };
