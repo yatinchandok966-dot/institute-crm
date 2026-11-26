@@ -795,6 +795,7 @@ export default function LeadsModule({
                 <th className="px-3 py-3.5 text-left whitespace-nowrap">Lead Status</th>
                 <th className="pl-3 pr-5 py-3.5 text-center whitespace-nowrap">Actions</th>
               </tr>
+              
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredLeads.length === 0 ? (
