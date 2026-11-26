@@ -58,27 +58,16 @@ function CustomSelect({ id, value, options, placeholder = 'Select an option', is
 }
 
 export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCRM }) {
-  const initialCourse = (courses && courses.length > 0 && (courses[0]?.name || courses[0])) || '';
   const [formData, setFormData] = useState({
     name: '',
     countryCode: '+91',
     phone: '',
     email: '',
-    course: initialCourse,
-    timing: 'Morning (09:00 AM - 11:30 AM)',
-    qualification: 'College Student (Final Year)',
+    course: '',
+    timing: '',
+    qualification: '',
     notes: ''
   });
-
-  // Ensure course is defaulted when courses load
-  useEffect(() => {
-    if (!formData.course && courses && courses.length > 0) {
-      const first = courses[0]?.name || courses[0];
-      if (first) {
-        setFormData(prev => ({ ...prev, course: prev.course || first }));
-      }
-    }
-  }, [courses]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -135,6 +124,11 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
         alert('Please enter a valid lowercase email address (e.g. name@gmail.com).');
         return;
       }
+    }
+
+    if (!formData.course || !formData.course.trim()) {
+      alert('Please select a program of interest.');
+      return;
     }
 
     setIsSubmitting(true);
@@ -251,8 +245,8 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
                   phone: '',
                   email: '',
                   course: '',
-                  timing: 'Morning (09:00 AM - 11:30 AM)',
-                  qualification: 'College Student (Final Year)',
+                  timing: '',
+                  qualification: '',
                   notes: ''
                 });
                 setIsSubmitted(false);
@@ -420,6 +414,7 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
               id="timing"
               value={formData.timing}
               options={TIMING_OPTIONS}
+              placeholder="Select preferred timing"
               isOpen={openDropdown === 'timing'}
               onToggle={toggleDropdown}
               onSelect={(val) => {
