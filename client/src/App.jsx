@@ -308,7 +308,7 @@ export default function App() {
             const mergedStudents = Array.isArray(result.students) ? result.students : [];
             const mergedFees = Array.isArray(result.feeTransactions) ? result.feeTransactions : [];
 
-            const totalRev = mergedFees.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+            const totalRev = mergedStudents.reduce((acc, s) => acc + Number(s.feePaid || 0), 0);
             const totalPend = mergedStudents.reduce((acc, s) => acc + Number(s.feeDue || 0), 0);
             const totalStuds = mergedStudents.length;
             const totalAdms = mergedAdmissions.length;
@@ -639,8 +639,8 @@ export default function App() {
         });
       }
 
-      const totalRevenue = updatedFees.reduce(
-        (acc, t) => acc + Number(t.amount || 0),
+      const totalRevenue = updatedStudents.reduce(
+        (acc, s) => acc + Number(s.feePaid || 0),
         0,
       );
       const totalPending = updatedStudents.reduce(
@@ -726,8 +726,8 @@ export default function App() {
           String(a.admission_no) !== String(admissionId)
       );
 
-      const totalRevenue = (prev.feeTransactions || []).reduce(
-        (acc, t) => acc + (Number(t.amount) || 0),
+      const totalRevenue = (prev.students || []).reduce(
+        (acc, s) => acc + (Number(s.feePaid) || 0),
         0
       );
       const totalPending = (prev.students || []).reduce(
@@ -786,14 +786,18 @@ export default function App() {
         return !matches;
       });
 
-      const totalRevenue = (prev.feeTransactions || []).reduce(
-        (acc, t) => acc + (Number(t.amount) || 0),
+      const totalRevenue = updatedStudents.reduce(
+        (acc, s) => acc + (Number(s.feePaid) || 0),
         0
       );
       const totalPending = updatedStudents.reduce(
         (acc, s) => acc + (Number(s.feeDue) || 0),
         0
       );
+      const collRate =
+        totalRevenue + totalPending > 0
+          ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
+          : "100%";
 
       const updatedData = {
         ...prev,
@@ -801,11 +805,11 @@ export default function App() {
         stats: {
           ...prev.stats,
           totalStudents: updatedStudents.length,
+          monthlyRevenue: totalRevenue,
+          pendingFees: totalPending,
+          feeCollectionRate: collRate,
           pendingFeesAmount: totalPending,
-          collectionRate:
-            totalRevenue + totalPending > 0
-              ? `${Math.round((totalRevenue / (totalRevenue + totalPending)) * 100)}%`
-              : "100%",
+          collectionRate: collRate,
         },
       };
 
@@ -860,8 +864,8 @@ export default function App() {
       });
 
       const updatedFees = [newReceipt, ...prev.feeTransactions];
-      const totalRevenue = updatedFees.reduce(
-        (acc, t) => acc + Number(t.amount || 0),
+      const totalRevenue = updatedStudents.reduce(
+        (acc, s) => acc + Number(s.feePaid || 0),
         0,
       );
       const totalPending = updatedStudents.reduce(
