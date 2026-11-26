@@ -239,16 +239,18 @@ export default function App() {
   // Fetch initial dashboard stats & DB status from Express backend
   const fetchDashboardData = async () => {
     setIsRefreshing(true);
+    const minSpin = new Promise((r) => setTimeout(r, 450));
     try {
+      const ts = Date.now();
       let [statsRes, healthRes] = await Promise.all([
-        fetch("/api/dashboard/stats", { cache: "no-store" }).catch(() => null),
-        fetch("/api/health", { cache: "no-store" }).catch(() => null),
+        fetch(`/api/dashboard/stats?t=${ts}`, { cache: "no-store" }).catch(() => null),
+        fetch(`/api/health?t=${ts}`, { cache: "no-store" }).catch(() => null),
       ]);
 
       // Retry once if cold start caused a transient failure
       if (!statsRes || !statsRes.ok) {
         await new Promise((r) => setTimeout(r, 600));
-        statsRes = await fetch("/api/dashboard/stats", { cache: "no-store" }).catch(() => null);
+        statsRes = await fetch(`/api/dashboard/stats?t=${Date.now()}`, { cache: "no-store" }).catch(() => null);
       }
 
       if (healthRes && healthRes.ok) {
@@ -350,9 +352,12 @@ export default function App() {
       }
     } catch (err) {
       console.warn("Backend running in local fallback mode:", err);
+      return false;
     } finally {
+      await minSpin;
       setIsRefreshing(false);
     }
+    return true;
   };
 
   useEffect(() => {

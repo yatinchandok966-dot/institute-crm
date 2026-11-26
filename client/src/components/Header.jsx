@@ -13,7 +13,15 @@ export default function Header({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [justRefreshed, setJustRefreshed] = useState(false);
   const searchRef = useRef(null);
+
+  const handleRefreshClick = async () => {
+    if (!onRefresh || isRefreshing) return;
+    await onRefresh();
+    setJustRefreshed(true);
+    setTimeout(() => setJustRefreshed(false), 2000);
+  };
 
   const todayFormatted = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
@@ -128,11 +136,16 @@ export default function Header({
 
         {/* Refresh Button */}
         <button
-          onClick={onRefresh}
-          title="Refresh Data"
-          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+          type="button"
+          onClick={handleRefreshClick}
+          disabled={isRefreshing}
+          title="Refresh Data from Database"
+          className="flex items-center gap-1.5 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 cursor-pointer disabled:opacity-60"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-600' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-600' : justRefreshed ? 'text-emerald-600' : ''}`} />
+          {justRefreshed && !isRefreshing && (
+            <span className="text-[11px] font-semibold text-emerald-700 pr-0.5">Synced</span>
+          )}
         </button>
       </div>
     </header>
