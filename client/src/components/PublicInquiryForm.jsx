@@ -70,26 +70,49 @@ export default function PublicInquiryForm({ courses, onLeadSubmitted, onBackToCR
       notes: `Timing: ${formData.timing} | Background: ${formData.qualification} ${formData.notes ? '| Message: ' + formData.notes : ''}`
     };
 
-    try {
-      const res = await fetch('/api/leads', {
+    const apiUrl = `${window.location.origin}/api/leads`;
+    const postLead = () =>
+      fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        cache: 'no-store',
         body: JSON.stringify(payload)
       });
+
+    try {
+      let res;
+      try {
+        res = await postLead();
+      } catch (firstErr) {
+        // iOS Safari can fail with "TypeError: Load failed" on a stale HTTP/2 keep-alive socket after form idle time; retry once on a fresh connection.
+        await new Promise((r) => setTimeout(r, 400));
+        res = await postLead();
+      }
+
       const data = await res.json().catch(() => null);
       if (!res.ok || !data || !data.success) {
-        setSubmitError(data?.message || 'Could not submit inquiry. Please check your connection and try again.');
+        setSubmitError(
+          data?.message ||
+            `Could not submit inquiry (status ${res.status}). Please check your connection and try again.`
+        );
         return;
       }
+
       if (data.lead && onLeadSubmitted) {
-        onLeadSubmitted({
-          ...data.lead,
-          source: data.lead.source || 'QR Code (Campus Reception)'
-        });
+        try {
+          onLeadSubmitted({
+            ...data.lead,
+            source: data.lead.source || 'QR Code (Campus Reception)'
+          });
+        } catch (cbErr) {
+          console.warn('onLeadSubmitted callback warning:', cbErr);
+        }
       }
       setIsSubmitted(true);
-    } catch {
-      setSubmitError('Network error while submitting inquiry. Please try again.');
+    } catch (err) {
+      const detail = err?.message ? ` (${err.message})` : '';
+      setSubmitError(`Network error while submitting inquiry. Please try again.${detail}`);
     } finally {
       setIsSubmitting(false);
     }
