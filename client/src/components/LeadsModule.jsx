@@ -503,11 +503,10 @@ export default function LeadsModule({
         {/* Card 1: Overdue Follow-ups */}
         <div
           onClick={() => setFollowUpFilter(followUpFilter === 'overdue' ? 'All' : 'overdue')}
-          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${
-            followUpFilter === 'overdue'
-              ? 'border-rose-400 ring-2 ring-rose-300 shadow-md bg-rose-50/40'
-              : 'border-slate-200/90 hover:border-rose-300 hover:shadow-md hover:-translate-y-0.5'
-          }`}
+          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${followUpFilter === 'overdue'
+            ? 'border-rose-400 ring-2 ring-rose-300 shadow-md bg-rose-50/40'
+            : 'border-slate-200/90 hover:border-rose-300 hover:shadow-md hover:-translate-y-0.5'
+            }`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="relative w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
@@ -521,9 +520,8 @@ export default function LeadsModule({
             </div>
 
             <div className="text-right">
-              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${
-                followUpStats.overdue > 0 ? 'text-rose-600' : 'text-slate-400'
-              }`}>
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${followUpStats.overdue > 0 ? 'text-rose-600' : 'text-slate-400'
+                }`}>
                 {followUpStats.overdue}
               </span>
             </div>
@@ -558,11 +556,10 @@ export default function LeadsModule({
         {/* Card 2: Follow-ups Due Today */}
         <div
           onClick={() => setFollowUpFilter(followUpFilter === 'today' ? 'All' : 'today')}
-          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${
-            followUpFilter === 'today'
-              ? 'border-amber-400 ring-2 ring-amber-300 shadow-md bg-amber-50/40'
-              : 'border-slate-200/90 hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5'
-          }`}
+          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${followUpFilter === 'today'
+            ? 'border-amber-400 ring-2 ring-amber-300 shadow-md bg-amber-50/40'
+            : 'border-slate-200/90 hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5'
+            }`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="relative w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
@@ -575,9 +572,8 @@ export default function LeadsModule({
             </div>
 
             <div className="text-right">
-              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${
-                followUpStats.today > 0 ? 'text-amber-600' : 'text-slate-400'
-              }`}>
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${followUpStats.today > 0 ? 'text-amber-600' : 'text-slate-400'
+                }`}>
                 {followUpStats.today}
               </span>
             </div>
@@ -612,11 +608,10 @@ export default function LeadsModule({
         {/* Card 3: Upcoming Follow-ups */}
         <div
           onClick={() => setFollowUpFilter(followUpFilter === 'upcoming' ? 'All' : 'upcoming')}
-          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${
-            followUpFilter === 'upcoming'
-              ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-md bg-indigo-50/40'
-              : 'border-slate-200/90 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5'
-          }`}
+          className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 border transition-all duration-200 cursor-pointer group bg-white min-h-[135px] flex flex-col justify-between ${followUpFilter === 'upcoming'
+            ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-md bg-indigo-50/40'
+            : 'border-slate-200/90 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5'
+            }`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="relative w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200/80 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
@@ -624,9 +619,8 @@ export default function LeadsModule({
             </div>
 
             <div className="text-right">
-              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${
-                followUpStats.upcoming > 0 ? 'text-indigo-600' : 'text-slate-400'
-              }`}>
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight block ${followUpStats.upcoming > 0 ? 'text-indigo-600' : 'text-slate-400'
+                }`}>
                 {followUpStats.upcoming}
               </span>
             </div>
@@ -782,7 +776,7 @@ export default function LeadsModule({
               <col style={{ width: '16%' }} className="w-[16%] min-w-[210px]" /> {/* 1. Lead Information */}
               <col style={{ width: '11%' }} className="w-[11%] min-w-[145px]" /> {/* 2. Contact */}
               <col style={{ width: '12%' }} className="w-[12%] min-w-[155px]" /> {/* 3. Interested Course */}
-              <col style={{ width: '8%' }} className="w-[8%] min-w-[100px]" />   {/* 4. Source */}
+              <col style={{ width: '10%' }} className="w-[8%] min-w-[100px]" />   {/* 4. Source */}
               <col style={{ width: '14%' }} className="w-[14%] min-w-[170px]" /> {/* 5. Assigned Counsellor */}
               <col style={{ width: '8%' }} className="w-[8%] min-w-[100px]" />   {/* 6. Priority */}
               <col style={{ width: '11%' }} className="w-[11%] min-w-[140px]" /> {/* 7. Next Follow-Up */}
@@ -884,18 +878,18 @@ export default function LeadsModule({
                             {(lead.city || lead.qualification || lead.college) && (
                               <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 truncate">
                                 {lead.city && (
-                                   <span className="inline-flex items-center gap-0.5 font-medium text-slate-600 shrink-0">
-                                     <MapPin className="w-2.5 h-2.5 text-slate-400" />
-                                     <span>{lead.city}</span>
-                                   </span>
+                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-600 shrink-0">
+                                    <MapPin className="w-2.5 h-2.5 text-slate-400" />
+                                    <span>{lead.city}</span>
+                                  </span>
                                 )}
                                 {(lead.qualification || lead.college) && (
-                                   <span className="inline-flex items-center gap-0.5 font-medium text-slate-500 truncate" title={[lead.qualification, lead.college].filter(Boolean).join(' • ')}>
-                                     <GraduationCap className="w-3 h-3 text-slate-400 shrink-0" />
-                                     <span className="truncate">
-                                       {[lead.qualification, lead.college].filter(Boolean).join(' • ')}
-                                     </span>
-                                   </span>
+                                  <span className="inline-flex items-center gap-0.5 font-medium text-slate-500 truncate" title={[lead.qualification, lead.college].filter(Boolean).join(' • ')}>
+                                    <GraduationCap className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span className="truncate">
+                                      {[lead.qualification, lead.college].filter(Boolean).join(' • ')}
+                                    </span>
+                                  </span>
                                 )}
                               </div>
                             )}
@@ -961,11 +955,10 @@ export default function LeadsModule({
 
                       {/* 5. Assigned Counsellor */}
                       <td className="px-3.5 py-3.5 align-middle whitespace-nowrap overflow-hidden">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border max-w-full truncate ${
-                          lead.counselor && lead.counselor !== 'Unassigned'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-slate-50 text-slate-500 border-slate-200'
-                        }`} title={lead.counselor || 'Unassigned'}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border max-w-full truncate ${lead.counselor && lead.counselor !== 'Unassigned'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-slate-50 text-slate-500 border-slate-200'
+                          }`} title={lead.counselor || 'Unassigned'}>
                           <User className="w-3 h-3 text-slate-400 shrink-0" />
                           <span className="truncate">{lead.counselor || 'Unassigned'}</span>
                         </span>
@@ -982,13 +975,12 @@ export default function LeadsModule({
                               onLeadUpdated({ ...lead, priority: e.target.value });
                             }
                           }}
-                          className={`text-[10px] font-bold rounded-md px-2 py-0.5 border cursor-pointer focus:outline-none transition-colors shadow-2xs ${
-                            lead.priority === 'Hot'
-                              ? 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
-                              : lead.priority === 'Warm'
+                          className={`text-[10px] font-bold rounded-md px-2 py-0.5 border cursor-pointer focus:outline-none transition-colors shadow-2xs ${lead.priority === 'Hot'
+                            ? 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
+                            : lead.priority === 'Warm'
                               ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
                               : 'bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100'
-                          }`}
+                            }`}
                         >
                           {LEAD_PRIORITIES.map((p) => (
                             <option key={p} value={p}>{p}</option>
@@ -1110,10 +1102,10 @@ export default function LeadsModule({
           setSelectedLeadForNotes((prev) =>
             prev
               ? {
-                  ...prev,
-                  callHistory: [call, ...(prev.callHistory || [])],
-                  ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
-                }
+                ...prev,
+                callHistory: [call, ...(prev.callHistory || [])],
+                ...(nextFollowUp ? { nextFollowUpDate: nextFollowUp } : {})
+              }
               : null
           );
         }}
