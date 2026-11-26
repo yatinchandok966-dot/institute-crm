@@ -202,6 +202,35 @@ const syncAdmissionsAndStudents = async () => {
         }
       }
     }
+
+    // Backfill: fix enrollments that have NULL course_id/batch_id
+    await pool.query(`
+      UPDATE enrollments e
+      SET course_id = sub.cid
+      FROM (
+        SELECT e2.id AS eid, c.id AS cid
+        FROM enrollments e2
+        JOIN students s ON e2.student_id = s.id
+        JOIN admissions a ON (s.admission_no = a.admission_no OR (s.phone IS NOT NULL AND s.phone <> '' AND s.phone = a.phone))
+        JOIN courses c ON LOWER(TRIM(c.name)) = LOWER(TRIM(a.course))
+        WHERE e2.course_id IS NULL
+      ) sub
+      WHERE e.id = sub.eid
+    `).catch(e => console.warn('Backfill course_id warning:', e.message));
+
+    await pool.query(`
+      UPDATE enrollments e
+      SET batch_id = sub.bid
+      FROM (
+        SELECT e2.id AS eid, b.id AS bid
+        FROM enrollments e2
+        JOIN students s ON e2.student_id = s.id
+        JOIN admissions a ON (s.admission_no = a.admission_no OR (s.phone IS NOT NULL AND s.phone <> '' AND s.phone = a.phone))
+        JOIN batches b ON LOWER(TRIM(b.batch_name)) = LOWER(TRIM(a.batch))
+        WHERE e2.batch_id IS NULL
+      ) sub
+      WHERE e.id = sub.eid
+    `).catch(e => console.warn('Backfill batch_id warning:', e.message));
   } catch (err) {
     console.warn('Sync admissions to students warning:', err.message);
   }
@@ -243,7 +272,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
       pool.query('SELECT * FROM courses ORDER BY id ASC'),
       pool.query('SELECT * FROM batches ORDER BY id ASC'),
       pool.query('SELECT * FROM leads ORDER BY id DESC'),
-      pool.query('SELECT * FROM admissions ORDER BY id DESC'),
+      pool.query('SELECT * FROM admissions WHERE student_deleted IS NOT TRUE ORDER BY id DESC'),
       pool.query(`
         SELECT
           s.id,
@@ -1155,11 +1184,22 @@ app.post('/api/admissions', async (req, res) => {
     const studentDbId = stuResult.rows[0]?.id;
     let enrollmentId = null;
     if (studentDbId) {
-      // 3. Insert enrollment
+      // 3. Resolve course_id and batch_id from names
+      let courseId = null;
+      let batchId = null;
+      if (course) {
+        const cRes = await pool.query('SELECT id FROM courses WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1', [course]);
+        courseId = cRes.rows[0]?.id || null;
+      }
+      if (batch) {
+        const bRes = await pool.query('SELECT id FROM batches WHERE LOWER(TRIM(batch_name)) = LOWER(TRIM($1)) LIMIT 1', [batch]);
+        batchId = bRes.rows[0]?.id || null;
+      }
+      // 4. Insert enrollment with course_id and batch_id
       const enrollResult = await pool.query(
-        `INSERT INTO enrollments (student_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [studentDbId, numTotalFee, numDiscount, numPaid, numDue, admissionDate, numDue === 0 ? 'Enrolled' : 'Fee Pending']
+        `INSERT INTO enrollments (student_id, course_id, batch_id, total_fee, discount, paid_fee, due_fee, enrollment_date, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+        [studentDbId, courseId, batchId, numTotalFee, numDiscount, numPaid, numDue, admissionDate, numDue === 0 ? 'Enrolled' : 'Fee Pending']
       );
       enrollmentId = enrollResult.rows[0]?.id;
     }
