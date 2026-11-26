@@ -33,9 +33,9 @@ const LinkedInIcon = ({ className = "w-6 h-6 text-white" }) => (
 
 const InstagramIcon = ({ className = "w-6 h-6 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
   </svg>
 );
 
@@ -47,7 +47,7 @@ const FacebookIcon = ({ className = "w-6 h-6 text-white" }) => (
 
 const TwitterIcon = ({ className = "w-5 h-5 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
@@ -62,7 +62,7 @@ const GmailIcon = ({ className = "w-6 h-6" }) => (
 
 const TelegramIcon = ({ className = "w-6 h-6 text-white" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
   </svg>
 );
 
@@ -122,7 +122,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       case 'whatsapp': {
         try {
           await navigator.clipboard.writeText(admissionCaption);
-        } catch (_) {}
+        } catch (_) { }
         const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(admissionCaption)}`;
         window.open(waUrl, '_blank', 'noopener,noreferrer');
         showToast('Opening WhatsApp with inquiry link and invitation message...');
@@ -131,7 +131,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       case 'linkedin': {
         try {
           await navigator.clipboard.writeText(admissionCaption);
-        } catch (_) {}
+        } catch (_) { }
         const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicInquiryUrl)}`;
         window.open(linkedInUrl, '_blank', 'noopener,noreferrer');
         showToast('Link & message copied! Opening LinkedIn share...');
@@ -140,7 +140,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       case 'instagram': {
         try {
           await navigator.clipboard.writeText(admissionCaption);
-        } catch (_) {}
+        } catch (_) { }
         window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
         showToast('Admission link copied! Opening Instagram to paste in DM, Bio, or Story...');
         break;
@@ -148,7 +148,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       case 'facebook': {
         try {
           await navigator.clipboard.writeText(publicInquiryUrl);
-        } catch (_) {}
+        } catch (_) { }
         const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicInquiryUrl)}&quote=${encodeURIComponent(admissionCaption)}`;
         window.open(fbUrl, '_blank', 'noopener,noreferrer');
         showToast('Opening Facebook to share inquiry link...');
@@ -208,7 +208,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Direct Chat',
       bg: 'bg-[#25D366]',
       hoverBg: 'hover:bg-[#20ba5a]',
-      icon: <WhatsAppIcon className="w-6 h-6 text-white" />
+      icon: <WhatsAppIcon className="w-5 h-5 text-white" />
     },
     {
       id: 'linkedin',
@@ -216,7 +216,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Feed / Post',
       bg: 'bg-[#0A66C2]',
       hoverBg: 'hover:bg-[#095196]',
-      icon: <LinkedInIcon className="w-6 h-6 text-white" />
+      icon: <LinkedInIcon className="w-5 h-5 text-white" />
     },
     {
       id: 'instagram',
@@ -224,7 +224,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'DM / Story',
       bg: 'bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]',
       hoverBg: 'hover:opacity-90',
-      icon: <InstagramIcon className="w-6 h-6 text-white" />
+      icon: <InstagramIcon className="w-5 h-5 text-white" />
     },
     {
       id: 'facebook',
@@ -232,7 +232,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Social Feed',
       bg: 'bg-[#1877F2]',
       hoverBg: 'hover:bg-[#166fe5]',
-      icon: <FacebookIcon className="w-6 h-6 text-white" />
+      icon: <FacebookIcon className="w-5 h-5 text-white" />
     },
     {
       id: 'twitter',
@@ -240,7 +240,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Tweet',
       bg: 'bg-slate-900',
       hoverBg: 'hover:bg-black',
-      icon: <TwitterIcon className="w-5 h-5 text-white" />
+      icon: <TwitterIcon className="w-4 h-4 text-white" />
     },
     {
       id: 'gmail',
@@ -248,7 +248,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Google Mail',
       bg: 'bg-white border border-slate-200 shadow-2xs',
       hoverBg: 'hover:bg-slate-50',
-      icon: <GmailIcon className="w-6 h-6" />
+      icon: <GmailIcon className="w-5 h-5" />
     },
     {
       id: 'telegram',
@@ -256,7 +256,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Messenger',
       bg: 'bg-[#229ED9]',
       hoverBg: 'hover:bg-[#1e8ec3]',
-      icon: <TelegramIcon className="w-6 h-6 text-white" />
+      icon: <TelegramIcon className="w-5 h-5 text-white" />
     },
     {
       id: 'system',
@@ -264,7 +264,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
       subtitle: 'Windows / OS',
       bg: 'bg-indigo-600',
       hoverBg: 'hover:bg-indigo-700',
-      icon: <Share2 className="w-5 h-5 text-white" />
+      icon: <Share2 className="w-4.5 h-4.5 text-white" />
     }
   ];
 
@@ -618,27 +618,27 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh] relative">
+      <div className={`bg-white rounded-2xl shadow-2xl border border-slate-200 w-full overflow-hidden flex flex-col max-h-[92vh] relative transition-all duration-200 ${isShareSheetOpen ? 'max-w-[440px]' : 'max-w-2xl'}`}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
-              {isShareSheetOpen ? <Share2 className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
+        <div className={`px-5 ${isShareSheetOpen ? 'py-3' : 'py-4'} border-b border-slate-200 flex items-center justify-between bg-slate-50`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`${isShareSheetOpen ? 'w-8 h-8 rounded-lg' : 'w-10 h-10 rounded-xl'} bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0 transition-all`}>
+              {isShareSheetOpen ? <Share2 className="w-4 h-4" /> : <QrCode className="w-5 h-5" />}
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className={`${isShareSheetOpen ? 'text-sm' : 'text-base'} font-bold text-slate-900 leading-tight`}>
                 {isShareSheetOpen ? 'Share Admission Link' : 'Share Student Inquiry QR Code'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-[11px] text-slate-500">
                 {isShareSheetOpen
-                  ? 'Share official admission registration link across all platforms'
+                  ? 'Share direct admission link across platforms'
                   : 'Digital registration form for campus front-desk, posters, and WhatsApp'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {isShareSheetOpen && (
+            {/* {isShareSheetOpen && (
               <button
                 onClick={() => setIsShareSheetOpen(false)}
                 className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
@@ -647,7 +647,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to QR</span>
               </button>
-            )}
+            )} */}
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
@@ -670,11 +670,10 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
           <div className="flex border-b border-slate-200 bg-white px-6">
             <button
               onClick={() => setActiveTab('qr')}
-              className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === 'qr'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
+              className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'qr'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
             >
               <Smartphone className="w-4 h-4" />
               <span>QR Code & Share Link</span>
@@ -682,11 +681,10 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
             <button
               onClick={() => setActiveTab('standee')}
-              className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === 'standee'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
+              className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'standee'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
             >
               <Printer className="w-4 h-4" />
               <span>Print Front-Desk Standee (A4)</span>
@@ -695,23 +693,23 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
         )}
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className={`${isShareSheetOpen ? 'p-4 space-y-3.5' : 'p-6 space-y-6'} overflow-y-auto flex-1`}>
           {/* ========================================================
               VIEW 1: SHARE SHEET (Requested by User like 2nd reference image)
               ======================================================== */}
           {isShareSheetOpen ? (
-            <div className="space-y-5 animate-in fade-in duration-150">
-              {/* Item Preview Card (Matches reference image 2 top card) */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs font-black text-lg">
+            <div className="space-y-3.5 animate-in fade-in duration-150">
+              {/* Item Preview Card (Compact, matches reference image 2 top card) */}
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-2.5 shadow-2xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs text-sm">
                     🎓
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xs font-bold text-slate-900 truncate">
+                    <h3 className="text-[11.5px] font-bold text-slate-900 truncate leading-tight">
                       EduPulse Academy - Course Inquiry & Admission Link
                     </h3>
-                    <p className="text-[11px] font-mono text-indigo-600 truncate mt-0.5" title={publicInquiryUrl}>
+                    <p className="text-[10px] font-mono text-indigo-600 truncate mt-0.5" title={publicInquiryUrl}>
                       {publicInquiryUrl}
                     </p>
                   </div>
@@ -719,27 +717,27 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
 
                 <button
                   onClick={handleCopyLink}
-                  className="shrink-0 p-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg border border-slate-200 bg-white shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                  className="shrink-0 py-1 px-2 text-slate-600 hover:text-indigo-600 hover:bg-white rounded-lg border border-slate-200 bg-white shadow-2xs transition-all cursor-pointer flex items-center gap-1 text-[10.5px] font-semibold"
                   title="Copy direct admission link"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span className="text-emerald-700 text-[11px]">Copied</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4" />
-                      <span className="text-[11px]">Copy Link</span>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Link</span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Section Heading: "Share using" (Reference image layout) */}
+              {/* Section Heading: "Share using" with compact spacing */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
                     Share using
                   </h4>
                   <span className="text-[10px] text-slate-400 font-medium">
@@ -747,26 +745,26 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   </span>
                 </div>
 
-                {/* Platforms Grid (WhatsApp, LinkedIn, Instagram, Facebook, Twitter, Gmail, Telegram, Device Share) */}
-                <div className="grid grid-cols-4 sm:grid-cols-4 gap-3.5 sm:gap-4">
+                {/* Platforms Grid: Reduced gap and compact cards */}
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                   {sharePlatforms.map((platform) => (
                     <button
                       key={platform.id}
                       onClick={() => handlePlatformShare(platform.id)}
-                      className="group flex flex-col items-center text-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer active:scale-95"
+                      className="group flex flex-col items-center text-center p-1.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer active:scale-95"
                     >
-                      {/* Brand Logo Container */}
+                      {/* Compact Brand Logo Container */}
                       <div
-                        className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-xs transition-transform duration-200 group-hover:scale-108 group-hover:shadow-md ${platform.bg} ${platform.hoverBg}`}
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-2xs transition-transform duration-200 group-hover:scale-108 group-hover:shadow-xs ${platform.bg} ${platform.hoverBg}`}
                       >
                         {platform.icon}
                       </div>
 
-                      {/* Label */}
-                      <span className="text-xs font-semibold text-slate-800 mt-2 truncate w-full group-hover:text-indigo-600 transition-colors">
+                      {/* Compact Labels with tight gap */}
+                      <span className="text-[11px] font-semibold text-slate-800 mt-1.5 truncate w-full group-hover:text-indigo-600 transition-colors leading-tight">
                         {platform.name}
                       </span>
-                      <span className="text-[10px] text-slate-400 truncate w-full mt-0.5">
+                      <span className="text-[9.5px] text-slate-400 truncate w-full mt-0.5 leading-none">
                         {platform.subtitle}
                       </span>
                     </button>
@@ -775,30 +773,30 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
               </div>
 
               {/* Bottom Quick Action: Copy Full Invitation Text */}
-              <div className="pt-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-2">
                 <button
                   onClick={handleCopyFullMessage}
-                  className="w-full sm:w-auto flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer truncate"
                 >
                   {copiedFullMessage ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span className="text-emerald-700">Full Invitation Message Copied!</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="text-emerald-700 truncate">Copied Full Message!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4 text-slate-600" />
-                      <span>Copy Full Invitation Message & Link</span>
+                      <Copy className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                      <span className="truncate">Copy Full Invitation Message</span>
                     </>
                   )}
                 </button>
 
                 <button
                   onClick={() => setIsShareSheetOpen(false)}
-                  className="w-full sm:w-auto py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Back to QR Code</span>
+                  <span>Back</span>
                 </button>
               </div>
             </div>
@@ -923,7 +921,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                   </p>
 
                   {/* Quick-Access Platform Icons right on modal for instant 1-click sharing */}
-                  <div className="pt-1">
+                  {/* <div className="pt-1">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         Quick Share to:
@@ -950,7 +948,7 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="flex items-center gap-2 pt-1">
                     <button
@@ -1030,20 +1028,20 @@ export default function ShareQRModal({ isOpen, onClose, courses }) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className={`${isShareSheetOpen ? 'px-4 py-2.5' : 'px-6 py-3'} bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500`}>
           <span>Target Destination: <strong>Leads & Inquiries Table</strong></span>
           <div className="flex items-center gap-2">
             {isShareSheetOpen && (
               <button
                 onClick={() => setIsShareSheetOpen(false)}
-                className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer text-xs"
               >
                 Back
               </button>
             )}
             <button
               onClick={onClose}
-              className="px-4 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer"
+              className="px-4 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer text-xs"
             >
               Close
             </button>
