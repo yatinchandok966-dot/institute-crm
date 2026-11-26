@@ -185,6 +185,7 @@ const initDb = async (client) => {
         college VARCHAR(150),
         passing_year VARCHAR(10),
         admission_no VARCHAR(50),
+        course VARCHAR(150),
         enrollment_status VARCHAR(30) DEFAULT 'Active',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -195,6 +196,7 @@ const initDb = async (client) => {
       ALTER TABLE students ADD COLUMN IF NOT EXISTS college VARCHAR(150);
       ALTER TABLE students ADD COLUMN IF NOT EXISTS passing_year VARCHAR(10);
       ALTER TABLE students ADD COLUMN IF NOT EXISTS admission_no VARCHAR(50);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS course VARCHAR(150);
 
       CREATE TABLE IF NOT EXISTS enrollments (
         id SERIAL PRIMARY KEY,
