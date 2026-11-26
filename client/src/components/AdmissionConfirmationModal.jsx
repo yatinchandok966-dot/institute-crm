@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, Printer, MessageSquare, Copy, School, Download, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, CheckCircle2, Printer, MessageSquare, Copy, School, Download, ShieldCheck, RotateCcw } from 'lucide-react';
 import { formatWhatsAppPhone } from '../utils/phone';
 
 export default function AdmissionConfirmationModal({ admission, onClose }) {
   const [copied, setCopied] = useState(false);
 
-  if (!admission) return null;
-
-  const confirmationMessage = `🎉 Admission Confirmed! Welcome to EduPulse Academy, ${admission.studentName}.
+  const defaultMessage = useMemo(() => {
+    if (!admission) return '';
+    return `🎉 Admission Confirmed! Welcome to EduPulse Academy, ${admission.studentName}.
 
 Your Admission Details:
 • Admission No: ${admission.admissionNo}
@@ -23,16 +23,25 @@ Your seat is officially reserved. Please bring your ID documents on Day 1.
 Counselor: ${admission.counselor}
 
 Welcome to EduPulse Academy!`;
+  }, [admission]);
+
+  const [messageText, setMessageText] = useState(defaultMessage);
+
+  useEffect(() => {
+    setMessageText(defaultMessage);
+  }, [defaultMessage]);
+
+  if (!admission) return null;
 
   const handleWhatsApp = () => {
     const cleanPhone = formatWhatsAppPhone(admission.phone);
     if (!cleanPhone) return;
-    const encoded = encodeURIComponent(confirmationMessage);
+    const encoded = encodeURIComponent(messageText);
     window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(confirmationMessage);
+    navigator.clipboard.writeText(messageText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -156,19 +165,35 @@ Welcome to EduPulse Academy!`;
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                Admission Confirmation Message (Ready to Send)
+                Admission Confirmation Message (Editable)
               </span>
-              <button
-                onClick={handleCopy}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-              >
-                <Copy className="w-3 h-3" />
-                <span>{copied ? 'Copied!' : 'Copy Text'}</span>
-              </button>
+              <div className="flex items-center gap-3">
+                {messageText !== defaultMessage && (
+                  <button
+                    type="button"
+                    onClick={() => setMessageText(defaultMessage)}
+                    className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>{copied ? 'Copied!' : 'Copy Text'}</span>
+                </button>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-600 font-mono bg-white p-3 rounded-lg border border-slate-200 whitespace-pre-wrap leading-relaxed">
-              {confirmationMessage}
-            </p>
+            <textarea
+              rows={11}
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              className="w-full text-[11px] text-slate-700 font-mono bg-white p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed resize-y"
+            />
           </div>
 
           {/* Signatures */}
