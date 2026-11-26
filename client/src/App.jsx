@@ -421,24 +421,37 @@ export default function App() {
     }).catch(() => null);
   };
 
-  const handleBatchLeadsImported = (newLeads) => {
-    if (!newLeads || newLeads.length === 0) return;
-    setInstituteData(prev => {
-      const updatedLeads = [...newLeads, ...prev.recentLeads];
-      return {
-        ...prev,
-        recentLeads: updatedLeads,
-        stats: {
-          ...prev.stats,
-          newLeadsThisMonth: updatedLeads.length
-        }
-      };
-    });
-    fetch('/api/leads/bulk', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leads: newLeads })
-    }).catch(() => null);
+  const handleBatchLeadsImported = async (newLeads) => {
+    if (!newLeads || newLeads.length === 0) return { success: false, error: 'No leads to import' };
+    try {
+      const res = await fetch('/api/leads/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads: newLeads })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || data?.message || 'Failed to save imported leads to database');
+      }
+      const savedLeads = Array.isArray(data.leads) && data.leads.length > 0 ? data.leads : newLeads;
+      setInstituteData(prev => {
+        const existingIds = new Set(prev.recentLeads.map(l => String(l.id)));
+        const uniqueSaved = savedLeads.filter(l => !existingIds.has(String(l.id)));
+        const updatedLeads = [...uniqueSaved, ...prev.recentLeads];
+        return {
+          ...prev,
+          recentLeads: updatedLeads,
+          stats: {
+            ...prev.stats,
+            newLeadsThisMonth: updatedLeads.length
+          }
+        };
+      });
+      return { success: true, count: savedLeads.length };
+    } catch (err) {
+      console.error('Bulk import DB error:', err);
+      throw err;
+    }
   };
 
   const handleUpdateLeadStatus = (leadId, newStatus) => {

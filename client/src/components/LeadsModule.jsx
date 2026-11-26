@@ -1125,8 +1125,8 @@ export default function LeadsModule({
         onClose={() => setIsImportModalOpen(false)}
         existingLeads={leads}
         courses={courses}
-        onImportLeads={(newLeads) => {
-          if (onBatchLeadsImported) onBatchLeadsImported(newLeads);
+        onImportLeads={async (newLeads) => {
+          if (onBatchLeadsImported) return await onBatchLeadsImported(newLeads);
         }}
       />
 

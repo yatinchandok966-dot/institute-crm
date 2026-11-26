@@ -748,6 +748,25 @@ app.delete('/api/leads/by-phone/:phone', async (req, res) => {
   }
 });
 
+function parseSafeFollowUpDate(raw) {
+  if (!raw) return null;
+  const str = String(raw).trim();
+  if (!str || /^#+$/.test(str)) return null;
+
+  // Match DD-MM-YYYY or DD/MM/YYYY with optional time (e.g. 22-11-2026 11:00 or 22/11/2026 11:00 AM)
+  const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(.*))?$/);
+  if (dmyMatch) {
+    const [, dd, mm, yyyy, timePart] = dmyMatch;
+    const isoCandidate = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}${timePart ? ' ' + timePart : ''}`;
+    const d = new Date(isoCandidate);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d.toISOString();
+  return null;
+}
+
 app.post('/api/leads/bulk', async (req, res) => {
   try {
     const { leads: incomingLeads } = req.body;
@@ -756,18 +775,94 @@ app.post('/api/leads/bulk', async (req, res) => {
     }
 
     const added = [];
+    const errors = [];
     for (const lead of incomingLeads) {
-      if (lead && lead.name && lead.phone) {
+      if (!lead || !lead.name || !lead.phone) continue;
+      try {
+        const cleanPhone = String(lead.phone).replace(/\D/g, '').slice(-10);
+        if (cleanPhone.length >= 10) {
+          const existing = await pool.query(
+            `SELECT * FROM leads WHERE RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $1 ORDER BY id DESC LIMIT 1`,
+            [cleanPhone]
+          );
+          if (existing.rows.length > 0) {
+            const r = existing.rows[0];
+            added.push({
+              id: r.id,
+              name: r.full_name,
+              phone: r.phone,
+              email: r.email || '',
+              city: r.city || '',
+              qualification: r.qualification || '',
+              college: r.college_university || '',
+              course: r.interested_course || '',
+              source: r.lead_source || 'Website',
+              status: r.lead_status || 'New',
+              priority: r.priority || 'Warm',
+              counselor: r.assigned_counsellor || 'Admissions Desk',
+              nextFollowUpDate: r.next_follow_up_date || '',
+              notes: r.notes || '',
+              notesList: [],
+              callHistory: [],
+              createdAt: r.created_date || new Date().toISOString().split('T')[0]
+            });
+            continue;
+          }
+        }
+
+        const safeFollowUp = parseSafeFollowUpDate(lead.nextFollowUpDate);
         const result = await pool.query(
           `INSERT INTO leads (full_name, phone, email, city, qualification, college_university, interested_course, lead_source, assigned_counsellor, lead_status, priority, next_follow_up_date, notes)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
            RETURNING *`,
-          [lead.name, lead.phone, lead.email || '', lead.city || '', lead.qualification || '', lead.college || '', lead.course || '', lead.source || 'Website', lead.counselor || 'Admissions Desk', lead.status || 'New', lead.priority || 'Warm', lead.nextFollowUpDate || null, lead.notes || '']
+          [
+            String(lead.name).trim(),
+            String(lead.phone).trim().slice(0, 25),
+            String(lead.email || '').trim().slice(0, 150),
+            String(lead.city || '').trim().slice(0, 100),
+            String(lead.qualification || '').trim().slice(0, 100),
+            String(lead.college || '').trim().slice(0, 150),
+            String(lead.course || '').trim().slice(0, 150),
+            String(lead.source || 'Website').trim().slice(0, 50),
+            String(lead.counselor || 'Admissions Desk').trim().slice(0, 100),
+            String(lead.status || 'New').trim().slice(0, 50),
+            String(lead.priority || 'Warm').trim().slice(0, 20),
+            safeFollowUp,
+            lead.notes || ''
+          ]
         );
-        added.push(result.rows[0]);
+        const r = result.rows[0];
+        if (lead.notes && String(lead.notes).trim()) {
+          await pool.query(
+            'INSERT INTO lead_notes (lead_id, note_text, author) VALUES ($1, $2, $3)',
+            [r.id, String(lead.notes).trim(), String(lead.counselor || 'Imported').trim().slice(0, 100)]
+          ).catch(() => null);
+        }
+        added.push({
+          id: r.id,
+          name: r.full_name,
+          phone: r.phone,
+          email: r.email || '',
+          city: r.city || '',
+          qualification: r.qualification || '',
+          college: r.college_university || '',
+          course: r.interested_course || '',
+          source: r.lead_source || 'Website',
+          status: r.lead_status || 'New',
+          priority: r.priority || 'Warm',
+          counselor: r.assigned_counsellor || 'Admissions Desk',
+          nextFollowUpDate: r.next_follow_up_date || '',
+          notes: r.notes || '',
+          notesList: lead.notes ? [{ id: Date.now(), text: String(lead.notes).trim(), date: new Date().toISOString().replace('T', ' ').substring(0, 16), author: lead.counselor || 'Imported' }] : [],
+          callHistory: [],
+          createdAt: r.created_date || new Date().toISOString().split('T')[0]
+        });
+      } catch (rowErr) {
+        console.warn('Bulk lead row insert error:', rowErr.message);
+        errors.push({ name: lead.name, error: rowErr.message });
       }
     }
-    res.status(201).json({ success: true, count: added.length, leads: added });
+    res.status(201).json({ success: true, count: added.length, leads: added, errors });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
